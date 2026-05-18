@@ -1078,56 +1078,6 @@ function renderJourneyBar() {
   bar.innerHTML = html;
 }
 
-  // Collect all stations in order across all routes and legs
-  const stations = [];
-  for (const route of routes) {
-    for (const leg of route.legs) {
-      if (leg.origin && !stations.includes(leg.origin)) stations.push(leg.origin);
-      if (leg.dest && !stations.includes(leg.dest)) stations.push(leg.dest);
-    }
-  }
-  if (!stations.length) { bar.classList.add('hidden'); return; }
-
-  bar.classList.remove('hidden');
-  // Build connection map: which stations are properly connected?
-  const connected = new Set();
-  for (const route of routes) {
-    for (let i = 0; i < route.legs.length - 1; i++) {
-      if (route.legs[i].dest && route.legs[i + 1].origin &&
-          route.legs[i].dest.toLowerCase() === route.legs[i + 1].origin.toLowerCase()) {
-        connected.add(route.legs[i].dest.toLowerCase());
-      }
-    }
-  }
-  // Cross-route connections
-  for (let i = 0; i < routes.length - 1; i++) {
-    const lastLeg = routes[i].legs[routes[i].legs.length - 1];
-    const firstLeg = routes[i + 1].legs[0];
-    if (lastLeg && firstLeg && lastLeg.dest && firstLeg.origin &&
-        lastLeg.dest.toLowerCase() === firstLeg.origin.toLowerCase()) {
-      connected.add(lastLeg.dest.toLowerCase());
-    }
-  }
-
-  let html = '<span class="journey-label">Journey</span>';
-  const firstStation = stations[0];
-  if (dirState.journeyOrigin && dirState.journeyOrigin !== firstStation) {
-    html += `<span class="journey-station journey-end">${dirState.journeyOrigin}</span><span class="journey-arrow">↓</span>`;
-  }
-  for (const [si, s] of stations.entries()) {
-    const isEnd = si === 0 || si === stations.length - 1;
-    const status = (isEnd || connected.has(s.toLowerCase())) ? 'connected' : 'gap';
-    html += `<span class="journey-station ${status}">${s}</span>`;
-    if (s !== stations[stations.length - 1]) {
-      html += `<span class="journey-arrow">↓</span>`;
-    }
-  }
-  if (dirState.journeyDest && dirState.journeyDest !== stations[stations.length - 1]) {
-    html += `<span class="journey-arrow">↓</span><span class="journey-station journey-end">${dirState.journeyDest}</span>`;
-  }
-  bar.innerHTML = html;
-}
-
 function renderTripStats() {
   const container = document.getElementById('trip-stats');
   const routes = dirRoutes();
@@ -1617,7 +1567,7 @@ function renderServicePage() {
   list.innerHTML = pageServices.map((s, i) => {
     const gi = start + i;
     return `
-    <div class="route-card ${gi === _selectedServiceIdx ? 'selected' : ''}" onclick="applyService(${gi})">
+    <div class="route-card ${gi === _selectedServiceIdx ? 'selected' : ''}">
       <div class="route-summary">
         <span class="route-mode-badge">${s.mode === 'HIGHSPEED_RAIL' ? '🚄' : s.mode === 'NIGHT_RAIL' ? '🛌' : s.mode === 'LONG_DISTANCE' ? '🚆' : s.mode === 'REGIONAL_RAIL' ? '🚃' : s.mode === 'SUBWAY' ? '🚇' : s.mode === 'TRAM' ? '🚊' : s.mode === 'BUS' ? '🚌' : s.mode === 'COACH' ? '🚐' : s.mode === 'FLIGHT' ? '✈️' : s.mode === 'FERRY' ? '⛴' : s.mode === 'WALK' ? '🚶' : '🚄'}</span>
         <span><strong>${s.display_name}</strong> ${s.operator ? '— ' + s.operator : ''}</span>
@@ -1626,6 +1576,10 @@ function renderServicePage() {
         <span>${s.origin} → ${s.destination}</span>
         <span>${s.departure}–${s.arrival}</span>
         ${s.distance_km ? `<span>${s.distance_km.toFixed(0)}km</span>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn-sm btn-primary" onclick="applyServiceExact(${gi})">Use Exact</button>
+        <button class="btn-sm btn-outline" onclick="applyServiceKeepTimes(${gi})">Keep My Times</button>
       </div>
     </div>`;
   }).join('');
@@ -1644,7 +1598,21 @@ function renderServicePage() {
 
 
 
-function applyService(idx) {
+function applyServiceExact(idx) {
+  const s = _foundServices[idx];
+  if (!s || !_serviceTarget) return;
+  const leg = findLeg(_serviceTarget.routeId, _serviceTarget.legId);
+  if (!leg) return;
+  leg.services = [s];
+  leg.selectedServices = [0];
+  leg.mode = s.mode || leg.mode;
+  leg.departure = s.departure || leg.departure;
+  leg.arrival = s.arrival || leg.arrival;
+  closeServiceModal();
+  renderRoutes();
+}
+
+function applyServiceKeepTimes(idx) {
   const s = _foundServices[idx];
   if (!s || !_serviceTarget) return;
   const leg = findLeg(_serviceTarget.routeId, _serviceTarget.legId);
@@ -2455,8 +2423,8 @@ async function generateBlog(writeFile) {
       origin_lon: svc?.origin_lon ?? l.originLon ?? 0,
       dest_lat: svc?.dest_lat ?? l.destLat ?? 0,
       dest_lon: svc?.dest_lon ?? l.destLon ?? 0,
-      departure: svc?.departure || l.departure || '',
-      arrival: svc?.arrival || l.arrival || '',
+      departure: l.departure || svc?.departure || '',
+      arrival: l.arrival || svc?.arrival || '',
       duration_seconds: svc?.duration_seconds || 0,
       distance_km: svc?.distance_km || 0,
       max_speed_kmh: svc?.max_speed_kmh || 0,
