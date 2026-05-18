@@ -106,13 +106,20 @@ button:hover { opacity: .85; }
 .modal-header h3 { margin: 0; }
 
 /* Journey bar */
-#journey-bar { display: flex; align-items: center; flex-wrap: nowrap; gap: 3px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; font-size: 0.82rem; overflow-x: auto; }
-.journey-station { padding: 2px 7px; border-radius: 3px; background: var(--bg); white-space: nowrap; }
-.journey-station.connected { border: 1px solid var(--good); color: var(--good); }
-.journey-station.gap { border: 1px solid var(--warn); color: var(--warn); }
-.journey-station.journey-end { border: 1px dashed var(--accent2); color: var(--accent2); }
-.journey-arrow { color: var(--muted); font-size: 0.78rem; }
-.journey-label { color: var(--muted); font-size: 0.7rem; margin-right: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+#journey-bar { display: flex; flex-direction: column; gap: 0; padding: 8px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; font-size: 0.78rem; }
+
+.journey-label { color: var(--muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+
+/* Timeline steps */
+.tl-step { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+.tl-time { font-family: monospace; font-size: 0.72rem; color: var(--muted); min-width: 42px; text-align: right; flex-shrink: 0; }
+.tl-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); flex-shrink: 0; }
+.tl-station { color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-station.tl-end { border: 1px dashed var(--accent2); color: var(--accent2); padding: 1px 6px; border-radius: 3px; font-size: 0.72rem; }
+.tl-duration { display: flex; align-items: center; gap: 6px; padding-left: 50px; font-size: 0.68rem; color: var(--muted); position: relative; }
+.tl-duration::before { content: ''; position: absolute; left: 57px; top: 0; bottom: 0; width: 1px; background: var(--border); }
+.tl-dur-text { font-family: monospace; }
+.tl-dist { color: var(--muted); font-size: 0.65rem; }
 
 /* Compact timeline bar */
 #timeline-bar { display: flex; align-items: stretch; gap: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; margin-top: -10px; margin-bottom: 10px; overflow-x: auto; overflow-y: hidden; min-height: 24px; }
@@ -186,6 +193,9 @@ button:hover { opacity: .85; }
 /* Route sections */
 .route-section { margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); overflow: hidden; }
 .route-section.collapsed { border-color: rgba(255,255,255,0.05); }
+.route-section.connection { border-color: var(--warn); background: rgba(255,152,0,0.04); }
+.route-section.connection .route-header { background: rgba(255,152,0,0.06); }
+.route-section.connection .route-name::before { content: '🔗 '; }
 
 .route-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; user-select: none; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); transition: background .15s; }
 .route-header:hover { background: rgba(255,255,255,0.05); }
@@ -206,6 +216,16 @@ button:hover { opacity: .85; }
 .route-photo-grid img { height: 90px; border-radius: 4px; object-fit: cover; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); transition: border-color .15s; }
 .route-photo-grid img:hover { border-color: var(--accent); }
 
+/* Collapsed route body — photos as thumbnails + short text */
+.route-collapsed-body { display: none; padding: 6px 12px; border-bottom: 1px solid var(--border); flex-direction: row; gap: 10px; align-items: flex-start; }
+.route-collapsed-body.collapsed { display: flex; }
+.route-collapsed-photos { display: flex; gap: 4px; flex-shrink: 0; align-items: center; }
+.route-collapsed-photos img { width: 36px; height: 36px; border-radius: 3px; object-fit: cover; border: 1px solid rgba(255,255,255,0.08); }
+.route-more-photos { font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+.route-collapsed-notes { font-size: 0.75rem; color: var(--muted); line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.route-expanded-body { display: block; }
+.route-expanded-body.collapsed { display: none; }
+
 /* Route notes textarea */
 .route-notes-area { padding: 6px 12px; border-bottom: 1px solid var(--border); }
 .route-notes-area textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 6px 8px; font-size: 0.78rem; resize: vertical; min-height: 36px; font-family: inherit; }
@@ -225,6 +245,14 @@ button:hover { opacity: .85; }
 .route-footer { padding: 4px 12px 8px; display: flex; gap: 6px; }
 .route-footer .btn-sm { font-size: 0.72rem; }
 
+/* Trip stats panel */
+#trip-stats { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; font-size: 0.78rem; }
+#trip-stats .stat { display: flex; flex-direction: column; gap: 1px; }
+#trip-stats .stat-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); }
+#trip-stats .stat-value { font-weight: 600; color: var(--accent2); font-family: monospace; font-size: 0.85rem; }
+#trip-stats .stat-value.good { color: var(--good); }
+#trip-stats .stat-value.warn { color: var(--warn); }
+
 /* Sidebar trip info details */
 .sidebar-section details summary { cursor: pointer; color: var(--accent2); font-size: 0.8rem; font-weight: 600; }
 .sidebar-section details summary:focus { outline: none; }
@@ -235,6 +263,65 @@ button:hover { opacity: .85; }
 
 /* Generate modal wider for blog preview */
 #generate-modal .modal-content { max-width: 800px; }
+
+/* Loading overlay */
+.loading-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.7); z-index: 2000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px;
+}
+.spinner {
+  width: 48px; height: 48px;
+  border: 4px solid var(--border);
+  border-top: 4px solid var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { color: var(--text); font-size: 1rem; }
+
+/* Route result modal */
+.route-result-card {
+  background: var(--bg); border: 2px solid var(--border); border-radius: 8px;
+  padding: 10px 14px; cursor: pointer; transition: border-color .15s;
+}
+.route-result-card:hover { border-color: var(--accent2); }
+.route-result-card.selected { border-color: var(--accent); background: rgba(181,9,172,.08); }
+.route-result-card .rr-header {
+  display: flex; justify-content: space-between; align-items: center;
+}
+.route-result-card .rr-title { font-weight: 600; font-size: .9rem; }
+.route-result-card .rr-badge {
+  font-size: .72rem; padding: 2px 8px; border-radius: 10px;
+  background: var(--border); color: var(--muted);
+}
+.route-result-card .rr-badge.stochastic { background: #e65100; color: #fff; }
+.route-result-card .rr-badge.direct { background: #1b5e20; color: #fff; }
+.route-result-card .rr-meta {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: .78rem; color: var(--muted);
+}
+.route-result-card .rr-meta span { white-space: nowrap; }
+.route-result-card .rr-services { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.route-result-card .rr-service {
+  font-size: .7rem; padding: 1px 7px; border-radius: 10px;
+  background: var(--border); color: var(--text);
+}
+
+/* Service selection cards */
+.route-card { background: var(--bg); border: 2px solid var(--border); border-radius: 8px; padding: 10px 14px; cursor: pointer; transition: border-color .15s; margin-bottom: 6px; }
+.route-card:hover { border-color: var(--accent2); }
+.route-card.selected { border-color: var(--accent); background: rgba(181,9,172,.08); }
+.route-summary { display: flex; align-items: center; gap: 8px; font-size: .82rem; }
+.route-mode-badge { font-size: 1.1rem; }
+.route-details { display: flex; gap: 12px; margin-top: 3px; font-size: .75rem; color: var(--muted); flex-wrap: wrap; }
+
+/* Service loading state */
+.service-loading { padding: 30px; text-align: center; color: var(--muted); font-size: .85rem; }
+.service-loading::before { content: '⏳ '; animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+#route-result-map { height: 200px; border-radius: 8px; border: 1px solid var(--border); margin: 10px 0; z-index: 1; }
 
 /* Outbound vs inbound accent for timeline summary border */
 .timeline-summary.outbound { border-left: 3px solid var(--accent2); }
@@ -286,6 +373,8 @@ button:hover { opacity: .85; }
       </div>
     </div>
 
+    <div id="journey-bar" class="sidebar-section hidden"></div>
+
     <div class="sidebar-section action-buttons">
       <button class="btn-primary btn-full" onclick="openGenerateModal()">Generate Blog</button>
       <button class="btn-danger btn-full" onclick="confirmDeleteEntry()">Delete Entry</button>
@@ -315,10 +404,10 @@ button:hover { opacity: .85; }
 
   <!-- Main content: journey bar, map, timeline -->
   <main class="main-content">
-    <div id="journey-bar" class="hidden"></div>
     <div id="timeline-bar" class="hidden"></div>
     <div id="global-map" class="hidden"></div>
     <div id="route-map" class="hidden"></div>
+    <div id="trip-stats" class="hidden"></div>
     <div id="route-list"></div>
   </main>
 
@@ -335,6 +424,20 @@ button:hover { opacity: .85; }
   </aside>
 
 </div>
+</div>
+
+<!-- Service selection modal -->
+<div id="service-modal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="service-modal-title">Select Service</h3>
+      <button class="btn-sm btn-outline" onclick="closeServiceModal()">✕</button>
+    </div>
+    <div id="service-list" class="route-result-list"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn-outline" onclick="closeServiceModal()">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <!-- Generate modal -->
@@ -501,6 +604,23 @@ function moveLeg(legId, dir) {
 }
 
 // ---- Leg management (flat list, routes auto-managed) ----
+function addRoute() {
+  const routes = dirRoutes();
+  const id = state.legIdCounter++;
+  const route = { id: 'route_' + state.routeIdCounter++, name: '', legs: [], photos: [], notes: '' };
+  route.legs.push({
+    id, type: 'transit', mode: '',
+    origin: '', originId: '', dest: '', destId: '',
+    originLat: null, originLon: null, destLat: null, destLon: null,
+    departure: '', arrival: '',
+    services: [], selectedServices: [], stops: [], photos: [], notes: '',
+  });
+  state._expandedLegIds.add(id);
+  routes.push(route);
+  autoNameRoute(route);
+  renderRoutes();
+}
+
 function addLeg(routeId) {
   const routes = dirRoutes();
   let route;
@@ -515,9 +635,15 @@ function addLeg(routeId) {
     }
   }
   const id = state.legIdCounter++;
+
+  // Pre-fill origin from the previous leg's destination
+  const prevLeg = route.legs.length ? route.legs[route.legs.length - 1] : null;
+  const defaultOrigin = prevLeg ? prevLeg.dest : '';
+  const defaultDest = '';
+
   route.legs.push({
-    id, type: 'transit',
-    origin: '', originId: '', dest: '', destId: '',
+    id, type: 'transit', mode: '',
+    origin: defaultOrigin, originId: '', dest: defaultDest, destId: '',
     originLat: null, originLon: null, destLat: null, destLon: null,
     departure: '', arrival: '',
     services: [], selectedServices: [], stops: [], photos: [], notes: '',
@@ -636,7 +762,7 @@ function renderTimeline() {
       const legCount = r.legs.length;
       const collapsed = isCollapsed ? ' collapsed' : '';
 
-      // Route-to-route gap indicator
+      // Route-to-route — only show on failure (gap)
       if (prevRoute && prevRoute.legs.length && r.legs.length) {
         const prevLast = prevRoute.legs[prevRoute.legs.length - 1];
         const curFirst = r.legs[0];
@@ -644,8 +770,6 @@ function renderTimeline() {
             prevLast.dest.toLowerCase() !== curFirst.origin.toLowerCase()) {
           html += `<div class="gap-indicator"><span class="gap-icon">⚠</span> <span class="gap-text">Route gap: ${prevLast.dest} → ${curFirst.origin}</span>
             <button class="btn-sm btn-outline" onclick="fillGapByLegs(${prevLast.id}, ${curFirst.id})">+ Connect</button></div>`;
-        } else if (prevLast.dest && curFirst.origin) {
-          html += `<div class="gap-indicator connected"><span class="gap-icon">✓</span> <span class="gap-text">Connected: ${prevLast.dest} → ${curFirst.origin}</span></div>`;
         }
       }
       prevRoute = r;
@@ -653,7 +777,8 @@ function renderTimeline() {
       const routeName = r.name || 'Route';
 
       // Route section card
-      html += `<div class="route-section${collapsed}">`;
+      const connClass = r.connection ? ' connection' : '';
+      html += `<div class="route-section${collapsed}${connClass}">`;
 
       // Route header
       html += `<div class="route-header" onclick="toggleRouteCollapse('${r.id}')" onmouseenter="zoomToRoute('${r.id}')" onmouseleave="zoomToAllRoutes()" title="${isCollapsed ? 'Expand' : 'Collapse'} this route">`;
@@ -680,16 +805,35 @@ function renderTimeline() {
       html += '</span>';
       html += '</div>';
 
-      // Route photo gallery (big images, at top of route)
+      // Route photo gallery + notes — show as thumbnail strip in collapsed, full grid when expanded
       const sprint = document.getElementById('photo-sprint')?.value || '';
-      if (r.photos && r.photos.length) {
+      const hasPhotos = r.photos && r.photos.length;
+      const hasNotes = r.notes && r.notes.trim();
+      const unincluded = r.legs.every(l => l.type === 'unincluded');
+
+      if (!unincluded) {
+      // Collapsed summary: photos as small thumbnails + notes as plain text side by side
+      html += `<div class="route-collapsed-body${collapsed}">`;
+      if (hasPhotos) {
+        html += `<div class="route-collapsed-photos">${r.photos.slice(0, 4).map(p =>
+          `<img src="/assets/img/${sprint}/${p}" title="${p}">`
+        ).join('')}${r.photos.length > 4 ? `<span class="route-more-photos">+${r.photos.length - 4}</span>` : ''}</div>`;
+      }
+      if (hasNotes) {
+        html += `<div class="route-collapsed-notes">${r.notes.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+      }
+      html += '</div>';
+
+      // Expanded photo grid + notes
+      html += `<div class="route-expanded-body${collapsed}">`;
+      if (hasPhotos) {
         html += `<div class="route-photo-grid">${r.photos.map(p =>
           `<img src="/assets/img/${sprint}/${p}" title="${p}" onclick="event.stopPropagation();openRoutePhotos('${r.id}')">`
         ).join('')}</div>`;
       }
-
-      // Route notes textarea
       html += `<div class="route-notes-area"><textarea placeholder="Route description (appears in blog)..." oninput="updateRouteNotes('${r.id}', this.value)">${(r.notes || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea></div>`;
+      html += '</div>';
+      }
 
       // Route legs container (hidden when collapsed)
       html += `<div class="route-legs${collapsed}">`;
@@ -716,15 +860,14 @@ function renderTimeline() {
         html += `</div>`;
         globalIdx++;
       }
-      html += '</div>'; // route-legs
-
-      // Route footer with add leg button
+      // Route footer with add leg button — inside route-legs so it hides on collapse
       html += `<div class="route-footer"><button class="btn-sm btn-outline" onclick="event.stopPropagation();addLeg('${r.id}')">+ Add Leg</button></div>`;
+      html += '</div>'; // route-legs
       html += '</div>'; // route-section
     }
   }
 
-  html += '<div class="flex" style="margin-top:12px"><button class="btn-secondary btn-sm" onclick="addLeg()">+ Add Leg</button></div>';
+  html += '<div class="flex" style="margin-top:12px;gap:6px"><button class="btn-secondary btn-sm" onclick="addRoute()">+ Add Route</button><button class="btn-outline btn-sm" onclick="findAllServices()">🔍 Find All</button></div>';
   container.innerHTML = html;
 
   // Wire up autocomplete for each leg
@@ -737,6 +880,7 @@ function renderTimeline() {
   renderJourneyBar();
   renderCompactTimeline();
   renderGlobalMap();
+  renderTripStats();
 }
 
 function renderRoutes() { renderTimeline(); }
@@ -758,45 +902,39 @@ function toggleLegExpand(legId) {
   }
 }
 function fillGapByLegs(prevLegId, nextLegId) {
-  for (const r of dirRoutes()) {
-    const pIdx = r.legs.findIndex(l => l.id === prevLegId);
-    const nIdx = r.legs.findIndex(l => l.id === nextLegId);
-    if (pIdx >= 0 && nIdx >= 0 && nIdx === pIdx + 1) {
-      const prev = r.legs[pIdx];
-      const next = r.legs[nIdx];
-      const id = state.legIdCounter++;
-      r.legs.splice(pIdx + 1, 0, {
-        id, type: 'transit',
-        origin: prev.dest, originId: '',
-        dest: next.origin, destId: '',
-        departure: prev.arrival || '', arrival: next.departure || '',
-        services: [], selectedServices: [], stops: [], photos: [],
-      });
-      autoNameRoute(r);
-      renderTimeline();
-      return;
-    }
-  }
-  // Fallback: try cross-route
+  // Find which routes these legs belong to
   const routes = dirRoutes();
-  for (let ri = 0; ri < routes.length - 1; ri++) {
-    const cr = routes[ri], nr = routes[ri + 1];
-    const lastLeg = cr.legs[cr.legs.length - 1];
-    const firstLeg = nr.legs[0];
-    if (lastLeg && firstLeg && lastLeg.id === prevLegId && firstLeg.id === nextLegId) {
-      const id = state.legIdCounter++;
-      cr.legs.push({
-        id, type: 'transit',
-        origin: lastLeg.dest, originId: '',
-        dest: firstLeg.origin, destId: '',
-        departure: lastLeg.arrival || '', arrival: firstLeg.departure || '',
-        services: [], selectedServices: [], stops: [], photos: [],
-      });
-      autoNameRoute(cr);
-      renderTimeline();
-      return;
+  let prevRoute = null, nextRoute = null;
+  let prevLeg = null, nextLeg = null;
+
+  for (const r of routes) {
+    for (const l of r.legs) {
+      if (l.id === prevLegId) { prevRoute = r; prevLeg = l; }
+      if (l.id === nextLegId) { nextRoute = r; nextLeg = l; }
     }
   }
+  if (!prevLeg || !nextLeg) return;
+
+  const origin = prevLeg.dest || '';
+  const dest = nextLeg.origin || '';
+  if (!origin || !dest) return;
+
+  // Create a new connection route between them
+  const route = { id: 'route_' + state.routeIdCounter++, name: `${origin} → ${dest}`, legs: [], photos: [], notes: '', connection: true };
+  const id = state.legIdCounter++;
+  route.legs.push({
+    id, type: 'transit', mode: '',
+    origin, originId: '',
+    dest, destId: '',
+    departure: prevLeg.arrival || '', arrival: nextLeg.departure || '',
+    services: [], selectedServices: [], stops: [], photos: [], notes: '',
+  });
+  state._expandedLegIds.add(id);
+
+  // Insert the new route after prevRoute
+  const pi = routes.indexOf(prevRoute);
+  routes.splice(pi + 1, 0, route);
+  renderTimeline();
 }
 
 // ---- Delete / Cache ----
@@ -841,11 +979,28 @@ function shutdownServer() {
     .catch(() => alert('Could not reach server.'));
 }
 
+// ---- Loading Overlay ----
+function showLoading(msg) {
+  let el = document.getElementById('loading-overlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'loading-overlay';
+    el.className = 'loading-overlay';
+    el.innerHTML = '<div class="spinner"></div><div class="loading-text" id="loading-text">Loading...</div>';
+    document.body.appendChild(el);
+  }
+  document.getElementById('loading-text').textContent = msg;
+  el.classList.remove('hidden');
+}
+function hideLoading() {
+  const el = document.getElementById('loading-overlay');
+  if (el) el.classList.add('hidden');
+}
+
 // ---- Generate Modal ----
 function openGenerateModal() {
   document.getElementById('generate-modal').classList.remove('hidden');
-  document.getElementById('preview-content').textContent = 'Generating...';
-  findRoutes();
+  document.getElementById('preview-content').textContent = 'Click Preview or Write to File to generate the blog post.';
 }
 function closeGenerateModal() {
   document.getElementById('generate-modal').classList.add('hidden');
@@ -859,6 +1014,69 @@ function renderJourneyBar() {
     bar.classList.add('hidden');
     return;
   }
+  bar.classList.remove('hidden');
+
+  // Walk all legs in order across all routes and build a timeline
+  const steps = [];
+  for (const route of routes) {
+    for (const leg of route.legs) {
+      if (!leg.origin || !leg.dest) continue;
+      const selIdx = leg.selectedServices.length > 0 ? leg.selectedServices[0] : -1;
+      const svc = selIdx >= 0 && leg.services[selIdx] ? leg.services[selIdx] : null;
+      const dist = svc?.distance_km || leg.distance_km || 0;
+
+      let durStr = '';
+      if (leg.departure && leg.arrival) {
+        const [dh, dm] = leg.departure.split(':').map(Number);
+        const [ah, am] = leg.arrival.split(':').map(Number);
+        let durMin = (ah * 60 + am) - (dh * 60 + dm);
+        if (durMin < 0) durMin += 24 * 60;
+        durStr = `${Math.floor(durMin / 60)}h ${durMin % 60}m`;
+      }
+
+      steps.push({ station: leg.origin, time: leg.departure || '', dur: '', dist: 0 });
+      steps.push({ station: leg.dest, time: leg.arrival || '', dur: durStr, dist });
+    }
+  }
+
+  // Deduplicate adjacent same-station transitions (e.g. dest of one = origin of next)
+  const deduped = [];
+  for (const s of steps) {
+    const prev = deduped[deduped.length - 1];
+    if (prev && prev.station === s.station && prev.time === s.time && !prev.dur) continue;
+    // Merge duration from the step that has it
+    if (prev && prev.station === s.station && s.dur && !prev.dur) { prev.dur = s.dur; prev.dist = s.dist; continue; }
+    // If this step has no time but previous has same station, skip
+    if (prev && prev.station === s.station && !s.time) continue;
+    deduped.push({ ...s });
+  }
+
+  if (!deduped.length) { bar.classList.add('hidden'); return; }
+
+  let html = '<div class="journey-label">Journey</div>';
+  for (let i = 0; i < deduped.length; i++) {
+    const s = deduped[i];
+    const hasDur = s.dur && s.dur !== '0h 0m';
+    const hasDist = s.dist > 0;
+
+    if (hasDur) {
+      html += `<div class="tl-duration"><span class="tl-dur-text">${s.dur}</span>${hasDist ? ` <span class="tl-dist">${s.dist.toFixed(0)}km</span>` : ''}</div>`;
+    }
+    html += '<div class="tl-step">';
+    html += `<span class="tl-time">${s.time || ''}</span>`;
+    html += `<span class="tl-dot"></span>`;
+    html += `<span class="tl-station">${s.station}</span>`;
+    html += '</div>';
+  }
+  if (dirState.journeyOrigin && dirState.journeyOrigin !== deduped[0]?.station) {
+    html = '<div class="tl-step"><span class="tl-time"></span><span class="tl-dot"></span><span class="tl-station tl-end">' + dirState.journeyOrigin + '</span></div>' + html;
+  }
+  if (dirState.journeyDest && dirState.journeyDest !== deduped[deduped.length - 1]?.station) {
+    html += '<div class="tl-step"><span class="tl-time"></span><span class="tl-dot"></span><span class="tl-station tl-end">' + dirState.journeyDest + '</span></div>';
+  }
+
+  bar.innerHTML = html;
+}
 
   // Collect all stations in order across all routes and legs
   const stations = [];
@@ -894,20 +1112,91 @@ function renderJourneyBar() {
   let html = '<span class="journey-label">Journey</span>';
   const firstStation = stations[0];
   if (dirState.journeyOrigin && dirState.journeyOrigin !== firstStation) {
-    html += `<span class="journey-station journey-end">${dirState.journeyOrigin}</span><span class="journey-arrow">→</span>`;
+    html += `<span class="journey-station journey-end">${dirState.journeyOrigin}</span><span class="journey-arrow">↓</span>`;
   }
   for (const [si, s] of stations.entries()) {
     const isEnd = si === 0 || si === stations.length - 1;
     const status = (isEnd || connected.has(s.toLowerCase())) ? 'connected' : 'gap';
     html += `<span class="journey-station ${status}">${s}</span>`;
     if (s !== stations[stations.length - 1]) {
-      html += `<span class="journey-arrow">→</span>`;
+      html += `<span class="journey-arrow">↓</span>`;
     }
   }
   if (dirState.journeyDest && dirState.journeyDest !== stations[stations.length - 1]) {
-    html += `<span class="journey-arrow">→</span><span class="journey-station journey-end">${dirState.journeyDest}</span>`;
+    html += `<span class="journey-arrow">↓</span><span class="journey-station journey-end">${dirState.journeyDest}</span>`;
   }
   bar.innerHTML = html;
+}
+
+function renderTripStats() {
+  const container = document.getElementById('trip-stats');
+  const routes = dirRoutes();
+  const allLegs = routes.flatMap(r => r.legs);
+  if (!allLegs.length) {
+    container.classList.add('hidden');
+    return;
+  }
+  container.classList.remove('hidden');
+
+  let totalDist = 0, railDist = 0, walkDist = 0;
+  let totalSecs = 0, maxSpeed = 0, legCount = 0, transferCount = 0;
+  let maxSpeedLeg = null;
+
+  for (const leg of allLegs) {
+    const selIdx = leg.selectedServices.length > 0 ? leg.selectedServices[0] : -1;
+    const svc = selIdx >= 0 && leg.services[selIdx] ? leg.services[selIdx] : null;
+    const dist = svc?.distance_km || leg.distance_km || 0;
+    totalDist += dist;
+
+    if (leg.mode === 'WALK' || leg.type === 'transfer') {
+      walkDist += dist;
+    } else {
+      railDist += dist;
+    }
+
+    if (leg.departure && leg.arrival) {
+      const [dh, dm] = leg.departure.split(':').map(Number);
+      const [ah, am] = leg.arrival.split(':').map(Number);
+      let durMin = (ah * 60 + am) - (dh * 60 + dm);
+      if (durMin < 0) durMin += 24 * 60;
+      totalSecs += durMin * 60;
+    }
+
+    const spd = svc?.max_speed_kmh || leg.max_speed_kmh || 0;
+    if (spd > maxSpeed) { maxSpeed = spd; maxSpeedLeg = leg; }
+
+    if (leg.type === 'transfer') transferCount++;
+    legCount++;
+  }
+
+  const totalH = Math.floor(totalSecs / 3600);
+  const totalM = Math.floor((totalSecs % 3600) / 60);
+  const avgSpeed = totalSecs > 0 && totalDist > 0 ? (totalDist / (totalSecs / 3600)) : 0;
+
+  // Transit legs (non-walk, non-transfer)
+  const transitLegs = allLegs.filter(l => l.type !== 'transfer' && l.mode !== 'WALK');
+
+  let html = '';
+  html += `<div class="stat"><span class="stat-label">Legs</span><span class="stat-value">${legCount}</span></div>`;
+  html += `<div class="stat"><span class="stat-label">Distance</span><span class="stat-value">${totalDist.toFixed(0)} km</span></div>`;
+  if (railDist > 0) html += `<div class="stat"><span class="stat-label">Rail</span><span class="stat-value">${railDist.toFixed(0)} km</span></div>`;
+  html += `<div class="stat"><span class="stat-label">Duration</span><span class="stat-value">${totalH}h ${totalM}m</span></div>`;
+  if (transitLegs.length) html += `<div class="stat"><span class="stat-label">Transfers</span><span class="stat-value">${transferCount}</span></div>`;
+  if (avgSpeed > 0) html += `<div class="stat"><span class="stat-label">Avg Speed</span><span class="stat-value">${avgSpeed.toFixed(0)} km/h</span></div>`;
+  if (maxSpeed > 0) html += `<div class="stat"><span class="stat-label">Max Speed</span><span class="stat-value good">${maxSpeed.toFixed(0)} km/h</span></div>`;
+
+  if (transitLegs.length) {
+    const ll = transitLegs.reduce((a, b) => (a.distance_km || 0) > (b.distance_km || 0) ? a : b);
+    const lt = transitLegs.reduce((a, b) => (a.duration_seconds || 0) > (b.duration_seconds || 0) ? a : b);
+    if (ll && ll.distance_km) html += `<div class="stat"><span class="stat-label">Longest Leg</span><span class="stat-value">${ll.origin || '?'} → ${ll.dest || '?'} (${ll.distance_km.toFixed(0)} km)</span></div>`;
+    if (lt && lt.duration_seconds) {
+      const lh = Math.floor(lt.duration_seconds / 3600);
+      const lm = Math.floor((lt.duration_seconds % 3600) / 60);
+      html += `<div class="stat"><span class="stat-label">Longest Time</span><span class="stat-value warn">${lt.origin || '?'} → ${lt.dest || '?'} (${lh}h ${lm}m)</span></div>`;
+    }
+  }
+
+  container.innerHTML = html;
 }
 
 // ---- Timeline ----
@@ -996,8 +1285,8 @@ function renderGlobalMap() {
   container.classList.remove('hidden');
 
   const map = L.map('global-map').setView([51.5, -0.1], 5);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors', maxZoom: 18,
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>', maxZoom: 18,
   }).addTo(map);
   state._globalMap = map;
 
@@ -1012,7 +1301,9 @@ function renderGlobalMap() {
       const svcIdx = leg.selectedServices.length > 0 ? leg.selectedServices[0] : -1;
       const svc = svcIdx >= 0 && leg.services[svcIdx] ? leg.services[svcIdx] : null;
       if (svc && svc.geometry && svc.geometry.length) {
-        svc.geometry.forEach(pt => coords.push([pt.lat, pt.lon]));
+        svc.geometry.forEach(pt => coords.push([pt[0], pt[1]]));
+      } else if (leg.geometry && leg.geometry.length >= 2) {
+        leg.geometry.forEach(p => coords.push([p[0], p[1]]));
       } else if (leg.type === 'flight' && leg.originLat != null && leg.destLat != null) {
         // Curved great-circle arc for flights
         const pts = _flightArc(leg.originLat, leg.originLon, leg.destLat, leg.destLon);
@@ -1049,7 +1340,7 @@ function renderGlobalMap() {
     });
   });
 
-  if (bounds.length) map.fitBounds(bounds, { padding: [30, 30] });
+  if (bounds.length) map.fitBounds(bounds, { padding: [10, 10] });
 }
 
 function _collectRouteCoords(r) {
@@ -1058,7 +1349,7 @@ function _collectRouteCoords(r) {
     const svcIdx = leg.selectedServices.length > 0 ? leg.selectedServices[0] : -1;
     const svc = svcIdx >= 0 && leg.services[svcIdx] ? leg.services[svcIdx] : null;
     if (svc && svc.geometry && svc.geometry.length) {
-      svc.geometry.forEach(pt => coords.push([pt.lat, pt.lon]));
+      svc.geometry.forEach(pt => coords.push([pt[0], pt[1]]));
     } else if (leg.type === 'flight' && leg.originLat != null && leg.destLat != null) {
       const pts = _flightArc(leg.originLat, leg.originLon, leg.destLat, leg.destLon);
       pts.forEach(p => coords.push(p));
@@ -1076,7 +1367,7 @@ function zoomToRoute(routeId) {
   const r = dirRoutes().find(ro => ro.id === routeId);
   if (!r) return;
   const coords = _collectRouteCoords(r);
-  if (coords.length) map.fitBounds(coords, { padding: [40, 40] });
+  if (coords.length) map.fitBounds(coords, { padding: [10, 10] });
 }
 
 function zoomToAllRoutes() {
@@ -1085,7 +1376,7 @@ function zoomToAllRoutes() {
   const routes = dirRoutes();
   const allCoords = [];
   for (const r of routes) allCoords.push(..._collectRouteCoords(r));
-  if (allCoords.length) map.fitBounds(allCoords, { padding: [30, 30] });
+  if (allCoords.length) map.fitBounds(allCoords, { padding: [2, 2] });
 }
 
 function renderTimelineEntry(l, routeId, idx) {
@@ -1117,7 +1408,7 @@ function renderTimelineEntry(l, routeId, idx) {
   const distKm = svc?.distance_km || l.distance_km;
   const distHtml = distKm ? ` <span class="duration-badge">${distKm.toFixed(0)}km</span>` : '';
 
-  const typeIcon = l.type === 'stay' ? ' 🛌' : l.type === 'transfer' ? ' 🚶' : l.type === 'unincluded' ? ' ⊘' : l.type === 'bus' ? ' 🚌' : l.type === 'flight' ? ' ✈️' : ' 🚄';
+  const modeIcon = l.mode === 'HIGHSPEED_RAIL' ? '🚄' : l.mode === 'NIGHT_RAIL' ? '🛌' : l.mode === 'LONG_DISTANCE' ? '🚆' : l.mode === 'REGIONAL_RAIL' ? '🚃' : l.mode === 'SUBWAY' ? '🚇' : l.mode === 'TRAM' ? '🚊' : l.mode === 'BUS' ? '🚌' : l.mode === 'COACH' ? '🚐' : l.mode === 'FLIGHT' ? '✈️' : l.mode === 'FERRY' ? '⛴' : l.mode === 'WALK' ? '🚶' : l.type === 'stay' ? '🛌' : l.type === 'transfer' ? '🚶' : l.type === 'unincluded' ? '⊘' : '🚄';
 
   // Collapsed summary row
   const expandedClass = isExpanded ? ' expanded' : '';
@@ -1128,7 +1419,7 @@ function renderTimelineEntry(l, routeId, idx) {
       <div class="timeline-summary ${dirClass}${expandedClass}" onclick="event.stopPropagation();toggleLegExpand(${l.id})">
         <span class="time">${l.departure || ''}</span>
         <span class="stations">${l.origin || '?'} → ${l.dest || '?'}</span>
-        <span class="meta">${durHtml}${distHtml}${typeIcon}
+        <span class="meta">${durHtml}${distHtml} <span class="mode-icon">${modeIcon}</span>
           ${!l.originLat || !l.destLat ? `<span class="fixme" title="Station coordinates missing — map can't show this leg">⚠ fixme</span>` : ''}
         </span>
         <span class="expand-icon">▼</span>
@@ -1162,12 +1453,36 @@ function renderTimelineEntry(l, routeId, idx) {
         <div class="leg-detail-controls">
           <button class="move-btn" onclick="moveLeg(${l.id}, -1)" title="Move leg up">↑</button>
           <button class="move-btn" onclick="moveLeg(${l.id}, 1)" title="Move leg down">↓</button>
+          <select class="leg-type-select" onchange="updateLeg('${routeId}',${l.id},'mode',this.value)">
+            <option value=""${!l.mode ? ' selected' : ''}>— Mode —</option>
+            <optgroup label="🚆 Train">
+              <option value="HIGHSPEED_RAIL"${l.mode === 'HIGHSPEED_RAIL' ? ' selected' : ''}>High Speed</option>
+              <option value="NIGHT_RAIL"${l.mode === 'NIGHT_RAIL' ? ' selected' : ''}>Night Train</option>
+              <option value="LONG_DISTANCE"${l.mode === 'LONG_DISTANCE' ? ' selected' : ''}>Long Distance</option>
+              <option value="REGIONAL_RAIL"${l.mode === 'REGIONAL_RAIL' ? ' selected' : ''}>Regional</option>
+            </optgroup>
+            <optgroup label="🏙 Urban">
+              <option value="SUBWAY"${l.mode === 'SUBWAY' ? ' selected' : ''}>Subway</option>
+              <option value="TRAM"${l.mode === 'TRAM' ? ' selected' : ''}>Tram</option>
+            </optgroup>
+            <optgroup label="🛣 Road">
+              <option value="BUS"${l.mode === 'BUS' ? ' selected' : ''}>Bus</option>
+              <option value="COACH"${l.mode === 'COACH' ? ' selected' : ''}>Coach</option>
+            </optgroup>
+            <optgroup label="✈️ Air">
+              <option value="FLIGHT"${l.mode === 'FLIGHT' ? ' selected' : ''}>Flight</option>
+            </optgroup>
+            <optgroup label="⛴ Water">
+              <option value="FERRY"${l.mode === 'FERRY' ? ' selected' : ''}>Ferry</option>
+            </optgroup>
+            <optgroup label="🚶 On Foot">
+              <option value="WALK"${l.mode === 'WALK' ? ' selected' : ''}>Walk</option>
+            </optgroup>
+          </select>
           <select class="leg-type-select" onchange="updateLeg('${routeId}',${l.id},'type',this.value)">
             <option value="transit"${l.type === 'transit' ? ' selected' : ''}>Transit</option>
             <option value="transfer"${l.type === 'transfer' ? ' selected' : ''}>Transfer</option>
             <option value="stay"${l.type === 'stay' ? ' selected' : ''}>Stay</option>
-            <option value="bus"${l.type === 'bus' ? ' selected' : ''}>Bus</option>
-            <option value="flight"${l.type === 'flight' ? ' selected' : ''}>Flight</option>
             <option value="unincluded"${l.type === 'unincluded' ? ' selected' : ''}>Unincluded</option>
           </select>
           <button class="leg-remove" onclick="removeLeg(${l.id})">✕</button>
@@ -1217,29 +1532,6 @@ function setupAutocomplete(inputId, routeId, legId, field) {
   }
 }
 
-async function searchStation(inputId, legId, field) {
-  const input = document.getElementById(inputId);
-  const drop = document.getElementById(inputId.replace('origin-', 'origin-drop-').replace('dest-', 'dest-drop-'));
-  const q = input.value.trim();
-  if (q.length < 2) { drop.classList.remove('open'); return; }
-
-  const res = await fetch(`/api/search-stations?q=${encodeURIComponent(q)}`);
-  const data = await res.json();
-  drop.innerHTML = data.map(s =>
-    `<div class="dropdown-item" onclick="selectStation('${inputId}', ${legId}, '${field}', '${s.name.replace(/'/g, "\\'")}', '${s.id}')">
-      ${s.name} <span class="text-muted">${s.id}</span>
-    </div>`
-  ).join('');
-  drop.classList.add('open');
-}
-
-function selectStation(inputId, legId, field, name, id) {
-  document.getElementById(inputId).value = name;
-  document.getElementById(inputId.replace('origin-', 'origin-drop-').replace('dest-', 'dest-drop-')).classList.remove('open');
-  updateLeg(legId, field, name);
-  updateLeg(legId, field + 'Id', id);
-}
-
 // ---- Service search ----
 function findLeg(routeId, legId) {
   const route = dirRoutes().find(r => r.id === routeId);
@@ -1250,6 +1542,13 @@ function findLeg(routeId, legId) {
 async function findServices(routeId, legId) {
   const leg = findLeg(routeId, legId);
   if (!leg || !leg.origin || !leg.dest) return alert('Set origin and destination first');
+
+  _serviceTarget = { routeId, legId };
+
+  // Show modal immediately with leg details in header and spinner
+  document.getElementById('service-modal-title').textContent = `${leg.origin} → ${leg.dest}${leg.departure && leg.arrival ? ` (${leg.departure}–${leg.arrival})` : ''}`;
+  document.getElementById('service-list').innerHTML = '<div class="service-loading">Searching...</div>';
+  document.getElementById('service-modal').classList.remove('hidden');
 
   const body = { origin: leg.origin, destination: leg.dest, via: leg.stops, leg_type: leg.type || 'transit' };
   if (document.getElementById('trip-date').value) {
@@ -1264,18 +1563,134 @@ async function findServices(routeId, legId) {
     body: JSON.stringify(body),
   });
   const data = await res.json();
-  if (data.error) return alert(data.error);
+  if (data.error) {
+    document.getElementById('service-list').innerHTML = `<div class="service-loading">${data.error}</div>`;
+    return;
+  }
 
-  leg.services = [];
+  _foundServices = [];
   const seen = new Set();
   for (const r of data.routes) {
     for (const l of r.legs) {
       const key = l.operator + l.display_name + l.departure;
       if (!seen.has(key) && l.mode !== 'WALK') {
         seen.add(key);
-        leg.services.push(l);
+        _foundServices.push(l);
       }
     }
+  }
+
+  // Sort by departure time — closest to requested time first, else earliest
+  const reqMin = leg.departure ? timeToMin(leg.departure) : null;
+  _foundServices.sort((a, b) => {
+    if (reqMin !== null) {
+      const aDiff = Math.abs(timeToMin(a.departure) - reqMin);
+      const bDiff = Math.abs(timeToMin(b.departure) - reqMin);
+      return aDiff - bDiff;
+    }
+    return timeToMin(a.departure) - timeToMin(b.departure);
+  });
+
+  _selectedServiceIdx = 0;
+  _servicePage = 0;
+  renderServicePage();
+}
+
+function timeToMin(t) {
+  if (!t) return 0;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+let _serviceTarget = null;
+let _foundServices = [];
+let _selectedServiceIdx = 0;
+const _SERVICE_PAGE_SIZE = 10;
+let _servicePage = 0;
+
+function renderServicePage() {
+  const start = _servicePage * _SERVICE_PAGE_SIZE;
+  const pageServices = _foundServices.slice(start, start + _SERVICE_PAGE_SIZE);
+  const totalPages = Math.ceil(_foundServices.length / _SERVICE_PAGE_SIZE);
+
+  const list = document.getElementById('service-list');
+  list.innerHTML = pageServices.map((s, i) => {
+    const gi = start + i;
+    return `
+    <div class="route-card ${gi === _selectedServiceIdx ? 'selected' : ''}" onclick="applyService(${gi})">
+      <div class="route-summary">
+        <span class="route-mode-badge">${s.mode === 'HIGHSPEED_RAIL' ? '🚄' : s.mode === 'NIGHT_RAIL' ? '🛌' : s.mode === 'LONG_DISTANCE' ? '🚆' : s.mode === 'REGIONAL_RAIL' ? '🚃' : s.mode === 'SUBWAY' ? '🚇' : s.mode === 'TRAM' ? '🚊' : s.mode === 'BUS' ? '🚌' : s.mode === 'COACH' ? '🚐' : s.mode === 'FLIGHT' ? '✈️' : s.mode === 'FERRY' ? '⛴' : s.mode === 'WALK' ? '🚶' : '🚄'}</span>
+        <span><strong>${s.display_name}</strong> ${s.operator ? '— ' + s.operator : ''}</span>
+      </div>
+      <div class="route-details">
+        <span>${s.origin} → ${s.destination}</span>
+        <span>${s.departure}–${s.arrival}</span>
+        ${s.distance_km ? `<span>${s.distance_km.toFixed(0)}km</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  if (totalPages > 1) {
+    const pag = document.createElement('div');
+    pag.style.cssText = 'display:flex;justify-content:center;align-items:center;gap:10px;margin-top:10px;font-size:.82rem';
+    pag.innerHTML = `
+      <button class="btn-sm btn-outline" onclick="_servicePage=Math.max(0,_servicePage-1);renderServicePage()" ${_servicePage === 0 ? 'disabled' : ''}>‹ Prev</button>
+      <span>Page ${_servicePage + 1} of ${totalPages}</span>
+      <button class="btn-sm btn-outline" onclick="_servicePage=Math.min(${totalPages - 1},_servicePage+1);renderServicePage()" ${_servicePage >= totalPages - 1 ? 'disabled' : ''}>Next ›</button>
+    `;
+    list.appendChild(pag);
+  }
+}
+
+
+
+function applyService(idx) {
+  const s = _foundServices[idx];
+  if (!s || !_serviceTarget) return;
+  const leg = findLeg(_serviceTarget.routeId, _serviceTarget.legId);
+  if (!leg) return;
+  leg.services = [s];
+  leg.selectedServices = [0];
+  leg.mode = s.mode || leg.mode;
+  closeServiceModal();
+  renderRoutes();
+}
+
+function closeServiceModal() {
+  document.getElementById('service-modal').classList.add('hidden');
+  _serviceTarget = null;
+}
+
+async function findAllServices() {
+  const todo = [];
+  for (const r of dirRoutes()) {
+    for (const l of r.legs) {
+      if (!l.origin || !l.dest) continue;
+      if (l.services.length) continue;
+      todo.push(l);
+    }
+  }
+  if (!todo.length) return alert('All legs already have services');
+
+  for (let i = 0; i < todo.length; i++) {
+    const l = todo[i];
+    try {
+      const body = { origin: l.origin, destination: l.dest };
+      if (document.getElementById('trip-date').value) body.date = document.getElementById('trip-date').value;
+      if (l.departure) body.time = l.departure;
+      const res = await fetch('/api/find-routes', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.error || !data.routes?.length) continue;
+      const found = data.routes[0].legs.find(s => s.mode !== 'WALK') || data.routes[0].legs[0];
+      if (found) {
+        l.services = [found];
+        l.selectedServices = [0];
+        l.mode = found.mode || l.mode;
+      }
+    } catch(e) {}
   }
   renderRoutes();
 }
@@ -1855,6 +2270,7 @@ async function findRoutes() {
   const date = document.getElementById('trip-date').value;
   if (date) body.date = date;
 
+  showLoading('Searching routes...');
   document.getElementById('preview-content').textContent = 'Searching routes...';
 
   // Search leg-by-leg for services — write geometry back to actual legs
@@ -1920,6 +2336,7 @@ async function findRoutes() {
     state.routeResults = [synRoute];
   }
 
+  hideLoading();
   selectRoute(0);
 }
 
@@ -1952,8 +2369,8 @@ function renderRouteMap(idx) {
 
   if (state._map) state._map.remove();
   const map = L.map('route-map').setView([51.5, -0.1], 5);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
     maxZoom: 18,
   }).addTo(map);
   state._map = map;
@@ -1964,7 +2381,7 @@ function renderRouteMap(idx) {
   route.legs.forEach((leg, i) => {
     const coords = [];
     if (leg.geometry?.length) {
-      leg.geometry.forEach(pt => coords.push([pt.lat, pt.lon]));
+      leg.geometry.forEach(pt => coords.push([pt[0], pt[1]]));
     } else {
       if (leg.origin_lat != null) coords.push([leg.origin_lat, leg.origin_lon]);
       if (leg.dest_lat != null) coords.push([leg.dest_lat, leg.dest_lon]);
@@ -1983,7 +2400,7 @@ function renderRouteMap(idx) {
   });
 
   if (bounds.length) {
-    map.fitBounds(bounds, { padding: [30, 30] });
+    map.fitBounds(bounds, { padding: [2, 2] });
   }
 }
 

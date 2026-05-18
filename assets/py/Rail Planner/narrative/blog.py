@@ -191,7 +191,7 @@ def _route_to_geojson(route: TruthRoute) -> dict:
         if leg.leg_type in ('transfer', 'unincluded'):
             continue
         if leg.geometry and len(leg.geometry) > 1:
-            coords = [[p["lon"], p["lat"]] for p in leg.geometry]
+            coords = [[p[1], p[0]] for p in leg.geometry]
             features.append({
                 "type": "Feature",
                 "properties": {
@@ -260,8 +260,8 @@ def _write_map(lines: list[str], route: TruthRoute) -> None:
     lines.append("<script>")
     lines.append(f"  (function() {{")
     lines.append(f"    var map = L.map('{map_id}', {{ scrollWheelZoom: false }});")
-    lines.append(f"    L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{")
-    lines.append(f"      attribution: '&copy; OpenStreetMap', maxZoom: 18")
+    lines.append(f"    L.tileLayer('https://{{s}}.basemaps.cartocdn.com/dark_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{")
+    lines.append(f"      attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OSM</a> &copy; <a href=\"https://carto.com/\">CARTO</a>', maxZoom: 18")
     lines.append(f"    }}).addTo(map);")
     lines.append("")
     lines.append(f"    var geojson = {geojson_str};")

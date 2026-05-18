@@ -2,6 +2,7 @@
 from __future__ import annotations
 import sys
 from pathlib import Path
+from datetime import datetime, timedelta
 from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -81,17 +82,169 @@ async def photos(sprint: str = "", direction: str = "", exclude: str = ""):
     return results
 
 
+def _parse_timetable_window(error_msg: str) -> tuple[datetime, datetime] | None:
+    """Extract the Transitous timetable window from error messages like
+    'outside of loaded timetable window [2025-03-15, 2025-12-14['"""
+    import re
+    m = re.search(r'\[([^,]+),\s*([^\[]+)\[', error_msg)
+    if not m:
+        return None
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d", "%d.%m.%Y %H:%M", "%d.%m.%Y"):
+        try:
+            ws = datetime.strptime(m.group(1).strip(), fmt)
+        except ValueError:
+            continue
+        try:
+            we = datetime.strptime(m.group(2).strip().rstrip(" ["), fmt)
+        except ValueError:
+            continue
+        return (ws, we)
+    return None
+
+
+def _stochastic_route_fallback(
+    origin, dest, via_locs, modes, original_dt,
+    *, use_arrival: bool = False,
+) -> list | None:
+    """When Transitous has no data for the requested date, sample same-weekday
+    dates across the available timetable window and return the most common
+    route pattern. If use_arrival is True, search for routes arriving by that
+    time instead of departing after it."""
+    import re
+
+    kw = {"arrive_before": original_dt} if use_arrival else {"depart_after": original_dt}
+
+    # Trigger the error to discover the window
+    error_msg = ""
+    try:
+        client.routes_between(
+            origin, dest,
+            via=via_locs or None,
+            modes=modes,
+            sort=EMISSIONS + TRANSFERS + DURATION,
+            model=emissions_model,
+            **kw,
+        )
+    except Exception as e:
+        error_msg = str(e)
+
+    window = _parse_timetable_window(error_msg)
+    if not window:
+        window = (datetime.now() + timedelta(days=1), datetime.now() + timedelta(days=365))
+    window_start, window_end = window
+
+    weekday = original_dt.weekday()
+    candidates: list[list] = []
+
+    # Sample up to 6 dates matching the same weekday, spread across the window
+    span_days = (window_end - window_start).days
+    step = max(1, span_days // 7)
+    for i in range(7):
+        sample = window_start + timedelta(days=i * step)
+        days_ahead = weekday - sample.weekday()
+        if days_ahead < 0:
+            days_ahead += 7
+        sample += timedelta(days=days_ahead)
+        if sample > window_end:
+            break
+        sample = sample.replace(
+            hour=original_dt.hour, minute=original_dt.minute,
+            second=original_dt.second, microsecond=original_dt.microsecond,
+        )
+        kw = {"arrive_before": sample} if use_arrival else {"depart_after": sample}
+        try:
+            result = client.routes_between(
+                origin, dest,
+                via=via_locs or None,
+                modes=modes,
+                sort=EMISSIONS + TRANSFERS + DURATION,
+                model=emissions_model,
+                **kw,
+            )
+            if result:
+                candidates.append(result)
+        except Exception:
+            continue
+
+    if not candidates:
+        return None
+
+    def route_signature(routes):
+        if not routes:
+            return ()
+        r = routes[0]
+        return tuple(
+            (l.origin.name, l.destination.name, l.mode)
+            for l in r.legs if l.mode != "WALK"
+        )
+
+    # Pick the most common route pattern across all sampled dates
+    signatures = [route_signature(c) for c in candidates]
+    best_idx = max(
+        range(len(candidates)),
+        key=lambda i: sum(
+            1 for j, s in enumerate(signatures) if j != i and s == signatures[i]
+        ),
+    )
+    return candidates[best_idx]
+
+
+def _serialize_geometry(geometry):
+    """Convert geometry to [[lat, lon], ...] format regardless of input type."""
+    if not geometry:
+        return []
+    # Already [[lat, lon], ...] format
+    if isinstance(geometry[0], (list, tuple)):
+        return [[float(p[0]), float(p[1])] for p in geometry]
+    # Position objects with .lat/.lon
+    if hasattr(geometry[0], 'lat'):
+        return [[p.lat.degrees, p.lon.degrees] for p in geometry]
+    # Dict format {"lat": ..., "lon": ...}
+    if isinstance(geometry[0], dict):
+        return [[float(p["lat"]), float(p["lon"])] for p in geometry]
+    return []
+
+
+def _time_string_to_minutes(ts: str) -> int:
+    """Convert 'HH:MM' to minutes since midnight."""
+    parts = ts.strip().split(":")
+    return int(parts[0]) * 60 + int(parts[1])
+
+
+def _minutes_to_time_string(m: int) -> str:
+    """Convert minutes since midnight to 'HH:MM'."""
+    m = m % (24 * 60)
+    return f"{m // 60:02d}:{m % 60:02d}"
+
+
+def _apply_time_offset(route_data: dict, offset_minutes: int) -> None:
+    """Shift all departure/arrival times in a route by offset_minutes.
+    Wraps around midnight if needed. Only called for small offsets (<= 30 min)."""
+    for leg in route_data.get("legs", []):
+        if leg.get("departure"):
+            base = _time_string_to_minutes(leg["departure"])
+            leg["departure"] = _minutes_to_time_string(base + offset_minutes)
+        if leg.get("arrival"):
+            base = _time_string_to_minutes(leg["arrival"])
+            leg["arrival"] = _minutes_to_time_string(base + offset_minutes)
+    if route_data.get("departure"):
+        base = _time_string_to_minutes(route_data["departure"])
+        route_data["departure"] = _minutes_to_time_string(base + offset_minutes)
+    if route_data.get("arrival"):
+        base = _time_string_to_minutes(route_data["arrival"])
+        route_data["arrival"] = _minutes_to_time_string(base + offset_minutes)
+
+
 @app.post("/api/find-routes")
 async def find_routes(body: dict):
     origin_name = body.get("origin", "")
     dest_name = body.get("destination", "")
     via = body.get("via", [])
     dep_date = body.get("date", "")
-    dep_time = body.get("time", "08:00")
+    dep_time = body.get("time", "")
+    arrive_by = body.get("arrive_by", "")
     leg_type = body.get("leg_type", "transit")
-
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
+    allow_fallback = body.get("allow_fallback", True)
 
     try:
         origin = client.exact(client.search_stations, origin_name)
@@ -106,73 +259,117 @@ async def find_routes(body: dict):
         except (IndexError, ValueError):
             pass
 
+    user_set_time = bool(dep_time) or bool(arrive_by)
+    use_arrival = bool(arrive_by) and not bool(dep_time)
+    query_time = arrive_by if use_arrival else (dep_time or "08:00")
+
     if dep_date:
-        depart_after = datetime.strptime(f"{dep_date} {dep_time}", "%Y-%m-%d %H:%M")
+        query_dt = datetime.strptime(f"{dep_date} {query_time}", "%Y-%m-%d %H:%M")
     else:
-        from datetime import timedelta
-        depart_after = datetime.now() + timedelta(hours=1)
+        query_dt = datetime.now() + timedelta(hours=1)
+        query_dt = query_dt.replace(hour=int(query_time.split(":")[0]),
+                                    minute=int(query_time.split(":")[1]))
 
     modes = TransitClient.TRAVEL_SKYE_BUSINESS if leg_type in ('bus', 'flight') else TransitClient.TRAVEL_SKYE
+
+    is_stochastic = False
+    time_offset = 0
+
+    route_kw = {"arrive_before": query_dt} if use_arrival else {"depart_after": query_dt}
 
     try:
         routes = client.routes_between(
             origin, dest,
-            depart_after=depart_after,
             via=via_locs or None,
             modes=modes,
             sort=EMISSIONS + TRANSFERS + DURATION,
             model=emissions_model,
+            **route_kw,
         )
-    except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=500)
+    except Exception:
+        routes = None
+
+    # If direct query failed and fallback is allowed, try same-weekday sampling
+    if not routes and allow_fallback:
+        fallback = _stochastic_route_fallback(
+            origin, dest, via_locs, modes, query_dt,
+            use_arrival=use_arrival,
+        )
+        if fallback:
+            routes = fallback
+            is_stochastic = True
+
+    if not routes:
+        return JSONResponse({"error": "No routes found"}, status_code=404)
 
     from truth.snapshot import TruthSnapshot
     snapshot = TruthSnapshot.from_routes(routes, query=body)
 
+    route_list = []
+    for r in snapshot.routes:
+        rd = {
+            "route_id": r.route_id,
+            "origin": r.origin_name,
+            "destination": r.destination_name,
+            "departure": r.departure,
+            "arrival": r.arrival,
+            "duration_seconds": r.duration_seconds,
+            "duration_str": f"{r.duration_seconds//3600}h{(r.duration_seconds%3600)//60:02d}m",
+            "total_distance_km": r.total_distance_km,
+            "rail_distance_km": r.rail_distance_km,
+            "walk_distance_km": r.walk_distance_km,
+            "transfers": r.transfers,
+            "average_speed_kmh": r.average_speed_kmh,
+            "max_speed_kmh": r.max_speed_kmh,
+            "tortuosity_pct": r.tortuosity_pct,
+            "operators": r.operators,
+            "stochastic": is_stochastic,
+            "legs": [
+                {
+                    "mode": l.mode,
+                    "display_name": l.display_name,
+                    "operator": l.operator,
+                    "origin": l.origin_name,
+                    "destination": l.destination_name,
+                    "origin_lat": l.origin_lat,
+                    "origin_lon": l.origin_lon,
+                    "dest_lat": l.dest_lat,
+                    "dest_lon": l.dest_lon,
+                    "departure": l.departure,
+                    "arrival": l.arrival,
+                    "duration_seconds": l.duration_seconds,
+                    "distance_km": l.distance_km,
+                    "max_speed_kmh": l.max_speed_kmh,
+                    "stops": l.intermediate_stops,
+                    "geometry": _serialize_geometry(l.geometry),
+                    "leg_type": l.leg_type,
+                }
+                for l in r.legs
+            ],
+        }
+
+        # If stochastic, compute the time offset from the user's requested time.
+        # Only apply small offsets (≤30 min) — larger differences mean the
+        # historical timetable is too far off, so return raw historical times
+        # and let the user edit them manually.
+        ref_time = dep_time or arrive_by
+        if is_stochastic and user_set_time and ref_time:
+            ref_field = "arrival" if use_arrival else "departure"
+            scheduled = _time_string_to_minutes(rd[ref_field])
+            requested = _time_string_to_minutes(ref_time)
+            time_offset = requested - scheduled
+            if abs(time_offset) <= 30:
+                _apply_time_offset(rd, time_offset)
+            else:
+                time_offset = 0
+
+        route_list.append(rd)
+
     return {
         "snapshot_id": snapshot.snapshot_id,
-        "routes": [
-            {
-                "route_id": r.route_id,
-                "origin": r.origin_name,
-                "destination": r.destination_name,
-                "departure": r.departure,
-                "arrival": r.arrival,
-                "duration_seconds": r.duration_seconds,
-                "duration_str": f"{r.duration_seconds//3600}h{(r.duration_seconds%3600)//60:02d}m",
-                "total_distance_km": r.total_distance_km,
-                "rail_distance_km": r.rail_distance_km,
-                "walk_distance_km": r.walk_distance_km,
-                "transfers": r.transfers,
-                "average_speed_kmh": r.average_speed_kmh,
-                "max_speed_kmh": r.max_speed_kmh,
-                "tortuosity_pct": r.tortuosity_pct,
-                "operators": r.operators,
-                    "legs": [
-                    {
-                        "mode": l.mode,
-                        "display_name": l.display_name,
-                        "operator": l.operator,
-                        "origin": l.origin_name,
-                        "destination": l.destination_name,
-                        "origin_lat": l.origin_lat,
-                        "origin_lon": l.origin_lon,
-                        "dest_lat": l.dest_lat,
-                        "dest_lon": l.dest_lon,
-                        "departure": l.departure,
-                        "arrival": l.arrival,
-                        "duration_seconds": l.duration_seconds,
-                        "distance_km": l.distance_km,
-                        "max_speed_kmh": l.max_speed_kmh,
-                        "stops": l.intermediate_stops,
-                        "geometry": l.geometry,
-                        "leg_type": l.leg_type,
-                    }
-                    for l in r.legs
-                ],
-            }
-            for r in snapshot.routes
-        ],
+        "routes": route_list,
+        "stochastic": is_stochastic,
+        "time_offset_minutes": time_offset if is_stochastic else 0,
     }
 
 

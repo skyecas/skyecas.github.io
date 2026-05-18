@@ -27,7 +27,7 @@ class TruthLeg:
     origin_lon: float = 0.0
     dest_lat: float = 0.0
     dest_lon: float = 0.0
-    geometry: list[dict[str, float]] | None = None
+    geometry: list[list[float]] | None = None
     leg_type: str = 'transit'
 
 
@@ -98,7 +98,7 @@ def _build_truth_leg(leg: Leg) -> TruthLeg:
 
     geometry = None
     if leg.geometry:
-        geometry = [{"lat": p.lat.degrees, "lon": p.lon.degrees} for p in leg.geometry]
+        geometry = [[p.lat.degrees, p.lon.degrees] for p in leg.geometry]
 
     origin_lat = leg.origin.position.lat.degrees if hasattr(leg.origin, "position") else 0
     origin_lon = leg.origin.position.lon.degrees if hasattr(leg.origin, "position") else 0
