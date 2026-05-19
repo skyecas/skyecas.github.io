@@ -239,6 +239,8 @@ def _apply_time_offset(route_data: dict, offset_minutes: int) -> None:
 async def find_routes(body: dict):
     origin_name = body.get("origin", "")
     dest_name = body.get("destination", "")
+    origin_id = body.get("origin_id", "")
+    dest_id = body.get("dest_id", "")
     via = body.get("via", [])
     dep_date = body.get("date", "")
     dep_time = body.get("time", "")
@@ -246,9 +248,17 @@ async def find_routes(body: dict):
     leg_type = body.get("leg_type", "transit")
     allow_fallback = body.get("allow_fallback", True)
 
+    def resolve_station(name: str, station_id: str | None) -> Location:
+        if station_id:
+            results = client.search_stations(name)
+            for r in results:
+                if r.id == station_id:
+                    return r
+        return client.exact(client.search_stations, name)
+
     try:
-        origin = client.exact(client.search_stations, origin_name)
-        dest = client.exact(client.search_stations, dest_name)
+        origin = resolve_station(origin_name, origin_id)
+        dest = resolve_station(dest_name, dest_id)
     except (IndexError, ValueError):
         return JSONResponse({"error": f"Could not find station"}, status_code=400)
 
