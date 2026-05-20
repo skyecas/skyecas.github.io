@@ -11,3 +11,18 @@ assets/libs/
 node_modules/
 vendor
 .idea
+
+# Python
+__pycache__/
+*.pyc
+.tox/
+
+# Generated sprint post JSON cache (companion to *-sprint.md)
+_posts/*.json
+
+# Transitous query cache
+.transitous_cache
+
+# Session files from opencode
+session-ses_*.md
+*.md.not_node
