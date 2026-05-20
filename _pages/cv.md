@@ -2,10 +2,11 @@
 layout: cv
 permalink: /cv/
 title: cv
-nav: true
-nav_order: 5
-cv_pdf: example_pdf.pdf
-description: This is a description of the page. You can modify it in '_pages/cv.md'. You can also change or remove the top pdf download button.
+nav: false
+cv_link: https://github.com/SK1Y101/cv/releases/download/latest/main.pdf
+cv_data_url: https://github.com/SK1Y101/cv/releases/download/latest/resume.json
+description: My CV rendered from standard json. A PDF copy is also available by clicking on the pdf icon!
+background: stars
 toc:
   sidebar: left
 ---

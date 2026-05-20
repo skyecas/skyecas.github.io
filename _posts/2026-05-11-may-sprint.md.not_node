@@ -1,0 +1,67 @@
+---
+layout: post
+title: Sprint Travel May 2026
+date: 2026-05-11 00:00:00-0000
+description: A summary of the travel to the Madrid sprint
+tags: train travel canonical
+categories: train-travel
+related_posts: false
+toc:
+  sidebar: left
+---
+
+# Location
+
+Madrid... Again.
+If you're reading this... well, it hasn't happened yet, go away!
+
+# Summary
+
+Time:
+
+Countries: 3 (UK, FR, ES)
+
+Distance: 4660Km, Cummulative 22113Km
+
+Trains:
+
+Stations:
+
+Destination:
+
+
+# Outbound <time>
+
+Planned time:
+
+Transfers:
+
+Countries:
+
+Distance: 2330Km
+
+Most looked forward to train:
+
+## journey start
+
+| Departure | Arrival | Location |
+| :-------: | :-----: | :------- |
+| <time> | <time> | <intermediate> |
+| <time> | <time> | <place> |
+
+<swiper-container keyboard="true" navigation="true" pagination="true" pagination-clickable="true" pagination-dynamic-bullets="true" rewind="true">
+  <swiper-slide>{% include figure.liquid loading="eager" path="assets/img/sprint2211/outbound_southern.jpg" class="img-fluid rounded z-depth-1" %}</swiper-slide>
+</swiper-container>
+
+
+# Inbound <time>
+
+Planned time:
+
+Transfers:
+
+Countries:
+
+Distance: 2330Km
+
+Most looked forward to train:

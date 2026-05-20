@@ -1,23 +1,82 @@
 <ul class="card-text font-weight-light list-group list-group-flush">
-  {% for content in data[1] %}
+  {% assign resume_data = data[1] %}
+  {% assign project_data = site.projects %}
+  {% for content in resume_data %}
+    {% unless content.hidden %}{% assign project_data = project_data | where_exp: "item","item.title!=content.name" %}{% endunless %}
+  {% endfor %}
+  {% assign all_data = resume_data | concat: project_data %}
+  {% assign all_data = all_data | sort: 'date' | reverse %}
+  {% for content in all_data %}
+    {% if content.hidden %}{% continue %}{% endif %}
+    {% assign project_match = site.projects | where_exp: "item", "item.title == content.name or item.title == content.title" | first %}
     <li class="list-group-item">
       <div class="row">
-        <div class="col-xs-2 cl-sm-2 col-md-2 text-center date-column">
-          {% if content.startDate %}
-            {% assign startDate = content.startDate | split: '-' | slice: 0, 2 | join: '.' %}
+        <div class="col-xs-2 cl-sm-2 col-md-2 text-center" style="min-width: 75px; padding: 0;">
+          {% if content.date %}
+            {% assign startDate = content.date | split: '-' | slice: 0, 2 | join: '.' %}
             {% assign endDate = content.endDate | split: '-' | slice: 0, 2 | join: '.' | default: 'Present' %}
-            {% assign date = startDate | append: ' - ' %}
-            {% assign date = date | append: endDate %}
+            {% assign date = startDate | append: ' <br> ' %}
+            {% if startDate != endDate %}
+              {% assign date = date | append: endDate %}
+            {% endif %}
           {% else %}
             {% assign date = '' %}
           {% endif %}
           <span class="badge font-weight-bold danger-color-dark text-uppercase align-middle" style="min-width: 75px"> {{ date }} </span>
+          {% assign icon = content.icon | default: project_match.icon %}
+          {% if icon %}
+            <br><br>
+            {% if icon contains '://' %}
+              <img class="preview z-depth-1 rounded" src="{{ icon }}">
+            {% else %}
+              {% assign entry_path = icon | prepend: '/assets/img/icons/' %}
+              {%
+                include figure.liquid
+                path=entry_path
+                sizes = "200px"
+                class="preview z-depth-1 rounded"
+                zoomable=false
+                alt=icon
+              %}
+            {% endif %}
+          {% endif %}
+          {% assign img = content.img | default: project_match.img %}
+          {% if img %}
+            <br><br>
+            {%
+              include figure.liquid
+              path=img
+              sizes = "200px"
+              class="preview z-depth-1 rounded"
+              zoomable=false
+              alt=img
+            %}
+          {% endif %}
         </div>
         <div class="col-xs-10 cl-sm-10 col-md-10 mt-2 mt-md-0">
+          {% assign match_redirect = content.redirect | default: project_match.redirect %}
+          {% assign match_url = content.url | default: project_match.url %}
+          {% assign match_category = content.category | default: project_match.category %}
           <h6 class="title font-weight-bold ml-1 ml-md-4">
-            <a href="{{ content.url }}">{{ content.name }}</a>
+            {% if content.title %}
+              {% if match_redirect %}
+                <a href="{{ match_redirect }}">{{ content.title }}</a>
+              {% else %}
+                <a href="{{ match_url | relative_url }}">{{ content.title }}</a>
+              {% endif %}
+            {% else %}
+              <a href="{{ match_url }}">{{ content.name }}</a>
+            {% endif %}
+            {% if match_category %}
+            <span style="color:{% case match_category %}{% when "fun" %}#66D9EE{% when "education" %}#FE9720{% when "work" %}#ff0050{% endcase %}; float: right;">{{ match_category }}</span>
+            {% endif %}
           </h6>
-          <h6 class="ml-1 ml-md-4" style="font-size: 0.95rem; font-style: italic">{{ content.summary }}</h6>
+          {% if content.summary %}
+            <h6 class="ml-1 ml-md-4" style="font-size: 0.95rem; font-style: italic">{{ content.summary }}</h6>
+          {% endif %}
+          {% if content.description %}
+            <h6 class="ml-1 ml-md-4" style="font-size: 0.95rem; font-style: italic">{{ content.description }}</h6>
+          {% endif %}
           <ul class="items">
             {% for item in content.highlights %}
               <li>

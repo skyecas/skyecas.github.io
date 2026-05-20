@@ -1,14 +1,45 @@
 github_users:
-  - torvalds
-  - alshedivat
+  - sk1y101
+  - SkiylianSoftware
 
-repo_description_lines_max: 2
+selected_repos:
+  - sk1y101/transitproject
+  - sk1y101/poketchfitbit
+  - sk1y101/skiylia
+  - canonical/maas
+  - canonical/terrform-provider-maas
 
 github_repos:
+  - sk1y101/improved-ttv-pipeline
+  - sk1y101/transitproject
+  - canonical/maas
+  - canonical/terrform-provider-maas
+  - canonical/maas-terraform-modules
+  - canonical/maas-charms
+  - canonical/maas-anvil
+  - canonical/ansible-collection
+  - canonical/packer-maas
+  - canonical/gomaasclient
+  - canonical/maas-ansible-playbook
+  - sk1y101/AutoBreezeBeats
+  - sk1y101/vn-template
+  - sk1y101/sk1y101.github.io
+  - sk1y101/poketchfitbit
+  - sk1y101/kos
+  - sk1y101/kosflightcontroller
+  - sk1y101/seasonsclock
+  - sk1y101/gwproject
+  - sk1y101/skiylia
+  - Revolutionary-Games/Thrive
   - alshedivat/al-folio
-  - jekyll/jekyll
-  - twbs/bootstrap
-  - jquery/jquery
-  - FortAwesome/Font-Awesome
-  - mathjax/MathJax
-  - jpswalsh/academicons
+  - all-contributors/all-contributors
+  - nick-juliano/exohammer
+  - just-the-docs/just-the-docs
+  - KSP-KOS/KOS
+  - canonical/maas.io
+  - pages-themes/minimal
+  - canonical/python-libmaas
+  - readthedocs/readthedocs.org
+  - hannorein/rebound
+  - dtamayo/reboundx
+  - Skiylia-Lang/PySkiylia

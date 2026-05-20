@@ -1,0 +1,67 @@
+---
+layout: post
+title: <TEMPLATE> Sprint Travel <Month> <Year>
+date: 2022-11-01 00:00:00-0000
+description: A summary of the travel to the <DATE> sprint
+tags: train travel canonical
+categories: train-travel
+related_posts: false
+toc:
+  sidebar: left
+---
+
+# Location
+
+<place>
+
+# Sumamry
+
+Time: <total time>
+
+Countries: <total countries>
+
+Distance: <total distance>, Cummulative <cumulative distance>
+
+Trains: <favourite train>
+
+Stations: <favourite station>
+
+Destination: <destination notes>
+
+# Outbound <time>
+
+Planned time:
+
+Transfers:
+
+Countries:
+
+Distance:
+(Havant to STP ~135km)
+(STP to GDN ~345)
+(STP to BXM ~320)
+
+Most looked forward to train:
+
+## journey start
+
+| Departure | Arrival | Location |
+| :-------: | :-----: | :------- |
+| <time> | <time> | <intermediate> |
+| <time> | <time> | <place> |
+
+<swiper-container keyboard="true" navigation="true" pagination="true" pagination-clickable="true" pagination-dynamic-bullets="true" rewind="true">
+  <swiper-slide>{% include figure.liquid loading="eager" path="assets/img/sprint2211/outbound_southern.jpg" class="img-fluid rounded z-depth-1" %}</swiper-slide>
+</swiper-container>
+
+# Inbound <time>
+
+Planned time:
+
+Transfers:
+
+Countries:
+
+Distance:
+
+Most looked forward to train:
