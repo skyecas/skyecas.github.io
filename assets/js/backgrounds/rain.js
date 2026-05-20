@@ -13,10 +13,8 @@ var requestAnimFrame = (function () {
 // Canvas setup
 const background = document.getElementById("bgCanvas"),
   bgCtx = background.getContext("2d"),
-  // width = window.innerWidth,
-  width = 1920,
-  // height = Math.max(400, document.body.offsetHeight);
-  height = 1080;
+  width = window.innerWidth,
+  height = window.innerHeight;
 
 background.width = width;
 background.height = height;

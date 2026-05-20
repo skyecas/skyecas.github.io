@@ -2,13 +2,15 @@
   {% assign resume_data = data[1] %}
   {% assign project_data = site.projects %}
   {% for content in resume_data %}
-    {% unless content.hidden %}{% assign project_data = project_data | where_exp: "item","item.title!=content.name" %}{% endunless %}
+    {% unless content.hidden %}{% assign project_data = project_data | where_exp: "item","item.title != content.name and item.redirect != content.url" %}{% endunless %}
   {% endfor %}
   {% assign all_data = resume_data | concat: project_data %}
-  {% assign all_data = all_data | sort: 'date' | reverse %}
+  {% assign ongoing = all_data | where_exp: "item", "item.endDate == nil or item.endDate == ''" | sort: 'date' | reverse %}
+  {% assign finished = all_data | where_exp: "item", "item.endDate != nil and item.endDate != ''" | sort: 'endDate' | reverse %}
+  {% assign all_data = ongoing | concat: finished %}
   {% for content in all_data %}
     {% if content.hidden %}{% continue %}{% endif %}
-    {% assign project_match = site.projects | where_exp: "item", "item.title == content.name or item.title == content.title" | first %}
+    {% assign project_match = site.projects | where_exp: "item", "item.title == content.name or item.title == content.title or item.redirect == content.url" | first %}
     <li class="list-group-item">
       <div class="row">
         <div class="col-xs-2 cl-sm-2 col-md-2 text-center" style="min-width: 75px; padding: 0;">

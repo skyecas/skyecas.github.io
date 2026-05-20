@@ -27,8 +27,6 @@ var background = document.getElementById("bgCanvas"),
 
 // ensure we have a minimum height
 (height < 400) ? height = 400 : height;
-height = 1080;
-width = 1920;
 
 // set the canvase size
 background.width = width;

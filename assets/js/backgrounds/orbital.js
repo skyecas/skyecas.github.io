@@ -9,7 +9,7 @@ var requestAnimFrame = (function(){
 
 var c = document.getElementById("bgCanvas"),
     ctx = c.getContext("2d"),
-    W = 1920, H = 1080;
+    W = window.innerWidth, H = window.innerHeight;
 c.width = W; c.height = H;
 
 // --- Constants ---

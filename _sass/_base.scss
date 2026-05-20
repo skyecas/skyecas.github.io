@@ -56,6 +56,15 @@ table.table a {
   }
 }
 
+.background {
+  position: fixed;
+  z-index: -900;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  margin-top: -56px;
+}
+
 blockquote {
   background: var(--global-bg-color);
   border-left: 5px solid var(--global-theme-color);
@@ -719,6 +728,8 @@ footer.sticky-bottom {
 
       .title {
         font-weight: bolder;
+        overflow-wrap: break-word;
+        word-break: break-word;
       }
 
       .author {
