@@ -17,6 +17,10 @@ var sx = W / 2, sy = H / 2;
 var baseW = 1920, baseH = 1080;
 var orScale = Math.min(W / baseW, H / baseH);
 
+// --- Camera (physics → screen transform) ---
+var AU = 180;
+var camScale = 0.7;
+
 // --- Constants ---
 var MU = 120;
 
@@ -85,17 +89,18 @@ var planets = (function() {
   var days = (now - j2000) / 86400000;
 
   var raw = [
-    { n:"Mercury", a:100, e:0.20563, w:1.3520, M0j:174.795, ndpd:4.0923, r:5, col:"#b0a894", mu:0.2 },
-    { n:"Venus",   a:170, e:0.00677, w:2.2962, M0j:50.416,  ndpd:1.6021, r:9, col:"#e8c880", mu:0.8 },
-    { n:"Earth",   a:240, e:0.01671, w:1.7966, M0j:357.527, ndpd:0.9856, r:11, col:"#4a9bd7", mu:1.0 },
-    { n:"Mars",    a:330, e:0.09340, w:5.8655, M0j:19.393,  ndpd:0.5240, r:8, col:"#c05030", mu:0.5 },
-    { n:"Jupiter", a:520, e:0.04849, w:0.2501, M0j:20.020,  ndpd:0.0831, r:21, col:"#d4a06a", mu:5.0 },
+    { n:"Mercury", aAu:0.3871, e:0.20563, w:1.3520, M0j:174.795, ndpd:4.0923, r:5, col:"#b0a894", mu:0.2 },
+    { n:"Venus",   aAu:0.7233, e:0.00677, w:2.2962, M0j:50.416,  ndpd:1.6021, r:9, col:"#e8c880", mu:0.8 },
+    { n:"Earth",   aAu:1.0000, e:0.01671, w:1.7966, M0j:357.527, ndpd:0.9856, r:11, col:"#4a9bd7", mu:1.0 },
+    { n:"Mars",    aAu:1.5237, e:0.09340, w:5.8655, M0j:19.393,  ndpd:0.5240, r:8, col:"#c05030", mu:0.5 },
+    { n:"Jupiter", aAu:5.2026, e:0.04849, w:0.2501, M0j:20.020,  ndpd:0.0831, r:21, col:"#d4a06a", mu:5.0 },
   ];
   return raw.map(function(p) {
     var M0real = (p.M0j + p.ndpd * days) % 360;
     if (M0real < 0) M0real += 360;
+    var aPx = p.aAu * AU;
     return {
-      n: p.n, a: p.a, e: p.e, w: p.w, M0: M0real * Math.PI / 180,
+      n: p.n, a: aPx, e: p.e, w: p.w, M0: M0real * Math.PI / 180,
       r: p.r * orScale, col: p.col, so: p.r * 3 * orScale, mu: p.mu
     };
   });
@@ -170,7 +175,7 @@ var totalDV = 0;
 
 // --- Finite burn model ---
 var burn = { active: false, dvx: 0, dvy: 0, rate: 0, remaining: 0 };
-var burnRate = 0.015;
+var burnRate = 0.003;
 
 // --- Orbit elements from state ---
 function orbitalElements(rx, ry, vx, vy, mu) {
@@ -227,10 +232,11 @@ function pickTarget(idx, visited, t) {
 function launch(t) {
   var ep = pPos(planets[2], t);
   var ev = pVel(planets[2], t);
-  sc.rx = ep.rx; sc.ry = ep.ry;
+  var dvm = Math.sqrt(0.4*0.4 + 0.2*0.2);
+  sc.rx = ep.rx + 15 * 0.4 / dvm;
+  sc.ry = ep.ry + 15 * 0.2 / dvm;
   sc.vx = ev.vx; sc.vy = ev.vy;
   totalDV = 0;
-  var dvx = 0.5, dvy = -0.3;
   mission.phase = "burning"; mission.legStart = t; mission.prevPlanet = 2;
   mission.visited = [2]; mission.correctionsLeft = 2; mission.inSOI = -1;
   mission.flybyCooldown = 0;
@@ -241,8 +247,7 @@ function launch(t) {
     mission.legDur = Math.max(1000, Math.min(15000, Math.sqrt(dx*dx+dy*dy) * 5));
     logEvent('launch', "Launch from Earth → " + planets[mission.target].n);
   } else logEvent('launch', "Launch from Earth");
-  burn.active = true; burn.dvx = 0.5; burn.dvy = -0.3;
-  var dvm = Math.sqrt(0.5*0.5 + 0.3*0.3);
+  burn.active = true; burn.dvx = 0.4; burn.dvy = -0.2;
   burn.rate = burnRate; burn.remaining = dvm;
 }
 
@@ -307,7 +312,7 @@ function integrate(t, dt) {
     var ax = -mu * prx / r3, ay = -mu * pry / r3;
     sc.vx += ax*dt/2; sc.vy += ay*dt/2;
     sc.rx += sc.vx*dt; sc.ry += sc.vy*dt;
-    if (t % 2 < 1) pushTrail(sc.rx + sx, sc.ry + sy);
+    if (t % 2 < 1) pushTrail(sx + sc.rx * camScale, sy + sc.ry * camScale);
     prx = sc.rx - pp.rx; pry = sc.ry - pp.ry;
     r2 = prx*prx + pry*pry; r3 = Math.max(1, r2*Math.sqrt(r2));
     ax = -mu*prx/r3; ay = -mu*pry/r3;
@@ -319,7 +324,7 @@ function integrate(t, dt) {
     var ax = -MU*rx/r3, ay = -MU*ry/r3;
     sc.vx += ax*dt/2; sc.vy += ay*dt/2;
     sc.rx += sc.vx*dt; sc.ry += sc.vy*dt;
-    if (t % 2 < 1) pushTrail(sc.rx + sx, sc.ry + sy);
+    if (t % 2 < 1) pushTrail(sx + sc.rx * camScale, sy + sc.ry * camScale);
     r2 = sc.rx*sc.rx + sc.ry*sc.ry; r3 = Math.max(1, r2*Math.sqrt(r2));
     ax = -MU*sc.rx/r3; ay = -MU*sc.ry/r3;
     sc.vx += ax*dt/2; sc.vy += ay*dt/2;
@@ -343,14 +348,14 @@ function emit(x, y, n, hue, spd) {
 
 // --- Drawing ---
 function drawSun() {
-  var r1 = 100 * orScale, r2 = 30 * orScale;
-  var g = ctx.createRadialGradient(sx,sy,0,sx,sy,r1);
+  var r1 = 45 / camScale, r2 = 14 / camScale;
+  var g = ctx.createRadialGradient(0,0,0,0,0,r1);
   g.addColorStop(0,"rgba(255,240,200,0.6)"); g.addColorStop(0.15,"rgba(255,220,150,0.3)");
   g.addColorStop(0.4,"rgba(255,180,80,0.08)"); g.addColorStop(1,"rgba(255,150,50,0)");
-  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sx,sy,r1,0,Math.PI*2); ctx.fill();
-  var g2 = ctx.createRadialGradient(sx-8*orScale,sy-8*orScale,0,sx,sy,r2);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0,0,r1,0,Math.PI*2); ctx.fill();
+  var g2 = ctx.createRadialGradient(0,0,0,0,0,r2);
   g2.addColorStop(0,"#fff8e0"); g2.addColorStop(0.5,"#ffdd66"); g2.addColorStop(1,"#ff8800");
-  ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(sx,sy,r2,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(0,0,r2,0,Math.PI*2); ctx.fill();
 }
 
 function drawOrbits() {
@@ -359,8 +364,7 @@ function drawOrbits() {
     ctx.beginPath();
     for (var th = 0; th <= Math.PI*2; th += 0.03) {
       var pos = kepToCart(p.a, p.e, p.w, 0, th / Math.sqrt(MU/(p.a*p.a*p.a)));
-      var x = sx+pos.rx, y = sy+pos.ry;
-      if (th === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      if (th === 0) ctx.moveTo(pos.rx, pos.ry); else ctx.lineTo(pos.rx, pos.ry);
     }
     ctx.stroke(); ctx.setLineDash([]);
   }
@@ -368,23 +372,23 @@ function drawOrbits() {
 
 function drawPlanet(p, t) {
   var pos = pPos(p, t);
-  var cx = sx+pos.rx, cy = sy+pos.ry;
+  var cs = 1 / camScale;
+  var rv = p.r * cs;
   ctx.fillStyle = p.col + "40";
-  ctx.beginPath(); ctx.arc(cx,cy,p.r*2.5,0,Math.PI*2); ctx.fill();
-  var g2 = ctx.createRadialGradient(cx-p.r*0.3,cy-p.r*0.3,0,cx,cy,p.r);
-  g2.addColorStop(0,"#fff"); g2.addColorStop(0.2,p.col); g2.addColorStop(1,"#222");
-  ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(cx,cy,p.r,0,Math.PI*2); ctx.fill();
-  ctx.font = "9px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "rgba(255,255,255,0.3)";
-  ctx.fillText(p.n, cx, cy+p.r+14);
+  ctx.beginPath(); ctx.arc(pos.rx, pos.ry, rv * 2.5, 0, Math.PI * 2); ctx.fill();
+  var g2 = ctx.createRadialGradient(pos.rx - rv * 0.3, pos.ry - rv * 0.3, 0, pos.rx, pos.ry, rv);
+  g2.addColorStop(0, "#fff"); g2.addColorStop(0.2, p.col); g2.addColorStop(1, "#222");
+  ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(pos.rx, pos.ry, rv, 0, Math.PI * 2); ctx.fill();
+  ctx.font = (11 * cs) + "px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "rgba(255,255,255,0.3)";
+  ctx.fillText(p.n, pos.rx, pos.ry + rv + 14 * cs);
 }
 
 function drawSOI() {
   if (mission.inSOI < 0) return;
   var p = planets[mission.inSOI];
   var pos = pPos(p, time);
-  var cx = sx+pos.rx, cy = sy+pos.ry;
   ctx.strokeStyle = "rgba(100,255,200,0.12)"; ctx.lineWidth = 1; ctx.setLineDash([2,6]);
-  ctx.beginPath(); ctx.arc(cx,cy,p.so,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(pos.rx, pos.ry, p.so, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
 }
 
 function drawTrail() {
@@ -413,47 +417,48 @@ function drawFutureArc(t) {
       tx += vx*(s*mission.legDur/10); ty += vy*(s*mission.legDur/10);
       vx += ax*(s*mission.legDur/10); vy += ay*(s*mission.legDur/10);
     }
-    if (first) { ctx.moveTo(sx+tx,sy+ty); first = false; }
-    else ctx.lineTo(sx+tx,sy+ty);
+    if (first) { ctx.moveTo(tx, ty); first = false; }
+    else ctx.lineTo(tx, ty);
   }
   ctx.stroke(); ctx.setLineDash([]);
 }
 
 function drawSC() {
-  var cx = sx+sc.rx, cy = sy+sc.ry;
-  var sr = 18 * orScale;
+  var cx = sc.rx, cy = sc.ry;
+  var cs = 1 / camScale;
+  var sr = 6 * cs;
   ctx.fillStyle = "rgba(100,200,255,0.15)";
   ctx.beginPath(); ctx.arc(cx,cy,sr,0,Math.PI*2); ctx.fill();
   ctx.save(); ctx.translate(cx,cy);
   var ang = Math.atan2(sc.vy, sc.vx);
   ctx.rotate(ang);
-  var fl = 12+Math.random()*8;
+  var fl = (4+Math.random()*3) * cs;
   var fg = ctx.createLinearGradient(0,0,0,fl);
   fg.addColorStop(0,"rgba(255,255,200,0.9)"); fg.addColorStop(0.3,"rgba(255,180,50,0.7)");
   fg.addColorStop(0.6,"rgba(255,80,20,0.4)"); fg.addColorStop(1,"rgba(255,50,0,0)");
   ctx.fillStyle = fg;
-  ctx.beginPath(); ctx.moveTo(-4,3); ctx.quadraticCurveTo(-1.5,fl*0.5,0,fl);
-  ctx.quadraticCurveTo(1.5,fl*0.5,4,3); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-2*cs, 2*cs); ctx.quadraticCurveTo(-1*cs, fl*0.5, 0, fl);
+  ctx.quadraticCurveTo(1*cs, fl*0.5, 2*cs, 2*cs); ctx.closePath(); ctx.fill();
   ctx.fillStyle = "#d0d8e0";
-  ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(-5,8); ctx.lineTo(5,8); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0, -6*cs); ctx.lineTo(-3*cs, 4*cs); ctx.lineTo(3*cs, 4*cs); ctx.closePath(); ctx.fill();
   ctx.fillStyle = "#6699cc";
-  ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, 2*cs, 0, Math.PI*2); ctx.fill();
   ctx.restore();
 }
 
 function drawTargetRing(t) {
   if (mission.target < 0 || mission.target >= planets.length) return;
   var tp = pPos(planets[mission.target], t);
-  var tcx = sx+tp.rx, tcy = sy+tp.ry;
+  var cs = 1 / camScale;
   ctx.strokeStyle = "rgba(255,200,100,0.2)"; ctx.lineWidth = 0.5; ctx.setLineDash([3,5]);
-  ctx.beginPath(); ctx.arc(tcx,tcy,planets[mission.target].r*3,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(tp.rx, tp.ry, planets[mission.target].r * cs * 3, 0, Math.PI*2); ctx.stroke();
   ctx.setLineDash([]);
   var dx = sc.rx - tp.rx, dy = sc.ry - tp.ry;
   var dist = Math.sqrt(dx*dx+dy*dy);
-  if (dist > 30) {
-    ctx.font = "9px sans-serif"; ctx.fillStyle = "rgba(255,200,100,0.25)";
+  if (dist > 30 * orScale / camScale) {
+    ctx.font = (9 / camScale) + "px sans-serif"; ctx.fillStyle = "rgba(255,200,100,0.25)";
     ctx.textAlign = "center";
-    ctx.fillText("→ " + planets[mission.target].n, tcx, tcy-planets[mission.target].r-15);
+    ctx.fillText("→ " + planets[mission.target].n, tp.rx, tp.ry - planets[mission.target].r / camScale * 1.5);
   }
 }
 
@@ -685,7 +690,7 @@ function predictEncounters() {
     }
 
     if (step % 10 === 0) {
-      trajectory.push({ x: sx + rx, y: sy + ry });
+      trajectory.push({ x: sx + rx * camScale, y: sy + ry * camScale });
     }
 
     if (Math.sqrt(rx*rx + ry*ry) > 5000) break;
@@ -755,7 +760,7 @@ function animate() {
     else if (mission.target >= 0) {
       var tp = pPos(planets[mission.target], time);
       var dx = tp.rx - sc.rx, dy = tp.ry - sc.ry;
-      if (Math.sqrt(dx*dx+dy*dy) < 80 * orScale) dt = 0.5;
+      if (Math.sqrt(dx*dx+dy*dy) < 80 / camScale) dt = 0.5;
     }
     integrate(time, dt);
 
@@ -766,7 +771,7 @@ function animate() {
       sc.vy += burn.dvy / burn.remaining * applyDV;
       totalDV += applyDV;
       burn.remaining -= applyDV;
-      emit(sx+sc.rx + (Math.random()-0.5)*4, sy+sc.ry + (Math.random()-0.5)*4, 1, 30, 0.5);
+      emit(sx + sc.rx * camScale + (Math.random()-0.5)*4, sy + sc.ry * camScale + (Math.random()-0.5)*4, 1, 30, 0.5);
       if (burn.remaining <= 0.001) {
         burn.active = false;
         mission.phase = "coast";
@@ -796,8 +801,8 @@ function animate() {
         // Close approach - the hyperbolic flyby is done by the patched conic,
         // but we log it and update the target
         logEvent('flyby', "✦ " + planets[mission.inSOI].n + " flyby (v∞=" + vInf.toFixed(2) + ")");
-        emit(sx+sc.rx, sy+sc.ry, 25, 40, 4);
-        emit(sx+sc.rx, sy+sc.ry, 15, 200, 3);
+        emit(sx + sc.rx * camScale, sy + sc.ry * camScale, 25, 40, 4);
+        emit(sx + sc.rx * camScale, sy + sc.ry * camScale, 15, 200, 3);
 
         mission.visited.push(mission.inSOI);
         mission.prevPlanet = mission.inSOI;
@@ -835,15 +840,20 @@ function animate() {
   }
 
   // --- Drawing ---
+  ctx.save();
+  ctx.setTransform(camScale, 0, 0, camScale, sx, sy);
   drawOrbits(); drawSOI(); drawSun();
   for (var p of planets) drawPlanet(p, time);
-  drawTrail();
-  drawPrediction();
   if (mission.phase !== "idle") {
     drawFutureArc(time);
     drawTargetRing(time);
     drawSC();
   }
+  ctx.restore();
+
+  // Screen-space elements
+  drawTrail();
+  drawPrediction();
 
   // Particles
   particles = particles.filter(function(p){ return p.life > 0; });

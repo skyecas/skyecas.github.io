@@ -11,6 +11,8 @@ var params = new URLSearchParams(window.location.search);
 var bg = params.get("name");
 
 if (bg && bgNames.indexOf(bg) !== -1) {
+  document.querySelector(".content").style.display = "none";
+  document.body.style.paddingBottom = "0";
   var script = document.createElement("script");
   script.src = "/assets/js/backgrounds/" + bg + ".js";
   document.body.appendChild(script);
