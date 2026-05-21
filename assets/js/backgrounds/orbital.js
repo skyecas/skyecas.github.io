@@ -93,7 +93,6 @@ var planets = (function() {
     { n:"Venus",   aAu:0.7233, e:0.00677, w:2.2962, M0j:50.416,  ndpd:1.6021, r:9, col:"#e8c880", mu:0.8 },
     { n:"Earth",   aAu:1.0000, e:0.01671, w:1.7966, M0j:357.527, ndpd:0.9856, r:11, col:"#4a9bd7", mu:1.0 },
     { n:"Mars",    aAu:1.5237, e:0.09340, w:5.8655, M0j:19.393,  ndpd:0.5240, r:8, col:"#c05030", mu:0.5 },
-    { n:"Jupiter", aAu:5.2026, e:0.04849, w:0.2501, M0j:20.020,  ndpd:0.0831, r:21, col:"#d4a06a", mu:5.0 },
   ];
   return raw.map(function(p) {
     var M0real = (p.M0j + p.ndpd * days) % 360;
@@ -229,25 +228,52 @@ function pickTarget(idx, visited, t) {
   return best;
 }
 
+function findBestTransfer(fromIdx, toIdx, t) {
+  var ep = pPos(planets[fromIdx], t);
+  var ev = pVel(planets[fromIdx], t);
+  var targetPeriod = Math.min(10000, 2 * Math.PI * Math.sqrt(planets[toIdx].a * planets[toIdx].a * planets[toIdx].a / MU) * 1.5);
+  var minDT = Math.max(500, targetPeriod * 0.3);
+  var bestLam = null, bestDV = Infinity, bestDt = minDT;
+  for (var rev = 0; rev <= 5; rev++) {
+    var dt = minDT + rev * targetPeriod;
+    var tp = pPos(planets[toIdx], t + dt);
+    var lam = lambert(ep.rx, ep.ry, tp.rx, tp.ry, dt);
+    if (!lam) continue;
+    var dvx = lam.vx - ev.vx, dvy = lam.vy - ev.vy;
+    var vInf = Math.sqrt(dvx*dvx + dvy*dvy);
+    var dv = Math.sqrt(vInf * vInf + 2 / 15);
+    if (dv < bestDV) { bestDV = dv; bestLam = lam; bestDt = dt; }
+  }
+  return { lam: bestLam, dv: bestDV, dt: bestDt };
+}
+
 function launch(t) {
   var ep = pPos(planets[2], t);
   var ev = pVel(planets[2], t);
-  var dvm = Math.sqrt(0.4*0.4 + 0.2*0.2);
-  sc.rx = ep.rx + 15 * 0.4 / dvm;
-  sc.ry = ep.ry + 15 * 0.2 / dvm;
+  // Find best target by trying Lambert transfers to each planet
+  var bestTarget = -1, bestDV = Infinity, bestTrans = null;
+  for (var i = 0; i < planets.length; i++) {
+    if (i === 2) continue;
+    var trans = findBestTransfer(2, i, t);
+    if (trans.lam && trans.dv < bestDV && trans.dv < 0.55) {
+      bestDV = trans.dv; bestTarget = i; bestTrans = trans;
+    }
+  }
+  if (bestTarget < 0) return;
+  var dvx = bestTrans.lam.vx - ev.vx, dvy = bestTrans.lam.vy - ev.vy;
+  var vInf = Math.sqrt(dvx*dvx + dvy*dvy);
+  var dvm = bestTrans.dv;
+  sc.rx = ep.rx + 15 * dvx / vInf;
+  sc.ry = ep.ry + 15 * dvy / vInf;
   sc.vx = ev.vx; sc.vy = ev.vy;
   totalDV = 0;
   mission.phase = "burning"; mission.legStart = t; mission.prevPlanet = 2;
   mission.visited = [2]; mission.correctionsLeft = 2; mission.inSOI = -1;
   mission.flybyCooldown = 0;
-  mission.target = pickTarget(2, mission.visited, t);
-  if (mission.target >= 0) {
-    var tp = pPos(planets[mission.target], t);
-    var dx = tp.rx - sc.rx, dy = tp.ry - sc.ry;
-    mission.legDur = Math.max(1000, Math.min(15000, Math.sqrt(dx*dx+dy*dy) * 5));
-    logEvent('launch', "Launch from Earth → " + planets[mission.target].n);
-  } else logEvent('launch', "Launch from Earth");
-  burn.active = true; burn.dvx = 0.4; burn.dvy = -0.2;
+  mission.target = bestTarget;
+  mission.legDur = bestTrans.dt;
+  logEvent('launch', "Launch from Earth → " + planets[bestTarget].n + " (Δv=" + dvm.toFixed(3) + ")");
+  burn.active = true; burn.dvx = dvx / vInf * dvm; burn.dvy = dvy / vInf * dvm;
   burn.rate = burnRate; burn.remaining = dvm;
 }
 
@@ -472,7 +498,7 @@ function fmtTime(tt) {
 }
 
 function drawHUD(t) {
-  var pw = 380, px = W - pw;
+  var pw = 460, px = W - pw;
   ctx.fillStyle = "rgba(0,6,18,0.82)";
   ctx.fillRect(px, 0, pw, H);
   ctx.strokeStyle = "rgba(0,80,180,0.25)";
@@ -620,8 +646,8 @@ function predictEncounters() {
   var rx = sc.rx, ry = sc.ry, vx = sc.vx, vy = sc.vy;
   var soi = mission.inSOI;
   var t = time;
-  var dt = 80;
-  var maxSteps = 3000;
+  var dt = 20;
+  var maxSteps = 12000;
   var encounters = [];
   var trajectory = [];
   var maxEnc = 5;
@@ -689,7 +715,7 @@ function predictEncounters() {
       vx += ax * dt / 2; vy += ay * dt / 2;
     }
 
-    if (step % 10 === 0) {
+    if (step % 40 === 0) {
       trajectory.push({ x: sx + rx * camScale, y: sy + ry * camScale });
     }
 
@@ -727,6 +753,66 @@ function drawPrediction() {
   }
 }
 
+function drawOffscreenIndicator(t) {
+  var scx = sx + sc.rx * camScale;
+  var scy = sy + sc.ry * camScale;
+  var hudLeft = W - 460;
+  var margin = 30;
+  var left = margin, right = hudLeft - margin, top = margin, bottom = H - margin;
+
+  var onScreen = scx >= left && scx <= right && scy >= top && scy <= bottom;
+  if (onScreen) return;
+
+  // Clamp to edge
+  var ex = Math.max(left, Math.min(right, scx));
+  var ey = Math.max(top, Math.min(bottom, scy));
+  var pulse = Math.sin(t * 0.05) * 0.3 + 0.7;
+
+  // Arrow toward SC
+  var dx = scx - ex, dy = scy - ey;
+  var ang = Math.atan2(dy, dx);
+
+  ctx.save();
+  ctx.translate(ex, ey);
+  ctx.rotate(ang);
+
+  // Glow ring
+  var gr = 16 + 4 * pulse;
+  var glow = ctx.createRadialGradient(0, 0, 0, 0, 0, gr);
+  glow.addColorStop(0, "rgba(100,200,255,0.15)");
+  glow.addColorStop(1, "rgba(100,200,255,0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(0, 0, gr, 0, Math.PI * 2); ctx.fill();
+
+  // Outer ring
+  ctx.strokeStyle = "rgba(100,200,255," + (0.3 + 0.3 * pulse) + ")";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.stroke();
+
+  // Arrow head pointing toward SC
+  ctx.fillStyle = "rgba(100,200,255,0.7)";
+  ctx.beginPath();
+  ctx.moveTo(18, 0);
+  ctx.lineTo(12, -5);
+  ctx.lineTo(12, 5);
+  ctx.closePath();
+  ctx.fill();
+
+  // Tiny spacecraft preview inside the ring
+  ctx.rotate(-ang); // cancel rotation for SC preview so it shows correct orientation
+  var scAng = Math.atan2(sc.vy, sc.vx);
+  ctx.rotate(scAng);
+  ctx.fillStyle = "rgba(180,220,255,0.6)";
+  ctx.beginPath();
+  ctx.moveTo(5, 0);
+  ctx.lineTo(-3, -3);
+  ctx.lineTo(-3, 3);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
 // --- Special dates ---
 var specialDates = {
   "27/07":"#FFD700","12/08":"#C0C0E0","23/08":"#FF7F7F",
@@ -741,9 +827,14 @@ function getDateHex() {
 // --- Animation ---
 var time = 0;
 var launched = false;
+var lastFrameTime = 0;
 
-function animate() {
-  time++;
+function animate(timestamp) {
+  // Fixed timestep: normalize to 60fps baseline
+  if (lastFrameTime === 0) lastFrameTime = timestamp;
+  var deltaMs = timestamp - lastFrameTime;
+  lastFrameTime = timestamp;
+  time += Math.min(deltaMs / 16.667, 3);
 
   ctx.fillStyle = "#03040c";
   ctx.fillRect(0,0,W,H);
@@ -852,6 +943,7 @@ function animate() {
   ctx.restore();
 
   // Screen-space elements
+  drawOffscreenIndicator(time);
   drawTrail();
   drawPrediction();
 
