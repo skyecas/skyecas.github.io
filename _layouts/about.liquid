@@ -85,61 +85,27 @@ layout: default
     {% endif %}
 
     <!-- Self gallery -->
-    {% assign container_width = 800 %}
-    {% assign gap = 10 %}
-    {% assign aspect_ratio_inverse = 13 | divided_by: 6 %}
-
     {%- assign profile_images = "" | split: "" -%}
-
     {%- for image in site.static_files -%}
         {%- if image.path contains '/profiles/' and (image.extname == '.jpg' or image.extname == '.png' or image.extname == '.jpeg' or image.extname == '.webp') -%}
             {%- assign profile_images = profile_images | push: image -%}
         {%- endif -%}
     {%- endfor -%}
 
-    {%- assign row_size = 4 -%}
-    {%- assign total_images = profile_images.size -%}
-    {%- assign rows = total_images | divided_by: row_size | ceil -%}
-
-    {%- for i in (0..rows) -%}
-        {%- assign start_index = i | times: row_size -%}
-        {%- assign end_index = start_index | plus: row_size | minus: 1 -%}
-        {%- assign row_images = "" | split: "" -%}
-
-        {%- for j in (start_index..end_index) -%}
-            {%- if j < total_images -%}
-            {%- assign row_images = row_images | push: profile_images[j] -%}
-            {%- endif -%}
-        {%- endfor -%}
-
-        {%- assign image_count = row_images.size -%}
-        {%- if image_count > 0 -%}
-        {%- assign image_count_minus_1 = image_count | minus: 1 -%}
-        {%- assign total_gap = gap | times: image_count_minus_1 -%}
-        {%- assign usable_width = container_width | minus: total_gap -%}
-        {%- if image_count == 1 -%}
-            {%- assign image_width = usable_width | divided_by: 2 -%}
-        {%- else -%}
-            {%- assign image_width = usable_width | divided_by: image_count -%}
-        {%- endif -%}
-        {%- assign image_height = image_width | times: aspect_ratio_inverse | floor -%}
-
-        <div style="display:flex; gap: {{ gap }}px; justify-content: center; overflow:hidden; height: {{ image_height }}px; margin-bottom: {{ gap }}px;">
-            {%- for image in row_images -%}
+    <div class="profile-gallery">
+        {%- for image in profile_images -%}
             {% assign parts = image.name | split: "-" %}
             {% if parts.size == 3 %}
                 {% assign year = parts[0] %}
                 {% assign month = parts[1] %}
-                <a href="/blog/{{ year }}/{{ month }}-sprint/" style="height: inherit;">
-                <img src="{{ image.path | relative_url }}" alt="{{ year }}-{{ month }}" style="width: auto; height: inherit; flex-grow:1; object-fit: cover; object-position: center; aspect-ratio: 6 / 13;" />
+                <a href="/blog/{{ year }}/{{ month }}-sprint/">
+                <img src="{{ image.path | relative_url }}" alt="{{ year }}-{{ month }}" />
                 </a>
             {% else %}
-                <img src="{{ image.path | relative_url }}" alt="{{ image.name }}" style="width: auto; height: inherit; flex-grow:1; object-fit: cover; object-position: center; aspect-ratio: 6 / 13;" />
+                <img src="{{ image.path | relative_url }}" alt="{{ image.name }}" />
             {% endif %}
-            {%- endfor -%}
-        </div>
-        {%- endif -%}
-    {%- endfor -%}
+        {%- endfor -%}
+    </div>
 
     <!-- Social -->
     {% if page.social %}

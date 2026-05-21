@@ -90,6 +90,24 @@ layout: default
     {% endif %}
   {% endif %}
 
+  {% if page.previous or page.next %}
+    <hr>
+    <nav aria-label="Post navigation">
+      <ul class="pagination pagination-lg justify-content-between">
+        <li class="page-item {% unless page.previous %}disabled{% endunless %}">
+          <a class="page-link" href="{{ page.previous.url | relative_url }}" tabindex="-1">
+            &larr; {{ page.previous.title | truncatewords: 5 }}
+          </a>
+        </li>
+        <li class="page-item {% unless page.next %}disabled{% endunless %}">
+          <a class="page-link" href="{{ page.next.url | relative_url }}">
+            {{ page.next.title | truncatewords: 5 }} &rarr;
+          </a>
+        </li>
+      </ul>
+    </nav>
+  {% endif %}
+
   {% if site.disqus_shortname and page.disqus_comments %}
     {% include disqus.liquid %}
   {% endif %}

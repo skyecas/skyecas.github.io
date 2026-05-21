@@ -262,8 +262,6 @@ ul.task-list input[type="checkbox"] {
 .navbar {
   box-shadow: none;
   border-bottom: 1px solid var(--global-divider-color);
-  background-color: var(--global-bg-color);
-  opacity: 0.95;
 }
 
 .navbar .dropdown-menu {
@@ -381,6 +379,11 @@ ul.task-list input[type="checkbox"] {
   }
 }
 
+.toggle-container {
+  display: flex;
+  align-items: center;
+}
+
 #light-toggle,
 #search-toggle {
   padding: 0;
@@ -391,6 +394,38 @@ ul.task-list input[type="checkbox"] {
   &:hover {
     color: var(--global-hover-color);
   }
+}
+
+#light-toggle {
+  padding: .5rem 0;
+  line-height: inherit;
+}
+
+// Profile gallery
+
+.profile-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.profile-gallery > a,
+.profile-gallery > img {
+  flex: 1 1 calc(25% - 10px);
+  max-width: calc(25% - 10px);
+}
+
+.profile-gallery > a {
+  display: flex;
+}
+
+.profile-gallery > a img,
+.profile-gallery > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: 6 / 13;
 }
 
 // Social (bottom)
