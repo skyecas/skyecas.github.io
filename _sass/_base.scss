@@ -299,7 +299,7 @@ ul.task-list input[type="checkbox"] {
   }
 
   .navbar-brand {
-    color: var(--global-text-color);
+    color: var(--global-theme-color);
   }
 
   .navbar-nav .nav-item .nav-link {
@@ -806,7 +806,7 @@ footer.sticky-bottom {
       color: var(--global-text-color);
 
       &:hover {
-        color: $black-color;
+        color: var(--global-theme-color);
       }
     }
 

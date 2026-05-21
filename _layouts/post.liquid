@@ -89,18 +89,22 @@ layout: default
   {% if prev_post or next_post %}
     <nav aria-label="Post navigation" class="post-nav-top">
       <ul class="pagination pagination-lg justify-content-between">
-        <li class="page-item {% unless prev_post %}disabled{% endunless %}">
+        {% if prev_post %}
+        <li class="page-item">
           <a class="page-link" href="{{ prev_post.url | relative_url }}" tabindex="-1">
             <span class="nav-arrow">&larr;</span>
             <span class="nav-title">{{ prev_post.title | truncatewords: 5 }}</span>
           </a>
         </li>
-        <li class="page-item {% unless next_post %}disabled{% endunless %}">
+        {% endif %}
+        {% if next_post %}
+        <li class="page-item">
           <a class="page-link" href="{{ next_post.url | relative_url }}">
             <span class="nav-title">{{ next_post.title | truncatewords: 5 }}</span>
             <span class="nav-arrow">&rarr;</span>
           </a>
         </li>
+        {% endif %}
       </ul>
     </nav>
     <hr>
@@ -139,18 +143,22 @@ layout: default
     <hr>
     <nav aria-label="Post navigation">
       <ul class="pagination pagination-lg justify-content-between">
-        <li class="page-item {% unless prev_post %}disabled{% endunless %}">
+        {% if prev_post %}
+        <li class="page-item">
           <a class="page-link" href="{{ prev_post.url | relative_url }}" tabindex="-1">
             <span class="nav-arrow">&larr;</span>
             <span class="nav-title">{{ prev_post.title | truncatewords: 5 }}</span>
           </a>
         </li>
-        <li class="page-item {% unless next_post %}disabled{% endunless %}">
+        {% endif %}
+        {% if next_post %}
+        <li class="page-item">
           <a class="page-link" href="{{ next_post.url | relative_url }}">
             <span class="nav-title">{{ next_post.title | truncatewords: 5 }}</span>
             <span class="nav-arrow">&rarr;</span>
           </a>
         </li>
+        {% endif %}
       </ul>
     </nav>
   {% endif %}

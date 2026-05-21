@@ -2,24 +2,30 @@
   {% assign resume_data = data[1] %}
   {% assign project_data = site.projects %}
   {% for content in resume_data %}
-    {% unless content.hidden %}{% assign project_data = project_data | where_exp: "item","item.title != content.name and item.redirect != content.url" %}{% endunless %}
-  {% endfor %}
-  {% assign all_data = resume_data | concat: project_data %}
-  {% assign ongoing = all_data | where_exp: "item", "item.endDate == nil or item.endDate == ''" | sort: 'date' | reverse %}
-  {% assign finished = all_data | where_exp: "item", "item.endDate != nil and item.endDate != ''" | sort: 'endDate' | reverse %}
-  {% assign all_data = ongoing | concat: finished %}
+     {% unless content.hidden %}{% assign project_data = project_data | where_exp: "item", "item.title != content.name and item.title != content.title and item.redirect != content.url and item.redirect != content.redirect and item.url != content.url and item.url != content.redirect" %}{% endunless %}
+   {% endfor %}
+  {% assign ongoing_from_resume = resume_data | where_exp: "item", "item.endDate == nil or item.endDate == ''" | sort: 'startDate' | reverse %}
+  {% assign ongoing_from_projects = project_data | where_exp: "item", "item.endDate == nil or item.endDate == ''" | sort: 'date' | reverse %}
+  {% assign finished_from_resume = resume_data | where_exp: "item", "item.endDate != nil and item.endDate != ''" | sort: 'endDate' | reverse %}
+  {% assign finished_from_projects = project_data | where_exp: "item", "item.endDate != nil and item.endDate != ''" | sort: 'endDate' | reverse %}
+  {% assign all_data = ongoing_from_resume | concat: ongoing_from_projects | concat: finished_from_resume | concat: finished_from_projects %}
   {% for content in all_data %}
     {% if content.hidden %}{% continue %}{% endif %}
-    {% assign project_match = site.projects | where_exp: "item", "item.title == content.name or item.title == content.title or item.redirect == content.url" | first %}
+    {% assign project_match = site.projects | where_exp: "item", "item.title == content.name or item.title == content.title or item.redirect == content.url or item.redirect == content.redirect or item.url == content.url or item.url == content.redirect" | first %}
     <li class="list-group-item">
       <div class="row">
         <div class="col-xs-2 cl-sm-2 col-md-2 text-center" style="min-width: 75px; padding: 0;">
-          {% if content.date %}
-            {% assign startDate = content.date | split: '-' | slice: 0, 2 | join: '.' %}
-            {% assign endDate = content.endDate | split: '-' | slice: 0, 2 | join: '.' | default: 'Present' %}
-            {% assign date = startDate | append: ' <br> ' %}
-            {% if startDate != endDate %}
-              {% assign date = date | append: endDate %}
+          {% if content.date or content.startDate %}
+            {% assign startDate = content.date | default: content.startDate | split: '-' | slice: 0, 2 | join: '.' %}
+            {% if content.endDate and content.endDate != '' %}
+              {% assign endDate = content.endDate | split: '-' | slice: 0, 2 | join: '.' %}
+              {% if startDate != endDate %}
+                {% assign date = startDate | append: ' <br> ' | append: endDate %}
+              {% else %}
+                {% assign date = startDate %}
+              {% endif %}
+            {% else %}
+              {% assign date = startDate | append: ' <br> Present' %}
             {% endif %}
           {% else %}
             {% assign date = '' %}
