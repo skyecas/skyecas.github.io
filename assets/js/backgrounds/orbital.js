@@ -47,8 +47,11 @@ function solveKepler(M, e) {
   for (var i = 0; i < 30; i++) {
     var f = E - e * Math.sin(E) - M;
     if (Math.abs(f) < 1e-10) break;
-    E = E - f / (1 - e * Math.cos(E));
+    var denom = 1 - e * Math.cos(E);
+    if (Math.abs(denom) < 1e-12) { E += 0.01; continue; }
+    E = E - f / denom;
   }
+  if (!isFinite(E)) return M;
   return E;
 }
 function trueFromEccentric(E, e) {
@@ -374,6 +377,7 @@ function emit(x, y, n, hue, spd) {
 
 // --- Drawing ---
 function drawSun() {
+  if (!isFinite(camScale) || camScale === 0) return;
   var r1 = 45 / camScale, r2 = 14 / camScale;
   var g = ctx.createRadialGradient(0,0,0,0,0,r1);
   g.addColorStop(0,"rgba(255,240,200,0.6)"); g.addColorStop(0.15,"rgba(255,220,150,0.3)");
@@ -398,6 +402,7 @@ function drawOrbits() {
 
 function drawPlanet(p, t) {
   var pos = pPos(p, t);
+  if (!isFinite(pos.rx) || !isFinite(pos.ry)) return;
   var cs = 1 / camScale;
   var rv = p.r * cs;
   ctx.fillStyle = p.col + "40";
@@ -931,16 +936,18 @@ function animate(timestamp) {
   }
 
   // --- Drawing ---
-  ctx.save();
-  ctx.setTransform(camScale, 0, 0, camScale, sx, sy);
-  drawOrbits(); drawSOI(); drawSun();
-  for (var p of planets) drawPlanet(p, time);
-  if (mission.phase !== "idle") {
-    drawFutureArc(time);
-    drawTargetRing(time);
-    drawSC();
+  if (isFinite(sx) && isFinite(sy) && isFinite(camScale)) {
+    ctx.save();
+    ctx.setTransform(camScale, 0, 0, camScale, sx, sy);
+    drawOrbits(); drawSOI(); drawSun();
+    for (var p of planets) drawPlanet(p, time);
+    if (mission.phase !== "idle") {
+      drawFutureArc(time);
+      drawTargetRing(time);
+      drawSC();
+    }
+    ctx.restore();
   }
-  ctx.restore();
 
   // Screen-space elements
   drawOffscreenIndicator(time);
