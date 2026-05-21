@@ -530,6 +530,7 @@ function drawHUD(t) {
   ctx.font = "9px 'Courier New',monospace";
   ctx.fillText("EVENT LOG", logX, rowY[0]);
 
+  ctx.save();
   ctx.beginPath();
   ctx.rect(logX, rowY[1] - 2, logW, phh - (rowY[1] - ph + 2) - 4);
   ctx.clip();
