@@ -83,7 +83,7 @@ layout: default
         {% endfor %}
         {% if match %}{% assign next_post = p %}{% endif %}
       {% endif %}
-    {% endif %}
+    {% endunless %}
   {% endfor %}
 
   {% if prev_post or next_post %}
