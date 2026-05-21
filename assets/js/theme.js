@@ -89,12 +89,16 @@ let setTheme = (theme) => {
 };
 
 let setHighlight = (theme) => {
+  const light = document.getElementById("highlight_theme_light");
+  const dark = document.getElementById("highlight_theme_dark");
+  if (!light || !dark) return;
+
   if (theme == "dark") {
-    document.getElementById("highlight_theme_light").media = "none";
-    document.getElementById("highlight_theme_dark").media = "";
+    light.media = "none";
+    dark.media = "";
   } else {
-    document.getElementById("highlight_theme_dark").media = "none";
-    document.getElementById("highlight_theme_light").media = "";
+    dark.media = "none";
+    light.media = "";
   }
 };
 

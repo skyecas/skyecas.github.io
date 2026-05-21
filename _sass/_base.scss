@@ -450,6 +450,109 @@ ul.task-list input[type="checkbox"] {
   }
 }
 
+.orcid {
+  color: #a6ce39;
+  i::before {
+    color: inherit !important;
+  }
+}
+.telegram {
+  color: #2aabee;
+  i::before {
+    color: inherit !important;
+  }
+}
+.whatsapp {
+  color: #25d366;
+  i::before {
+    color: inherit !important;
+  }
+}
+.researchgate {
+  color: #00ccbb;
+  i::before {
+    color: inherit !important;
+  }
+}
+.linkedin {
+  color: #0077b5;
+  i::before {
+    color: inherit !important;
+  }
+}
+.mastodon {
+  color: #563acc;
+  i::before {
+    color: inherit !important;
+  }
+}
+.quora {
+  color: #b92b27;
+  i::before {
+    color: inherit !important;
+  }
+}
+.blogger {
+  color: #ff5722;
+  i::before {
+    color: inherit !important;
+  }
+}
+.strava {
+  color: #fc4c02;
+  i::before {
+    color: inherit !important;
+  }
+}
+.gitlab {
+  color: #fca326;
+  i::before {
+    color: inherit !important;
+  }
+}
+.stackoverflow {
+  color: #f47f24;
+  i::before {
+    color: inherit !important;
+  }
+}
+.spotify {
+  color: #1ed760;
+  i::before {
+    color: inherit !important;
+  }
+}
+.pinterest {
+  color: #e60023;
+  i::before {
+    color: inherit !important;
+  }
+}
+.facebook {
+  color: #0165e1;
+  i::before {
+    color: inherit !important;
+  }
+}
+.youtube {
+  color: #ff0000;
+  i::before {
+    color: inherit !important;
+  }
+}
+.discord {
+  color: #5865f2;
+  i::before {
+    color: inherit !important;
+  }
+}
+.rss {
+  color: #f26522;
+  i::before {
+    color: inherit !important;
+  }
+}
+
 // Footer
 footer.fixed-bottom {
   background-color: var(--global-footer-bg-color);
