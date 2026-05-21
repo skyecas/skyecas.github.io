@@ -4,11 +4,10 @@
   {% for content in resume_data %}
      {% unless content.hidden %}{% assign project_data = project_data | where_exp: "item", "item.title != content.name and item.title != content.title and item.redirect != content.url and item.redirect != content.redirect and item.url != content.url and item.url != content.redirect" %}{% endunless %}
    {% endfor %}
-  {% assign ongoing_from_resume = resume_data | where_exp: "item", "item.endDate == nil or item.endDate == ''" | sort: 'startDate' | reverse %}
-  {% assign ongoing_from_projects = project_data | where_exp: "item", "item.endDate == nil or item.endDate == ''" | sort: 'date' | reverse %}
-  {% assign finished_from_resume = resume_data | where_exp: "item", "item.endDate != nil and item.endDate != ''" | sort: 'endDate' | reverse %}
-  {% assign finished_from_projects = project_data | where_exp: "item", "item.endDate != nil and item.endDate != ''" | sort: 'endDate' | reverse %}
-  {% assign all_data = ongoing_from_resume | concat: ongoing_from_projects | concat: finished_from_resume | concat: finished_from_projects %}
+  {% assign all_data = resume_data | concat: project_data %}
+  {% assign ongoing = all_data | where_exp: "item", "item.endDate == nil or item.endDate == ''" %}
+  {% assign finished = all_data | where_exp: "item", "item.endDate != nil and item.endDate != ''" | sort: 'endDate' | reverse %}
+  {% assign all_data = ongoing | concat: finished %}
   {% for content in all_data %}
     {% if content.hidden %}{% continue %}{% endif %}
     {% assign project_match = site.projects | where_exp: "item", "item.title == content.name or item.title == content.title or item.redirect == content.url or item.redirect == content.redirect or item.url == content.url or item.url == content.redirect" | first %}
