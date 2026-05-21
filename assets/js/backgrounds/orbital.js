@@ -19,7 +19,6 @@ var orScale = Math.min(W / baseW, H / baseH);
 
 // --- Constants ---
 var MU = 120;
-var timeSpeed = 3;
 
 // --- Stars ---
 var starCols = ["white","aliceBlue","powderBlue","azure","moccasin","sandyBrown","coral"];
@@ -79,14 +78,28 @@ function kepVel(a, e, w, M0, t) {
   return { vx: vx*cw - vy*sw, vy: vx*sw + vy*cw };
 }
 
-// --- Planets (sun-relative coords) ---
-var planets = [
-  { n:"Mercury", a:100, e:0.2056, w:1.35, M0:4.0, r:5*orScale,  col:"#b0a894", so:15*orScale, mu:0.2 },
-  { n:"Venus",   a:170, e:0.0068, w:2.30, M0:1.2, r:9*orScale,  col:"#e8c880", so:25*orScale, mu:0.8 },
-  { n:"Earth",   a:240, e:0.0167, w:3.12, M0:0.5, r:11*orScale, col:"#4a9bd7", so:30*orScale, mu:1.0 },
-  { n:"Mars",    a:330, e:0.0934, w:0.87, M0:3.8, r:8*orScale,  col:"#c05030", so:20*orScale, mu:0.5 },
-  { n:"Jupiter", a:520, e:0.0484, w:4.52, M0:2.1, r:21*orScale, col:"#d4a06a", so:60*orScale, mu:5.0 },
-];
+// --- Planets with real orbital elements, initialized from current date ---
+var planets = (function() {
+  var now = new Date();
+  var j2000 = new Date(2000, 0, 1, 12, 0, 0);
+  var days = (now - j2000) / 86400000;
+
+  var raw = [
+    { n:"Mercury", a:100, e:0.20563, w:1.3520, M0j:174.795, ndpd:4.0923, r:5, col:"#b0a894", mu:0.2 },
+    { n:"Venus",   a:170, e:0.00677, w:2.2962, M0j:50.416,  ndpd:1.6021, r:9, col:"#e8c880", mu:0.8 },
+    { n:"Earth",   a:240, e:0.01671, w:1.7966, M0j:357.527, ndpd:0.9856, r:11, col:"#4a9bd7", mu:1.0 },
+    { n:"Mars",    a:330, e:0.09340, w:5.8655, M0j:19.393,  ndpd:0.5240, r:8, col:"#c05030", mu:0.5 },
+    { n:"Jupiter", a:520, e:0.04849, w:0.2501, M0j:20.020,  ndpd:0.0831, r:21, col:"#d4a06a", mu:5.0 },
+  ];
+  return raw.map(function(p) {
+    var M0real = (p.M0j + p.ndpd * days) % 360;
+    if (M0real < 0) M0real += 360;
+    return {
+      n: p.n, a: p.a, e: p.e, w: p.w, M0: M0real * Math.PI / 180,
+      r: p.r * orScale, col: p.col, so: p.r * 3 * orScale, mu: p.mu
+    };
+  });
+})();
 
 function pPos(p, t) { return kepToCart(p.a, p.e, p.w, p.M0, t); }
 function pVel(p, t) { return kepVel(p.a, p.e, p.w, p.M0, t); }
@@ -155,6 +168,10 @@ function lambert(r1x, r1y, r2x, r2y, dt) {
 var sc = { rx: 0, ry: 0, vx: 0, vy: 0 };
 var totalDV = 0;
 
+// --- Finite burn model ---
+var burn = { active: false, dvx: 0, dvy: 0, rate: 0, remaining: 0 };
+var burnRate = 0.015;
+
 // --- Orbit elements from state ---
 function orbitalElements(rx, ry, vx, vy, mu) {
   var r = Math.sqrt(rx*rx + ry*ry);
@@ -210,13 +227,11 @@ function pickTarget(idx, visited, t) {
 function launch(t) {
   var ep = pPos(planets[2], t);
   var ev = pVel(planets[2], t);
-  var dvx = 0.8, dvy = -0.6;
-  var dvm = Math.sqrt(dvx*dvx + dvy*dvy);
-  sc.rx = ep.rx + planets[2].r * dvx / dvm;
-  sc.ry = ep.ry + planets[2].r * dvy / dvm;
-  sc.vx = ev.vx + dvx; sc.vy = ev.vy + dvy;
-  totalDV = Math.sqrt(dvx*dvx + dvy*dvy);
-  mission.phase = "coast"; mission.legStart = t; mission.prevPlanet = 2;
+  sc.rx = ep.rx; sc.ry = ep.ry;
+  sc.vx = ev.vx; sc.vy = ev.vy;
+  totalDV = 0;
+  var dvx = 0.5, dvy = -0.3;
+  mission.phase = "burning"; mission.legStart = t; mission.prevPlanet = 2;
   mission.visited = [2]; mission.correctionsLeft = 2; mission.inSOI = -1;
   mission.flybyCooldown = 0;
   mission.target = pickTarget(2, mission.visited, t);
@@ -226,23 +241,26 @@ function launch(t) {
     mission.legDur = Math.max(1000, Math.min(15000, Math.sqrt(dx*dx+dy*dy) * 5));
     logEvent('launch', "Launch from Earth → " + planets[mission.target].n);
   } else logEvent('launch', "Launch from Earth");
+  burn.active = true; burn.dvx = 0.5; burn.dvy = -0.3;
+  var dvm = Math.sqrt(0.5*0.5 + 0.3*0.3);
+  burn.rate = burnRate; burn.remaining = dvm;
 }
 
 function doCorrection(t) {
   if (mission.target < 0 || mission.target >= planets.length) return false;
-  var tp = pPos(planets[mission.target], t + mission.legDur * 0.3);
-  var dt = mission.legDur * 0.5;
+  var dt = Math.min(mission.legDur * 0.5, 5000);
+  var tp = pPos(planets[mission.target], t + dt);
   var lam = lambert(sc.rx, sc.ry, tp.rx, tp.ry, dt);
   if (lam) {
     var dvx = lam.vx - sc.vx, dvy = lam.vy - sc.vy;
     var dvm = Math.sqrt(dvx*dvx + dvy*dvy);
-    if (dvm > 2) { dvx = dvx/dvm*2; dvy = dvy/dvm*2; dvm = 2; }
-    sc.vx += dvx; sc.vy += dvy;
-    totalDV += dvm;
+    if (dvm > 0.3) { dvx = dvx/dvm*0.3; dvy = dvy/dvm*0.3; dvm = 0.3; }
+    mission.phase = "burning";
+    burn.active = true; burn.dvx = dvx; burn.dvy = dvy;
+    burn.rate = burnRate; burn.remaining = dvm;
     mission.correctionsLeft--;
     mission.lastCCtime = t;
-    logEvent('correction', "Maneuvre (Δv=" + dvm.toFixed(3) + ") → " + planets[mission.target].n);
-    emit(sc.rx + sx, sc.ry + sy, 8, 200, 1.5);
+    logEvent('correction', "Correction (Δv=" + dvm.toFixed(3) + ") → " + planets[mission.target].n);
     return true;
   }
   return false;
@@ -267,6 +285,14 @@ function integrate(t, dt) {
   } else if (soiIdx < 0 && mission.inSOI >= 0) {
     logEvent('soi', "≈≈ " + planets[mission.inSOI].n + " SOI exit ≈≈");
     mission.inSOI = -1;
+    mission.legStart = t;
+    if (mission.target >= 0 && mission.target < planets.length) {
+      var tp = pPos(planets[mission.target], t);
+      var dx = tp.rx - sc.rx, dy = tp.ry - sc.ry;
+      mission.legDur = Math.max(1000, Math.min(15000, Math.sqrt(dx*dx+dy*dy) * 5));
+    }
+    mission.correctionsLeft = 2;
+    mission.lastCCtime = t;
   }
 
   var mu = mission.inSOI >= 0 ? planets[mission.inSOI].mu : MU;
@@ -441,124 +467,259 @@ function fmtTime(tt) {
 }
 
 function drawHUD(t) {
-  var pw = 340, px = W - pw;
-  // Panel background
+  var pw = 380, px = W - pw;
   ctx.fillStyle = "rgba(0,6,18,0.82)";
   ctx.fillRect(px, 0, pw, H);
   ctx.strokeStyle = "rgba(0,80,180,0.25)";
   ctx.lineWidth = 1;
   ctx.strokeRect(px, 0, pw, H);
 
-  ctx.font = "bold 11px 'Courier New',monospace";
+  var col = px + 16;
+  var row = 18;
 
   // Header
+  ctx.font = "bold 14px 'Courier New',monospace";
   ctx.textAlign = "left";
   ctx.fillStyle = "rgba(80,180,255,0.7)";
-  ctx.fillText("MISSION CONTROL", px + 12, 16);
+  ctx.fillText("MISSION CONTROL", col, row); row += 20;
+  ctx.font = "12px 'Courier New',monospace";
   ctx.textAlign = "right";
-  ctx.fillText("T+" + fmtTime(t), px + pw - 12, 16);
+  ctx.fillStyle = "rgba(120,200,255,0.5)";
+  ctx.fillText("T+" + fmtTime(t), px + pw - 16, row); row += 4;
 
-  // Divider
   ctx.strokeStyle = "rgba(0,80,180,0.2)";
-  ctx.beginPath(); ctx.moveTo(px + 6, 24); ctx.lineTo(px + pw - 6, 24); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px + 8, row); ctx.lineTo(px + pw - 8, row); ctx.stroke(); row += 8;
 
   var oe = orbitalElements(sc.rx, sc.ry, sc.vx, sc.vy, mission.inSOI >= 0 ? planets[mission.inSOI].mu : MU);
   var inSOI = mission.inSOI >= 0;
 
-  ctx.font = "9px 'Courier New',monospace";
-  var colX = [px + 12, px + 170];
-  var rowY = [36, 50, 64, 78, 92, 106, 120, 134, 148, 162];
+  ctx.font = "13px 'Courier New',monospace";
 
-  // Col 0: Navigation
-  ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("NAVIGATION", colX[0], rowY[0]);
+  // Navigation
+  ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("NAVIGATION", col, row); row += 18;
   ctx.fillStyle = "rgba(180,255,180,0.8)";
-  ctx.fillText("VEL  " + oe.v.toFixed(3) + " px/f", colX[0], rowY[1]);
-  ctx.fillText("Vx   " + sc.vx.toFixed(3), colX[0], rowY[2]);
-  ctx.fillText("Vy   " + sc.vy.toFixed(3), colX[0], rowY[3]);
-  ctx.fillText("RNG  " + oe.r.toFixed(1) + " px", colX[0], rowY[4]);
+  ctx.fillText("VEL " + oe.v.toFixed(3) + " px/f", col, row); row += 18;
+  ctx.fillText("Vx  " + sc.vx.toFixed(3), col, row); row += 18;
+  ctx.fillText("Vy  " + sc.vy.toFixed(3), col, row); row += 18;
+  ctx.fillText("RNG " + oe.r.toFixed(1) + " px", col, row); row += 18;
   if (inSOI) {
     var pp = pPos(planets[mission.inSOI], t);
     var dx = sc.rx - pp.rx, dy = sc.ry - pp.ry;
     var sd = Math.sqrt(dx*dx + dy*dy);
-    ctx.fillText("SOI  " + sd.toFixed(1) + "/" + planets[mission.inSOI].so, colX[0], rowY[5]);
+    ctx.fillText("SOI " + sd.toFixed(1) + "/" + planets[mission.inSOI].so, col, row); row += 18;
   }
 
-  // Col 1: Orbital Elements
-  ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("ORBIT" + (inSOI ? " (SOI)" : ""), colX[1], rowY[0]);
+  // Orbit
+  ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("ORBIT" + (inSOI ? " (SOI)" : ""), col, row); row += 18;
   ctx.fillStyle = "rgba(180,255,180,0.8)";
-  ctx.fillText("a    " + oe.a, colX[1], rowY[1]);
-  ctx.fillText("e    " + oe.e, colX[1], rowY[2]);
-  if (oe.T < Infinity) ctx.fillText("T    " + fmtTime(oe.T), colX[1], rowY[3]);
-  else ctx.fillText("T    ∞", colX[1], rowY[3]);
+  ctx.fillText("a   " + oe.a, col, row); row += 18;
+  ctx.fillText("e   " + oe.e, col, row); row += 18;
+  if (oe.T < Infinity) ctx.fillText("T   " + fmtTime(oe.T), col, row);
+  else ctx.fillText("T   ∞", col, row); row += 18;
   if (oe.eps < 0) {
-    ctx.fillText("rp   " + oe.rp.toFixed(1), colX[1], rowY[4]);
-    ctx.fillText("ra   " + oe.ra.toFixed(1), colX[1], rowY[5]);
+    ctx.fillText("rp  " + oe.rp.toFixed(1), col, row); row += 18;
+    ctx.fillText("ra  " + oe.ra.toFixed(1), col, row); row += 18;
   }
 
-  // Mission section
-  ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("MISSION", colX[0], rowY[6]);
+  // Mission
+  ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("MISSION", col, row); row += 18;
   ctx.fillStyle = "rgba(180,255,180,0.8)";
   var phaseStr = mission.phase.toUpperCase();
   if (inSOI) phaseStr += " [SOI:" + planets[mission.inSOI].n + "]";
-  ctx.fillText("PHASE " + phaseStr, colX[0], rowY[7]);
-  ctx.fillText("ΔV   " + totalDV.toFixed(3) + " px/f", colX[0], rowY[8]);
+  ctx.fillText("PHASE " + phaseStr, col, row); row += 18;
+  ctx.fillText("DV   " + totalDV.toFixed(3) + " px/f", col, row); row += 18;
   if (mission.target >= 0 && mission.target < planets.length) {
     var tp = pPos(planets[mission.target], t);
     var dx = tp.rx - sc.rx, dy = tp.ry - sc.ry;
-    ctx.fillText("TGT  " + planets[mission.target].n, colX[1], rowY[7]);
-    ctx.fillText("RNG  " + Math.round(Math.sqrt(dx*dx+dy*dy)) + " px", colX[1], rowY[8]);
+    ctx.fillText("TGT  " + planets[mission.target].n, col, row); row += 18;
+    ctx.fillText("RNG  " + Math.round(Math.sqrt(dx*dx+dy*dy)) + " px", col, row); row += 18;
   }
-  ctx.fillText("CRR  " + mission.correctionsLeft + " left", colX[0], rowY[9]);
-  ctx.fillText("FRP  " + mission.visited.length + "/" + planets.length, colX[1], rowY[9]);
+  ctx.fillText("CRR  " + mission.correctionsLeft + " left", col, row); row += 18;
+  ctx.fillText("FRP  " + mission.visited.length + "/" + planets.length, col, row); row += 8;
 
-  // Divider
-  var detailEnd = rowY[9] + 10;
   ctx.strokeStyle = "rgba(0,80,180,0.2)";
-  ctx.beginPath(); ctx.moveTo(px + 6, detailEnd); ctx.lineTo(px + pw - 6, detailEnd); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px + 8, row); ctx.lineTo(px + pw - 8, row); ctx.stroke(); row += 8;
 
   // Event log
-  var logY = detailEnd + 4;
+  ctx.font = "13px 'Courier New',monospace";
   ctx.fillStyle = "rgba(120,200,255,0.5)";
   ctx.textAlign = "left";
-  ctx.font = "9px 'Courier New',monospace";
-  ctx.fillText("EVENT LOG", colX[0], logY + 12);
+  ctx.fillText("EVENT LOG", col, row); row += 18;
 
-  var logTop = logY + 18;
+  var logTop = row;
   var logBottom = H - 20;
   ctx.save();
   ctx.beginPath();
-  ctx.rect(colX[0], logTop, pw - 24, logBottom - logTop);
+  ctx.rect(col, logTop, pw - 32, logBottom - logTop);
   ctx.clip();
 
-  var logStart = Math.max(0, eventLog.length - Math.floor((logBottom - logTop) / 13));
+  var logStart = Math.max(0, eventLog.length - Math.floor((logBottom - logTop) / 18));
   for (var i = logStart; i < eventLog.length; i++) {
     var ev = eventLog[i];
-    var yOff = logTop + (i - logStart) * 13;
-    var col;
+    var yOff = logTop + (i - logStart) * 18;
+    var col2;
     switch (ev.type) {
-      case 'launch': col = "#80ff80"; break;
-      case 'target': col = "#80d0ff"; break;
-      case 'correction': col = "#ffc060"; break;
-      case 'soi': col = "#60ffc0"; break;
-      case 'flyby': col = "#ffd080"; break;
-      default: col = "#c0c0d0";
+      case 'launch': col2 = "#80ff80"; break;
+      case 'target': col2 = "#80d0ff"; break;
+      case 'correction': col2 = "#ffc060"; break;
+      case 'soi': col2 = "#60ffc0"; break;
+      case 'flyby': col2 = "#ffd080"; break;
+      default: col2 = "#c0c0d0";
     }
-    ctx.fillStyle = col;
-    ctx.fillText("T+" + fmtTime(ev.t), colX[0], yOff);
-    ctx.fillText(ev.msg, colX[0] + 65, yOff);
+    ctx.fillStyle = col2;
+    ctx.fillText("T+" + fmtTime(ev.t), col, yOff);
+    ctx.fillText(ev.msg, col + 75, yOff);
   }
   ctx.restore();
 
+  // Predicted encounters
+  if (prediction.valid && prediction.encounters.length > 0) {
+    row = logBottom + 4;
+    ctx.font = "12px 'Courier New',monospace";
+    ctx.fillStyle = "rgba(120,200,255,0.5)";
+    ctx.fillText("UPCOMING", col, row); row += 16;
+    ctx.font = "11px 'Courier New',monospace";
+    for (var ei = 0; ei < Math.min(prediction.encounters.length, 5); ei++) {
+      var enc = prediction.encounters[ei];
+      if (enc.type === "enter") {
+        ctx.fillStyle = "rgba(100,255,200,0.6)";
+        ctx.fillText("→ " + planets[enc.planet].n + " SOI", col, row);
+      } else if (enc.type === "flyby") {
+        ctx.fillStyle = "rgba(255,200,100,0.6)";
+        ctx.fillText("✦ " + planets[enc.planet].n + " flyby", col, row);
+      } else {
+        ctx.fillStyle = "rgba(255,100,100,0.4)";
+        ctx.fillText("← " + planets[enc.planet].n + " exit", col, row);
+      }
+      row += 14;
+    }
+  }
+
   // Status bar
   ctx.fillStyle = "rgba(0,80,180,0.15)";
-  ctx.fillRect(px, H - 16, pw, 16);
-  ctx.font = "8px 'Courier New',monospace";
+  ctx.fillRect(px, H - 18, pw, 18);
+  ctx.font = "11px 'Courier New',monospace";
   ctx.fillStyle = "rgba(120,200,255,0.4)";
   ctx.textAlign = "left";
   var status = inSOI ? ("≈ " + planets[mission.inSOI].n + " SOI ≈") : "● SOLAR COAST";
-  ctx.fillText(status, colX[0], H - 4);
+  ctx.fillText(status, col, H - 5);
   ctx.textAlign = "right";
-  ctx.fillText("FLYBY: " + mission.visited.length + " | ΔV: " + totalDV.toFixed(2), px + pw - 12, H - 4);
+  ctx.fillText("FLY: " + mission.visited.length + " | DV: " + totalDV.toFixed(2), px + pw - 16, H - 5);
+}
+
+// --- Patched-conic prediction engine ---
+var prediction = { encounters: [], trajectory: [], valid: false };
+var predTimer = 0;
+
+function predictEncounters() {
+  var rx = sc.rx, ry = sc.ry, vx = sc.vx, vy = sc.vy;
+  var soi = mission.inSOI;
+  var t = time;
+  var dt = 80;
+  var maxSteps = 3000;
+  var encounters = [];
+  var trajectory = [];
+  var maxEnc = 5;
+
+  for (var step = 0; step < maxSteps; step++) {
+    t += dt;
+
+    // Find current SOI
+    var newSOI = -1;
+    for (var i = 0; i < planets.length; i++) {
+      var pp = pPos(planets[i], t);
+      var dx = rx - pp.rx, dy = ry - pp.ry;
+      if (Math.sqrt(dx*dx + dy*dy) < planets[i].so) { newSOI = i; break; }
+    }
+
+    // SOI change detection
+    if (newSOI !== soi) {
+      if (newSOI >= 0) {
+        var pp = pPos(planets[newSOI], t);
+        var dx = rx - pp.rx, dy = ry - pp.ry;
+        var dist = Math.sqrt(dx*dx + dy*dy);
+        encounters.push({ type: "enter", planet: newSOI, time: t, dist: dist });
+      } else {
+        encounters.push({ type: "exit", planet: soi, time: t });
+      }
+      soi = newSOI;
+      if (encounters.length >= maxEnc) break;
+    }
+
+    // Predict close approach within SOI
+    if (soi >= 0) {
+      var pp = pPos(planets[soi], t);
+      var dx = rx - pp.rx, dy = ry - pp.ry;
+      var dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < planets[soi].r * 3 && encounters.length > 0 &&
+          encounters[encounters.length-1].type !== "flyby") {
+        encounters.push({ type: "flyby", planet: soi, time: t, dist: dist });
+        if (encounters.length >= maxEnc) break;
+      }
+    }
+
+    // Integration step
+    var mu = soi >= 0 ? planets[soi].mu : MU;
+    if (soi >= 0) {
+      var pp = pPos(planets[soi], t);
+      var prx = rx - pp.rx, pry = ry - pp.ry;
+      var pr2 = prx*prx + pry*pry;
+      var pr3 = Math.max(1, pr2 * Math.sqrt(pr2));
+      var ax = -mu * prx / pr3, ay = -mu * pry / pr3;
+      vx += ax * dt / 2; vy += ay * dt / 2;
+      rx += vx * dt; ry += vy * dt;
+      pp = pPos(planets[soi], t);
+      prx = rx - pp.rx; pry = ry - pp.ry;
+      pr2 = prx*prx + pry*pry; pr3 = Math.max(1, pr2 * Math.sqrt(pr2));
+      ax = -mu * prx / pr3; ay = -mu * pry / pr3;
+      vx += ax * dt / 2; vy += ay * dt / 2;
+    } else {
+      var r2 = rx*rx + ry*ry;
+      var r3 = Math.max(1, r2 * Math.sqrt(r2));
+      var ax = -MU * rx / r3, ay = -MU * ry / r3;
+      vx += ax * dt / 2; vy += ay * dt / 2;
+      rx += vx * dt; ry += vy * dt;
+      r2 = rx*rx + ry*ry; r3 = Math.max(1, r2 * Math.sqrt(r2));
+      ax = -MU * rx / r3; ay = -MU * ry / r3;
+      vx += ax * dt / 2; vy += ay * dt / 2;
+    }
+
+    if (step % 10 === 0) {
+      trajectory.push({ x: sx + rx, y: sy + ry });
+    }
+
+    if (Math.sqrt(rx*rx + ry*ry) > 5000) break;
+  }
+
+  return { encounters: encounters, trajectory: trajectory };
+}
+
+function drawPrediction() {
+  if (!prediction.valid || prediction.trajectory.length < 2) return;
+  ctx.save();
+  ctx.setLineDash([3, 6]);
+  ctx.strokeStyle = "rgba(255, 200, 100, 0.12)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(prediction.trajectory[0].x, prediction.trajectory[0].y);
+  for (var i = 1; i < prediction.trajectory.length; i++) {
+    ctx.lineTo(prediction.trajectory[i].x, prediction.trajectory[i].y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // Mark encounter waypoints
+  for (var e of prediction.encounters) {
+    var idx = Math.min(Math.floor((e.time - time) / 80 / 10), prediction.trajectory.length - 1);
+    if (idx >= 0 && idx < prediction.trajectory.length) {
+      var pt = prediction.trajectory[idx];
+      ctx.fillStyle = e.type === "enter" ? "rgba(100,255,200,0.3)" :
+                      e.type === "flyby" ? "rgba(255,200,100,0.4)" :
+                      "rgba(255,100,100,0.2)";
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2); ctx.fill();
+    }
+  }
 }
 
 // --- Special dates ---
@@ -577,7 +738,7 @@ var time = 0;
 var launched = false;
 
 function animate() {
-  time += timeSpeed;
+  time++;
 
   ctx.fillStyle = "#03040c";
   ctx.fillRect(0,0,W,H);
@@ -589,14 +750,29 @@ function animate() {
   // Physics
   if (mission.phase !== "idle") {
     // Adjust dt for SOI accuracy
-    var dt = timeSpeed;
-    if (mission.inSOI >= 0) dt = 0.3 * timeSpeed;
+    var dt = 1;
+    if (mission.inSOI >= 0) dt = 0.3;
     else if (mission.target >= 0) {
       var tp = pPos(planets[mission.target], time);
       var dx = tp.rx - sc.rx, dy = tp.ry - sc.ry;
-      if (Math.sqrt(dx*dx+dy*dy) < 80 * orScale) dt = 0.5 * timeSpeed;
+      if (Math.sqrt(dx*dx+dy*dy) < 80 * orScale) dt = 0.5;
     }
     integrate(time, dt);
+
+    // Finite burn application
+    if (burn.active) {
+      var applyDV = Math.min(burn.rate, burn.remaining);
+      sc.vx += burn.dvx / burn.remaining * applyDV;
+      sc.vy += burn.dvy / burn.remaining * applyDV;
+      totalDV += applyDV;
+      burn.remaining -= applyDV;
+      emit(sx+sc.rx + (Math.random()-0.5)*4, sy+sc.ry + (Math.random()-0.5)*4, 1, 30, 0.5);
+      if (burn.remaining <= 0.001) {
+        burn.active = false;
+        mission.phase = "coast";
+        logEvent('burn', "Burn complete (Δv=" + totalDV.toFixed(3) + ")");
+      }
+    }
 
     // Course corrections
     var elapsed = time - mission.legStart;
@@ -662,6 +838,7 @@ function animate() {
   drawOrbits(); drawSOI(); drawSun();
   for (var p of planets) drawPlanet(p, time);
   drawTrail();
+  drawPrediction();
   if (mission.phase !== "idle") {
     drawFutureArc(time);
     drawTargetRing(time);
@@ -678,6 +855,13 @@ function animate() {
   }
 
   drawHUD(time);
+
+  // Periodic prediction update (every 30 frames)
+  predTimer++;
+  if (predTimer % 30 === 0 && mission.phase !== "idle") {
+    prediction = predictEncounters();
+    prediction.valid = true;
+  }
 
   // Special date overlay
   var dc = getDateHex();
