@@ -19,6 +19,7 @@ var orScale = Math.min(W / baseW, H / baseH);
 
 // --- Constants ---
 var MU = 120;
+var timeSpeed = 3;
 
 // --- Stars ---
 var starCols = ["white","aliceBlue","powderBlue","azure","moccasin","sandyBrown","coral"];
@@ -209,9 +210,12 @@ function pickTarget(idx, visited, t) {
 function launch(t) {
   var ep = pPos(planets[2], t);
   var ev = pVel(planets[2], t);
-  sc.rx = ep.rx; sc.ry = ep.ry;
-  sc.vx = ev.vx + 0.3; sc.vy = ev.vy - 0.2;
-  totalDV = 0.36;
+  var dvx = 0.8, dvy = -0.6;
+  var dvm = Math.sqrt(dvx*dvx + dvy*dvy);
+  sc.rx = ep.rx + planets[2].r * dvx / dvm;
+  sc.ry = ep.ry + planets[2].r * dvy / dvm;
+  sc.vx = ev.vx + dvx; sc.vy = ev.vy + dvy;
+  totalDV = Math.sqrt(dvx*dvx + dvy*dvy);
   mission.phase = "coast"; mission.legStart = t; mission.prevPlanet = 2;
   mission.visited = [2]; mission.correctionsLeft = 2; mission.inSOI = -1;
   mission.flybyCooldown = 0;
@@ -437,108 +441,99 @@ function fmtTime(tt) {
 }
 
 function drawHUD(t) {
-  var ph = H - 130, pw = W, phh = 130;
+  var pw = 340, px = W - pw;
   // Panel background
-  ctx.fillStyle = "rgba(0,6,18,0.75)";
-  ctx.fillRect(0, ph, pw, phh);
-  ctx.strokeStyle = "rgba(0,80,180,0.3)";
+  ctx.fillStyle = "rgba(0,6,18,0.82)";
+  ctx.fillRect(px, 0, pw, H);
+  ctx.strokeStyle = "rgba(0,80,180,0.25)";
   ctx.lineWidth = 1;
-  ctx.strokeRect(0, ph, pw, phh);
+  ctx.strokeRect(px, 0, pw, H);
 
-  // Header line
   ctx.font = "bold 11px 'Courier New',monospace";
-  ctx.fillStyle = "rgba(80,180,255,0.7)";
+
+  // Header
   ctx.textAlign = "left";
-  ctx.fillText("MISSION CONTROL  •  KSP-1", 15, ph+16);
+  ctx.fillStyle = "rgba(80,180,255,0.7)";
+  ctx.fillText("MISSION CONTROL", px + 12, 16);
   ctx.textAlign = "right";
-  ctx.fillText("T+" + fmtTime(t), pw-15, ph+16);
+  ctx.fillText("T+" + fmtTime(t), px + pw - 12, 16);
 
   // Divider
   ctx.strokeStyle = "rgba(0,80,180,0.2)";
-  ctx.beginPath(); ctx.moveTo(0,ph+22); ctx.lineTo(pw,ph+22); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px + 6, 24); ctx.lineTo(px + pw - 6, 24); ctx.stroke();
 
   var oe = orbitalElements(sc.rx, sc.ry, sc.vx, sc.vy, mission.inSOI >= 0 ? planets[mission.inSOI].mu : MU);
   var inSOI = mission.inSOI >= 0;
 
-  // --- Telemetry columns ---
   ctx.font = "9px 'Courier New',monospace";
-  var colX = [15, 210, 400, 590, 780];
-  var rowY = [ph+30, ph+44, ph+58, ph+72, ph+86, ph+100, ph+114];
+  var colX = [px + 12, px + 170];
+  var rowY = [36, 50, 64, 78, 92, 106, 120, 134, 148, 162];
 
-  // Col 0: Velocity & Navigation
-  ctx.fillStyle = "rgba(120,200,255,0.5)";
-  ctx.fillText("NAVIGATION", colX[0], rowY[0]);
+  // Col 0: Navigation
+  ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("NAVIGATION", colX[0], rowY[0]);
   ctx.fillStyle = "rgba(180,255,180,0.8)";
   ctx.fillText("VEL  " + oe.v.toFixed(3) + " px/f", colX[0], rowY[1]);
   ctx.fillText("Vx   " + sc.vx.toFixed(3), colX[0], rowY[2]);
   ctx.fillText("Vy   " + sc.vy.toFixed(3), colX[0], rowY[3]);
   ctx.fillText("RNG  " + oe.r.toFixed(1) + " px", colX[0], rowY[4]);
+  if (inSOI) {
+    var pp = pPos(planets[mission.inSOI], t);
+    var dx = sc.rx - pp.rx, dy = sc.ry - pp.ry;
+    var sd = Math.sqrt(dx*dx + dy*dy);
+    ctx.fillText("SOI  " + sd.toFixed(1) + "/" + planets[mission.inSOI].so, colX[0], rowY[5]);
+  }
 
   // Col 1: Orbital Elements
-  ctx.fillStyle = "rgba(120,200,255,0.5)";
-  ctx.fillText("ORBIT" + (inSOI ? " (SOI)" : ""), colX[1], rowY[0]);
+  ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("ORBIT" + (inSOI ? " (SOI)" : ""), colX[1], rowY[0]);
   ctx.fillStyle = "rgba(180,255,180,0.8)";
   ctx.fillText("a    " + oe.a, colX[1], rowY[1]);
   ctx.fillText("e    " + oe.e, colX[1], rowY[2]);
-  if (oe.T < Infinity) {
-    ctx.fillText("T    " + fmtTime(oe.T), colX[1], rowY[3]);
-  } else {
-    ctx.fillText("T    ∞", colX[1], rowY[3]);
-  }
+  if (oe.T < Infinity) ctx.fillText("T    " + fmtTime(oe.T), colX[1], rowY[3]);
+  else ctx.fillText("T    ∞", colX[1], rowY[3]);
   if (oe.eps < 0) {
     ctx.fillText("rp   " + oe.rp.toFixed(1), colX[1], rowY[4]);
     ctx.fillText("ra   " + oe.ra.toFixed(1), colX[1], rowY[5]);
   }
 
-  // Col 2: Mission Status
-  ctx.fillStyle = "rgba(120,200,255,0.5)";
-  ctx.fillText("MISSION", colX[2], rowY[0]);
+  // Mission section
+  ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("MISSION", colX[0], rowY[6]);
   ctx.fillStyle = "rgba(180,255,180,0.8)";
   var phaseStr = mission.phase.toUpperCase();
   if (inSOI) phaseStr += " [SOI:" + planets[mission.inSOI].n + "]";
-  ctx.fillText("PHASE " + phaseStr, colX[2], rowY[1]);
-  ctx.fillText("ΔV   " + totalDV.toFixed(3) + " px/f", colX[2], rowY[2]);
+  ctx.fillText("PHASE " + phaseStr, colX[0], rowY[7]);
+  ctx.fillText("ΔV   " + totalDV.toFixed(3) + " px/f", colX[0], rowY[8]);
   if (mission.target >= 0 && mission.target < planets.length) {
-    ctx.fillText("TGT  " + planets[mission.target].n, colX[2], rowY[3]);
     var tp = pPos(planets[mission.target], t);
     var dx = tp.rx - sc.rx, dy = tp.ry - sc.ry;
-    ctx.fillText("RNG  " + Math.round(Math.sqrt(dx*dx+dy*dy)) + " px", colX[2], rowY[4]);
+    ctx.fillText("TGT  " + planets[mission.target].n, colX[1], rowY[7]);
+    ctx.fillText("RNG  " + Math.round(Math.sqrt(dx*dx+dy*dy)) + " px", colX[1], rowY[8]);
   }
-  ctx.fillText("CRR  " + mission.correctionsLeft + " left", colX[2], rowY[5]);
-  ctx.fillText("FRP  " + mission.visited.length + "/" + planets.length, colX[2], rowY[6]);
+  ctx.fillText("CRR  " + mission.correctionsLeft + " left", colX[0], rowY[9]);
+  ctx.fillText("FRP  " + mission.visited.length + "/" + planets.length, colX[1], rowY[9]);
 
-  // Col 3: Energy / Angular momentum
-  ctx.fillStyle = "rgba(120,200,255,0.5)";
-  ctx.fillText("DYNAMICS", colX[3], rowY[0]);
-  ctx.fillStyle = "rgba(180,255,180,0.8)";
-  ctx.fillText("ε    " + oe.eps.toFixed(4), colX[3], rowY[1]);
-  ctx.fillText("h    " + oe.h.toFixed(2), colX[3], rowY[2]);
-  ctx.fillText("μ    " + (inSOI ? planets[mission.inSOI].mu.toFixed(2) : MU.toFixed(0)), colX[3], rowY[3]);
+  // Divider
+  var detailEnd = rowY[9] + 10;
+  ctx.strokeStyle = "rgba(0,80,180,0.2)";
+  ctx.beginPath(); ctx.moveTo(px + 6, detailEnd); ctx.lineTo(px + pw - 6, detailEnd); ctx.stroke();
 
-  // SOI info
-  if (inSOI) {
-    var pp = pPos(planets[mission.inSOI], t);
-    var dx = sc.rx - pp.rx, dy = sc.ry - pp.ry;
-    var sd = Math.sqrt(dx*dx + dy*dy);
-    ctx.fillText("SOI  " + sd.toFixed(1) + "/" + planets[mission.inSOI].so, colX[3], rowY[4]);
-  }
-
-  // --- Event log (right side) ---
-  var logX = 1000, logW = pw - logX - 15;
+  // Event log
+  var logY = detailEnd + 4;
   ctx.fillStyle = "rgba(120,200,255,0.5)";
   ctx.textAlign = "left";
   ctx.font = "9px 'Courier New',monospace";
-  ctx.fillText("EVENT LOG", logX, rowY[0]);
+  ctx.fillText("EVENT LOG", colX[0], logY + 12);
 
+  var logTop = logY + 18;
+  var logBottom = H - 20;
   ctx.save();
   ctx.beginPath();
-  ctx.rect(logX, rowY[1] - 2, logW, phh - (rowY[1] - ph + 2) - 4);
+  ctx.rect(colX[0], logTop, pw - 24, logBottom - logTop);
   ctx.clip();
 
-  var logStart = Math.max(0, eventLog.length - 8);
+  var logStart = Math.max(0, eventLog.length - Math.floor((logBottom - logTop) / 13));
   for (var i = logStart; i < eventLog.length; i++) {
     var ev = eventLog[i];
-    var yOff = rowY[1] + (i - logStart) * 13;
+    var yOff = logTop + (i - logStart) * 13;
     var col;
     switch (ev.type) {
       case 'launch': col = "#80ff80"; break;
@@ -549,25 +544,21 @@ function drawHUD(t) {
       default: col = "#c0c0d0";
     }
     ctx.fillStyle = col;
-    ctx.fillText("T+" + fmtTime(ev.t), logX, yOff);
-    ctx.fillText(ev.msg, logX + 60, yOff);
+    ctx.fillText("T+" + fmtTime(ev.t), colX[0], yOff);
+    ctx.fillText(ev.msg, colX[0] + 65, yOff);
   }
   ctx.restore();
 
-  // --- Quick status bar ---
-  ctx.fillStyle = "rgba(0,80,180,0.2)";
-  ctx.fillRect(0, ph-16, pw, 16);
+  // Status bar
+  ctx.fillStyle = "rgba(0,80,180,0.15)";
+  ctx.fillRect(px, H - 16, pw, 16);
   ctx.font = "8px 'Courier New',monospace";
   ctx.fillStyle = "rgba(120,200,255,0.4)";
   ctx.textAlign = "left";
   var status = inSOI ? ("≈ " + planets[mission.inSOI].n + " SOI ≈") : "● SOLAR COAST";
-  ctx.fillText(status, 15, ph-4);
-  ctx.textAlign = "center";
-  ctx.fillText("FLYBY COUNT: " + mission.visited.length + "  |  ΔV: " + totalDV.toFixed(2) + "  |  TGT: " +
-    (mission.target >= 0 ? planets[mission.target].n : "NONE"), pw/2, ph-4);
+  ctx.fillText(status, colX[0], H - 4);
   ctx.textAlign = "right";
-  var corrStatus = mission.correctionsLeft > 0 ? "CRR AVL" : "CRR DONE";
-  ctx.fillText(corrStatus, pw-15, ph-4);
+  ctx.fillText("FLYBY: " + mission.visited.length + " | ΔV: " + totalDV.toFixed(2), px + pw - 12, H - 4);
 }
 
 // --- Special dates ---
@@ -586,7 +577,7 @@ var time = 0;
 var launched = false;
 
 function animate() {
-  time++;
+  time += timeSpeed;
 
   ctx.fillStyle = "#03040c";
   ctx.fillRect(0,0,W,H);
@@ -598,12 +589,12 @@ function animate() {
   // Physics
   if (mission.phase !== "idle") {
     // Adjust dt for SOI accuracy
-    var dt = 1;
-    if (mission.inSOI >= 0) dt = 0.3;
+    var dt = timeSpeed;
+    if (mission.inSOI >= 0) dt = 0.3 * timeSpeed;
     else if (mission.target >= 0) {
       var tp = pPos(planets[mission.target], time);
       var dx = tp.rx - sc.rx, dy = tp.ry - sc.ry;
-      if (Math.sqrt(dx*dx+dy*dy) < 80) dt = 0.5;
+      if (Math.sqrt(dx*dx+dy*dy) < 80 * orScale) dt = 0.5 * timeSpeed;
     }
     integrate(time, dt);
 
