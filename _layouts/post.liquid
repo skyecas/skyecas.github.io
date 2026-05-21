@@ -61,6 +61,51 @@ layout: default
     </p>
   </header>
 
+  {% assign prev_post = nil %}
+  {% assign next_post = nil %}
+  {% assign found_current = false %}
+  {% for p in site.posts reversed %}
+    {% if p.url == page.url %}
+      {% assign found_current = true %}
+      {% continue %}
+    {% endif %}
+    {% unless found_current %}
+      {% assign match = false %}
+      {% for cat in p.categories %}
+        {% if page.categories contains cat %}{% assign match = true %}{% endif %}
+      {% endfor %}
+      {% if match %}{% assign prev_post = p %}{% endif %}
+    {% else %}
+      {% if next_post == nil %}
+        {% assign match = false %}
+        {% for cat in p.categories %}
+          {% if page.categories contains cat %}{% assign match = true %}{% endif %}
+        {% endfor %}
+        {% if match %}{% assign next_post = p %}{% endif %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+
+  {% if prev_post or next_post %}
+    <nav aria-label="Post navigation" class="post-nav-top">
+      <ul class="pagination pagination-lg justify-content-between">
+        <li class="page-item {% unless prev_post %}disabled{% endunless %}">
+          <a class="page-link" href="{{ prev_post.url | relative_url }}" tabindex="-1">
+            <span class="nav-arrow">&larr;</span>
+            <span class="nav-title">{{ prev_post.title | truncatewords: 5 }}</span>
+          </a>
+        </li>
+        <li class="page-item {% unless next_post %}disabled{% endunless %}">
+          <a class="page-link" href="{{ next_post.url | relative_url }}">
+            <span class="nav-title">{{ next_post.title | truncatewords: 5 }}</span>
+            <span class="nav-arrow">&rarr;</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+    <hr>
+  {% endif %}
+
   <article class="post-content">
     {% if page.toc and page.toc.beginning %}
       <div id="table-of-contents">
@@ -90,18 +135,20 @@ layout: default
     {% endif %}
   {% endif %}
 
-  {% if page.previous or page.next %}
+  {% if prev_post or next_post %}
     <hr>
     <nav aria-label="Post navigation">
       <ul class="pagination pagination-lg justify-content-between">
-        <li class="page-item {% unless page.previous %}disabled{% endunless %}">
-          <a class="page-link" href="{{ page.previous.url | relative_url }}" tabindex="-1">
-            &larr; {{ page.previous.title | truncatewords: 5 }}
+        <li class="page-item {% unless prev_post %}disabled{% endunless %}">
+          <a class="page-link" href="{{ prev_post.url | relative_url }}" tabindex="-1">
+            <span class="nav-arrow">&larr;</span>
+            <span class="nav-title">{{ prev_post.title | truncatewords: 5 }}</span>
           </a>
         </li>
-        <li class="page-item {% unless page.next %}disabled{% endunless %}">
-          <a class="page-link" href="{{ page.next.url | relative_url }}">
-            {{ page.next.title | truncatewords: 5 }} &rarr;
+        <li class="page-item {% unless next_post %}disabled{% endunless %}">
+          <a class="page-link" href="{{ next_post.url | relative_url }}">
+            <span class="nav-title">{{ next_post.title | truncatewords: 5 }}</span>
+            <span class="nav-arrow">&rarr;</span>
           </a>
         </li>
       </ul>

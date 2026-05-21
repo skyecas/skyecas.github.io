@@ -30,31 +30,21 @@ pagination:
   {% endif %}
 
 {% if site.display_tags or site.display_categories %}
-
+  {% assign sorted_tags = site.display_tags | sort %}
+  {% assign sorted_categories = site.display_categories | sort %}
   <div class="tag-category-list">
-    <ul class="p-0 m-0">
-      {% for tag in site.display_tags %}
-        <li>
-          <i class="fa-solid fa-hashtag fa-sm"></i> <a href="{{ tag | slugify | prepend: '/blog/tag/' | relative_url }}">{{ tag }}</a>
-        </li>
-        {% unless forloop.last %}
-          <p>&bull;</p>
-        {% endunless %}
-      {% endfor %}
-      {% if site.display_categories.size > 0 and site.display_tags.size > 0 %}
-        <p>&bull;</p>
-      {% endif %}
-      {% for category in site.display_categories %}
-        <li>
-          <i class="fa-solid fa-tag fa-sm"></i> <a href="{{ category | slugify | prepend: '/blog/category/' | relative_url }}">{{ category }}</a>
-        </li>
-        {% unless forloop.last %}
-          <p>&bull;</p>
-        {% endunless %}
-      {% endfor %}
-    </ul>
+    {% for tag in sorted_tags %}
+      <a class="tag-badge" href="{{ tag | slugify | prepend: '/blog/tag/' | relative_url }}">
+        <i class="fa-solid fa-hashtag fa-sm"></i> {{ tag }}
+      </a>
+    {% endfor %}
+    {% for category in sorted_categories %}
+      <a class="tag-badge tag-badge-category" href="{{ category | slugify | prepend: '/blog/category/' | relative_url }}">
+        <i class="fa-solid fa-tag fa-sm"></i> {{ category }}
+      </a>
+    {% endfor %}
   </div>
-  {% endif %}
+{% endif %}
 
 {% assign featured_posts = site.posts | where: "featured", "true" %}
 {% if featured_posts.size > 0 %}

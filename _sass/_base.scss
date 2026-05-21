@@ -262,6 +262,7 @@ ul.task-list input[type="checkbox"] {
 .navbar {
   box-shadow: none;
   border-bottom: 1px solid var(--global-divider-color);
+  background-color: var(--global-bg-color);
 }
 
 .navbar .dropdown-menu {
@@ -384,6 +385,12 @@ ul.task-list input[type="checkbox"] {
   align-items: center;
 }
 
+@media (max-width: 575.98px) {
+  .toggle-container {
+    justify-content: flex-end;
+  }
+}
+
 #light-toggle,
 #search-toggle {
   padding: 0;
@@ -401,6 +408,27 @@ ul.task-list input[type="checkbox"] {
   line-height: inherit;
 }
 
+// Post navigation arrows
+
+.pagination > li > .page-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination > li:first-child > .page-link {
+  justify-content: space-between;
+}
+
+.pagination > li:last-child > .page-link {
+  justify-content: space-between;
+}
+
+.nav-arrow {
+  font-size: 1.2em;
+  flex-shrink: 0;
+}
+
 // Profile gallery
 
 .profile-gallery {
@@ -413,7 +441,6 @@ ul.task-list input[type="checkbox"] {
 .profile-gallery > a,
 .profile-gallery > img {
   flex: 1 1 calc(25% - 10px);
-  max-width: calc(25% - 10px);
 }
 
 .profile-gallery > a {
@@ -426,6 +453,40 @@ ul.task-list input[type="checkbox"] {
   height: 100%;
   object-fit: cover;
   aspect-ratio: 6 / 13;
+}
+
+// Tag/category list on blog page
+
+.tag-category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 1rem;
+  font-size: 0.85rem;
+  color: var(--global-text-color);
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    color: var(--global-hover-text-color);
+    background-color: var(--global-theme-color);
+    border-color: var(--global-theme-color);
+    text-decoration: none;
+  }
+}
+
+.tag-badge-category {
+  border-style: dashed;
 }
 
 // Social (bottom)
@@ -750,7 +811,7 @@ footer.sticky-bottom {
     }
 
     &.active .page-link {
-      color: $white-color;
+      color: var(--global-hover-text-color);
       background-color: var(--global-theme-color);
 
       &:hover {
