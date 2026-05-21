@@ -11,11 +11,16 @@ var requestAnimFrame = (function(){
 
 var background = document.getElementById("bgCanvas"),
     bgCtx = background.getContext("2d"),
-    width = window.innerWidth,
-    height = window.innerHeight;
+    rawWidth = window.innerWidth,
+    rawHeight = window.innerHeight;
 
-background.width = width;
-background.height = height;
+background.width = rawWidth;
+background.height = rawHeight;
+
+var sx = rawWidth / 1920, sy = rawHeight / 1080;
+var width = 1920, height = 1080;
+var scale = Math.min(sx, sy);
+var ox = (rawWidth - 1920 * scale) / 2, oy = (rawHeight - 1080 * scale) / 2;
 
 var starColours = ["white", "aliceBlue", "powderBlue", "azure", "moccasin"];
 
@@ -421,6 +426,8 @@ function drawLandscape() {
 
 function animate() {
   time++;
+
+  bgCtx.setTransform(scale, 0, 0, scale, ox, oy);
 
   var skyGrad = bgCtx.createLinearGradient(0, 0, 0, height * 0.85);
   skyGrad.addColorStop(0, "#08081a");

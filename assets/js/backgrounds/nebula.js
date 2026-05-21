@@ -11,11 +11,18 @@ var requestAnimFrame = (function(){
 
 var background = document.getElementById("bgCanvas"),
     bgCtx = background.getContext("2d"),
-    width = window.innerWidth,
-    height = window.innerHeight;
+    rawWidth = window.innerWidth,
+    rawHeight = window.innerHeight;
 
-background.width = width;
-background.height = height;
+background.width = rawWidth;
+background.height = rawHeight;
+
+var sx = rawWidth / 1920, sy = rawHeight / 1080;
+var width = 1920, height = 1080;
+var scale = Math.min(sx, sy);
+var ox = (rawWidth - 1920 * scale) / 2, oy = (rawHeight - 1080 * scale) / 2;
+
+var nebulaMult = 2.5;
 
 function lerp(a, b, t) { return a + (b - a) * t; }
 
@@ -86,7 +93,7 @@ DustLane.prototype.update = function(t) {
 
   var segments = 40;
   var segW = this.width / segments;
-  bgCtx.fillStyle = "rgba(2, 2, 8, 0.15)";
+  bgCtx.fillStyle = "rgba(2, 2, 8, 0.3)";
   bgCtx.beginPath();
   bgCtx.moveTo(0, 0);
   for (var i = 0; i <= segments; i++) {
@@ -98,7 +105,7 @@ DustLane.prototype.update = function(t) {
   bgCtx.closePath();
   bgCtx.fill();
 
-  bgCtx.fillStyle = "rgba(2, 2, 8, 0.1)";
+  bgCtx.fillStyle = "rgba(2, 2, 8, 0.2)";
   bgCtx.beginPath();
   bgCtx.moveTo(0, this.height * 0.3);
   for (var i = 0; i <= segments; i++) {
@@ -124,17 +131,17 @@ var dustLanes = [
 
 function drawNebulaGas(t) {
   var centres = [
-    { x: 500, y: 350, rx: 450, ry: 300, colours: ["rgba(180, 40, 200, 0.04)", "rgba(120, 20, 160, 0.07)", "rgba(60, 10, 100, 0.03)"], speed: 0.00008, phase: 0 },
-    { x: 900, y: 500, rx: 500, ry: 350, colours: ["rgba(30, 80, 200, 0.03)", "rgba(20, 50, 160, 0.06)", "rgba(10, 20, 100, 0.02)"], speed: -0.00006, phase: 1.5 },
-    { x: 700, y: 350, rx: 350, ry: 250, colours: ["rgba(255, 80, 120, 0.03)", "rgba(200, 40, 80, 0.06)", "rgba(140, 20, 60, 0.02)"], speed: 0.0001, phase: -0.8 },
-    { x: 1100, y: 650, rx: 400, ry: 250, colours: ["rgba(200, 140, 40, 0.02)", "rgba(160, 100, 20, 0.04)", "rgba(100, 60, 10, 0.02)"], speed: -0.00005, phase: 2.5 },
-    { x: 400, y: 700, rx: 350, ry: 200, colours: ["rgba(40, 180, 160, 0.02)", "rgba(20, 140, 120, 0.04)", "rgba(10, 90, 80, 0.02)"], speed: 0.00007, phase: -1.5 },
-    { x: 1300, y: 350, rx: 300, ry: 350, colours: ["rgba(130, 40, 220, 0.02)", "rgba(90, 20, 180, 0.04)", "rgba(50, 10, 120, 0.02)"], speed: -0.00009, phase: 0.5 },
+    { x: 500, y: 350, rx: 450, ry: 300, colours: ["rgba(180, 40, 200, 0.1)", "rgba(120, 20, 160, 0.18)", "rgba(60, 10, 100, 0.08)"], speed: 0.00008, phase: 0 },
+    { x: 900, y: 500, rx: 500, ry: 350, colours: ["rgba(30, 80, 200, 0.08)", "rgba(20, 50, 160, 0.15)", "rgba(10, 20, 100, 0.05)"], speed: -0.00006, phase: 1.5 },
+    { x: 700, y: 350, rx: 350, ry: 250, colours: ["rgba(255, 80, 120, 0.08)", "rgba(200, 40, 80, 0.15)", "rgba(140, 20, 60, 0.05)"], speed: 0.0001, phase: -0.8 },
+    { x: 1100, y: 650, rx: 400, ry: 250, colours: ["rgba(200, 140, 40, 0.05)", "rgba(160, 100, 20, 0.1)", "rgba(100, 60, 10, 0.05)"], speed: -0.00005, phase: 2.5 },
+    { x: 400, y: 700, rx: 350, ry: 200, colours: ["rgba(40, 180, 160, 0.05)", "rgba(20, 140, 120, 0.1)", "rgba(10, 90, 80, 0.05)"], speed: 0.00007, phase: -1.5 },
+    { x: 1300, y: 350, rx: 300, ry: 350, colours: ["rgba(130, 40, 220, 0.05)", "rgba(90, 20, 180, 0.1)", "rgba(50, 10, 120, 0.05)"], speed: -0.00009, phase: 0.5 },
   ];
 
   var blurred = document.createElement("canvas");
-  blurred.width = width;
-  blurred.height = height;
+  blurred.width = 1920;
+  blurred.height = 1080;
   var bCtx = blurred.getContext("2d");
 
   for (var c of centres) {
@@ -161,9 +168,9 @@ function drawNebulaGas(t) {
 function drawBrightCore(t) {
   var pulse = Math.sin(t * 0.005) * 0.2 + 0.8;
   var cores = [
-    { x: 650, y: 380, r: 80, colour: "rgba(200, 150, 255, " + pulse * 0.06 + ")" },
-    { x: 850, y: 520, r: 60, colour: "rgba(100, 200, 255, " + pulse * 0.05 + ")" },
-    { x: 500, y: 300, r: 100, colour: "rgba(255, 150, 200, " + pulse * 0.04 + ")" },
+    { x: 650, y: 380, r: 80, colour: "rgba(200, 150, 255, " + pulse * 0.18 + ")" },
+    { x: 850, y: 520, r: 60, colour: "rgba(100, 200, 255, " + pulse * 0.15 + ")" },
+    { x: 500, y: 300, r: 100, colour: "rgba(255, 150, 200, " + pulse * 0.12 + ")" },
   ];
   for (var c of cores) {
     var grad = bgCtx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
@@ -191,6 +198,8 @@ function getDateRGB() {
 
 function animate() {
   time++;
+
+  bgCtx.setTransform(scale, 0, 0, scale, ox, oy);
 
   bgCtx.fillStyle = "#030308";
   bgCtx.fillRect(0, 0, width, height);

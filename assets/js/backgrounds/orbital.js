@@ -12,6 +12,11 @@ var c = document.getElementById("bgCanvas"),
     W = window.innerWidth, H = window.innerHeight;
 c.width = W; c.height = H;
 
+// --- Scene center ---
+var sx = W / 2, sy = H / 2;
+var baseW = 1920, baseH = 1080;
+var orScale = Math.min(W / baseW, H / baseH);
+
 // --- Constants ---
 var MU = 120;
 
@@ -74,13 +79,12 @@ function kepVel(a, e, w, M0, t) {
 }
 
 // --- Planets (sun-relative coords) ---
-var sx = 960, sy = 540;
 var planets = [
-  { n:"Mercury", a:100, e:0.2056, w:1.35, M0:4.0, r:5,  col:"#b0a894", so:15, mu:0.2 },
-  { n:"Venus",   a:170, e:0.0068, w:2.30, M0:1.2, r:9,  col:"#e8c880", so:25, mu:0.8 },
-  { n:"Earth",   a:240, e:0.0167, w:3.12, M0:0.5, r:11, col:"#4a9bd7", so:30, mu:1.0 },
-  { n:"Mars",    a:330, e:0.0934, w:0.87, M0:3.8, r:8,  col:"#c05030", so:20, mu:0.5 },
-  { n:"Jupiter", a:520, e:0.0484, w:4.52, M0:2.1, r:21, col:"#d4a06a", so:60, mu:5.0 },
+  { n:"Mercury", a:100, e:0.2056, w:1.35, M0:4.0, r:5*orScale,  col:"#b0a894", so:15*orScale, mu:0.2 },
+  { n:"Venus",   a:170, e:0.0068, w:2.30, M0:1.2, r:9*orScale,  col:"#e8c880", so:25*orScale, mu:0.8 },
+  { n:"Earth",   a:240, e:0.0167, w:3.12, M0:0.5, r:11*orScale, col:"#4a9bd7", so:30*orScale, mu:1.0 },
+  { n:"Mars",    a:330, e:0.0934, w:0.87, M0:3.8, r:8*orScale,  col:"#c05030", so:20*orScale, mu:0.5 },
+  { n:"Jupiter", a:520, e:0.0484, w:4.52, M0:2.1, r:21*orScale, col:"#d4a06a", so:60*orScale, mu:5.0 },
 ];
 
 function pPos(p, t) { return kepToCart(p.a, p.e, p.w, p.M0, t); }
@@ -309,13 +313,14 @@ function emit(x, y, n, hue, spd) {
 
 // --- Drawing ---
 function drawSun() {
-  var g = ctx.createRadialGradient(sx,sy,0,sx,sy,100);
+  var r1 = 100 * orScale, r2 = 30 * orScale;
+  var g = ctx.createRadialGradient(sx,sy,0,sx,sy,r1);
   g.addColorStop(0,"rgba(255,240,200,0.6)"); g.addColorStop(0.15,"rgba(255,220,150,0.3)");
   g.addColorStop(0.4,"rgba(255,180,80,0.08)"); g.addColorStop(1,"rgba(255,150,50,0)");
-  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sx,sy,100,0,Math.PI*2); ctx.fill();
-  var g2 = ctx.createRadialGradient(sx-8,sy-8,0,sx,sy,30);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sx,sy,r1,0,Math.PI*2); ctx.fill();
+  var g2 = ctx.createRadialGradient(sx-8*orScale,sy-8*orScale,0,sx,sy,r2);
   g2.addColorStop(0,"#fff8e0"); g2.addColorStop(0.5,"#ffdd66"); g2.addColorStop(1,"#ff8800");
-  ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(sx,sy,30,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(sx,sy,r2,0,Math.PI*2); ctx.fill();
 }
 
 function drawOrbits() {
@@ -386,8 +391,9 @@ function drawFutureArc(t) {
 
 function drawSC() {
   var cx = sx+sc.rx, cy = sy+sc.ry;
+  var sr = 18 * orScale;
   ctx.fillStyle = "rgba(100,200,255,0.15)";
-  ctx.beginPath(); ctx.arc(cx,cy,18,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,sr,0,Math.PI*2); ctx.fill();
   ctx.save(); ctx.translate(cx,cy);
   var ang = Math.atan2(sc.vy, sc.vx);
   ctx.rotate(ang);
@@ -431,7 +437,7 @@ function fmtTime(tt) {
 }
 
 function drawHUD(t) {
-  var ph = 950, pw = W, phh = 130;
+  var ph = H - 130, pw = W, phh = 130;
   // Panel background
   ctx.fillStyle = "rgba(0,6,18,0.75)";
   ctx.fillRect(0, ph, pw, phh);
