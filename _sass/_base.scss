@@ -65,6 +65,13 @@ table.table a {
   margin-top: -56px;
 }
 
+.content {
+  background-color: var(--global-bg-color);
+  border-radius: 2rem !important;
+  margin-bottom: 100px;
+  padding-bottom: 1em;
+}
+
 blockquote {
   background: var(--global-bg-color);
   border-left: 5px solid var(--global-theme-color);
