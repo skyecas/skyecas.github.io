@@ -9,13 +9,17 @@ var requestAnimFrame = (function(){
 
 var c = document.getElementById("bgCanvas"),
     ctx = c.getContext("2d"),
-    W = window.innerWidth, H = window.innerHeight;
+    rawW = window.innerWidth, rawH = window.innerHeight;
+if (!isFinite(rawW) || rawW < 100) rawW = 1920;
+if (!isFinite(rawH) || rawH < 100) rawH = 1080;
+var W = rawW, H = rawH;
 c.width = W; c.height = H;
 
 // --- Scene center ---
 var sx = W / 2, sy = H / 2;
 var baseW = 1920, baseH = 1080;
 var orScale = Math.min(W / baseW, H / baseH);
+if (!isFinite(orScale) || orScale < 0.05) orScale = 1;
 
 // --- Camera (physics → screen transform) ---
 var AU = 180;
@@ -402,7 +406,7 @@ function drawOrbits() {
 
 function drawPlanet(p, t) {
   var pos = pPos(p, t);
-  if (!isFinite(pos.rx) || !isFinite(pos.ry)) return;
+  if (!isFinite(pos.rx) || !isFinite(pos.ry) || !isFinite(p.r)) return;
   var cs = 1 / camScale;
   var rv = p.r * cs;
   ctx.fillStyle = p.col + "40";
