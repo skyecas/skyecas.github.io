@@ -93,8 +93,8 @@ function getDateKey() {
 
 // --- All constellations (Wikipedia-verified, mag <= 5.5) ---
 var consData = [
-                                                            { /* ORION */
-    name: "Orion", date: "06/01",
+{ /* ORION */
+    name: "Orion", always: true,
     stars: [
       { name:"Tabit", ra:[4.0, 49.0, 50.14], dec:[6.0, 57.0, 40.5], mag:3.19, spec:"F6V" },
       { name:"\u03c02 Ori", ra:[4.0, 50.0, 36.72], dec:[8.0, 54.0, 0.9], mag:4.35, spec:"A1V" },
@@ -176,8 +176,8 @@ var consData = [
     connections: [[9, 7], [6, 0], [0, 1], [10, 9], [2, 3], [15, 14], [6, 8], [13, 10], [10, 11], [8, 13], [11, 5], [3, 4], [7, 6], [14, 13], [5, 7], [0, 2], [16, 14], [16, 15], [15, 12]],
     mainIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
   },
-                                          { /* CASSIOPEIA */
-    name: "Cassiopeia", date: "04/01",
+{ /* CASSIOPEIA */
+    name: "Cassiopeia", always: true,
     stars: [
       { name:"Caph", ra:[0.0, 9.0, 10.09], dec:[59.0, 9.0, 0.8], mag:2.28, spec:"F2III" },
       { name:"Schedar", ra:[0.0, 40.0, 30.39], dec:[56.0, 32.0, 14.7], mag:2.24, spec:"K0II" },
@@ -231,8 +231,8 @@ var consData = [
     connections: [[1, 0], [3, 2], [4, 3], [2, 1]],
     mainIndices: [0, 1, 2, 3, 4],
   },
-                            { /* LYRA */
-    name: "Lyra", date: "01/01",
+{ /* LYRA */
+    name: "Lyra", date: "27/07",
     stars: [
       { name:"Vega", ra:[18.0, 36.0, 56.19], dec:[38.0, 46.0, 58.8], mag:0.03, spec:"A0V" },
       { name:"\u03b61 Lyr", ra:[18.0, 44.0, 46.34], dec:[37.0, 36.0, 18.2], mag:4.34, spec:null },
@@ -261,8 +261,8 @@ var consData = [
     connections: [[0, 1], [2, 4], [1, 2], [3, 1], [4, 3]],
     mainIndices: [0, 1, 2, 3, 4],
   },
-                            { /* CYGNUS */
-    name: "Cygnus", date: "01/01",
+{ /* CYGNUS */
+    name: "Cygnus", date: "12/08",
     stars: [
       { name:"\u03ba Cyg", ra:[19.0, 17.0, 6.11], dec:[53.0, 22.0, 5.4], mag:3.80, spec:"K0III" },
       { name:"\u03b9 Cyg", ra:[19.0, 29.0, 42.34], dec:[51.0, 43.0, 46.1], mag:3.76, spec:"A5V" },
@@ -342,8 +342,8 @@ var consData = [
     connections: [[4, 2], [5, 7], [1, 3], [0, 1], [5, 4], [3, 5], [5, 6], [7, 8]],
     mainIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8],
   },
-                            { /* GEMINI */
-    name: "Gemini", date: "07/01",
+{ /* GEMINI */
+    name: "Gemini", date: "04/09",
     stars: [
       { name:"1 Gem", ra:[6.0, 4.0, 7.22], dec:[23.0, 15.0, 49.1], mag:4.16, spec:"G7III" },
       { name:"Propus", ra:[6.0, 14.0, 52.7], dec:[22.0, 30.0, 24.6], mag:3.31, spec:"M3III" },
@@ -393,8 +393,8 @@ var consData = [
     connections: [[8, 11], [9, 5], [11, 10], [12, 9], [4, 8], [2, 12], [14, 12], [14, 15], [5, 3], [10, 6], [14, 16], [5, 2], [11, 14], [12, 0], [9, 13], [9, 7]],
     mainIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
   },
-                              { /* SCORPIUS */
-    name: "Scorpius", date: "01/01",
+{ /* SCORPIUS */
+    name: "Scorpius", date: "26/10",
     stars: [
       { name:"Fang", ra:[15.0, 58.0, 51.12], dec:[-26.0, 6.0, 50.6], mag:2.89, spec:"B1V" },
       { name:"Dschubba", ra:[16.0, 0.0, 20.01], dec:[-22.0, 37.0, 17.8], mag:2.29, spec:"B0.2IV" },
@@ -460,8 +460,8 @@ var consData = [
     connections: [[10, 7], [7, 6], [4, 3], [3, 2], [11, 12], [12, 10], [5, 4], [3, 1], [3, 0], [9, 11], [6, 5], [8, 7], [8, 9]],
     mainIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
   },
-                                  { /* ANDROMEDA */
-    name: "Andromeda", date: "04/01",
+{ /* ANDROMEDA */
+    name: "Andromeda", date: "31/03",
     stars: [
       { name:"Alpheratz", ra:[0.0, 8.0, 23.17], dec:[29.0, 5.0, 27.0], mag:2.07, spec:"B9" },
       { name:"\u03b4 And", ra:[0.0, 39.0, 19.6], dec:[30.0, 51.0, 40.4], mag:3.27, spec:"K3III" },
@@ -517,7 +517,11 @@ var consData = [
     connections: [[0, 1], [1, 3], [3, 2], [4, 3]],
     mainIndices: [0, 1, 2, 3, 4],
   },
-];];
+
+
+
+
+];
 
 function randomSpectralType() {
   var r = Math.random();
