@@ -81,9 +81,10 @@ var time = 0;
 
 function getDateColour() {
 	var key = getDateKey();
-	for (var i = 0; i < consData.length; i++) {
-		if (consData[i].date === key) {
-			var s = consData[i].stars;
+	for (var consKey in consDataByName) {
+		var c = consDataByName[consKey];
+		if (c.date === key) {
+			var s = c.stars;
 			var bri = null, briMag = Infinity;
 			for (var j = 0; j < s.length; j++) {
 				if (s[j].mag < briMag) {
@@ -107,16 +108,16 @@ function getDateColour() {
 function buildExtraCons() {
 	var cons = [];
 	var configs = [
-		{ idx: 1, cx: width * 0.4, cy: height * 0.2, sc: 2, rC: 0, dC: 60 },
-		{ idx: 0, cx: width * 0.6, cy: height * 0.35, sc: 8, rC: 5.5, dC: 0 },
-		{ idx: 2, cx: width * 0.8, cy: height * 0.2, sc: 8, rC: 18.6, dC: 38 },
-		{ idx: 3, cx: width * 0.85, cy: height * 0.3, sc: 10, rC: 20.5, dC: 40 },
-		{ idx: 5, cx: width * 0.5, cy: height * 0.7, sc: 6, rC: 16.8, dC: -35 },
-		{ idx: 6, cx: width * 0.2, cy: height * 0.5, sc: 3, rC: 1.5, dC: 40 },
+		{ name: "CASSIOPEIA", cx: width * 0.4, cy: height * 0.2, sc: 2, rC: 0, dC: 60 },
+		{ name: "ORION", cx: width * 0.6, cy: height * 0.35, sc: 8, rC: 5.5, dC: 0 },
+		{ name: "LYRA", cx: width * 0.8, cy: height * 0.2, sc: 8, rC: 18.6, dC: 38 },
+		{ name: "CYGNUS", cx: width * 0.85, cy: height * 0.3, sc: 10, rC: 20.5, dC: 40 },
+		{ name: "SCORPIUS", cx: width * 0.5, cy: height * 0.7, sc: 6, rC: 16.8, dC: -35 },
+		{ name: "ANDROMEDA", cx: width * 0.2, cy: height * 0.5, sc: 3, rC: 1.5, dC: 40 },
 	];
 	for (var i = 0; i < configs.length; i++) {
 		var c = configs[i];
-		var data = consData[c.idx];
+		var data = consDataByName[c.name];
 		if (!data) continue;
 		if (!data.always && data.date !== getDateKey()) continue;
 		cons.push({

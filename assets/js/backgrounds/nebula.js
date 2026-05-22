@@ -127,7 +127,7 @@ function drawBrightCore(t) {
 
 // === Cassiopeia Constellation ===
 
-var cassData = consData[1];
+var cassData = consDataByName.CASSIOPEIA;
 var cassPts = [];
 
 function projectConstellationLocal() {
@@ -176,8 +176,8 @@ function animate() {
   drawConstellationLabel();
 
   var todayKey = getDateKey();
-  for (var i = 0; i < consData.length; i++) {
-    if (consData[i].date === todayKey) {
+  for (var key in consDataByName) {
+    if (consDataByName[key].date === todayKey) {
       var pulse = Math.sin(time * 0.02) * 0.4 + 0.6;
       var grad = bgCtx.createRadialGradient(width * 0.4, height * 0.4, 0, width * 0.4, height * 0.4, 600 * mScale);
       grad.addColorStop(0, "rgba(255, 215, 0, " + pulse * 0.03 + ")");
