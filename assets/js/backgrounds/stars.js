@@ -197,12 +197,14 @@ function drawOrionConstellation(t) {
 // determine which star colours are allowed
 const starColour = ["white", "floralWhite", "aliceBlue", "powderBlue", "azure", "moccasin", "sandyBrown", "peachPuff"]
 
-// function to draw background stars with per-star parallax depth
+// function to draw background stars with per-star parallax depth and spectral colour
 function Star() {
-  this.size = Math.random() * 2 + .1;
-  this.x = Math.random() * width;
-  this.y = Math.random() * pageHeight;
-  this.colour = starColour[Math.floor(Math.random() * starColour.length)]
+  var data = createBackgroundStar(width, pageHeight);
+  this.x = data.x;
+  this.y = data.y;
+  this.size = data.size;
+  this.colour = data.colour;
+  this.mag = data.mag;
   // Parallax depth: 0.3 (distant, slow) to 1.0 (nearby, scrolls with page)
   this.depth = 0.3 + Math.random() * 0.7;
 }
