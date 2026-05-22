@@ -13,6 +13,7 @@ var bg = params.get("name");
 if (bg && bgNames.indexOf(bg) !== -1) {
   document.querySelector(".content").style.display = "none";
   document.body.style.paddingBottom = "0";
+  document.querySelector(".background").style.marginTop = "0";
   var script = document.createElement("script");
   script.src = "/assets/js/backgrounds/" + bg + ".js?v=" + Date.now();
   document.body.appendChild(script);
