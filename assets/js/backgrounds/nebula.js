@@ -1,14 +1,3 @@
-var requestAnimFrame = (function(){
-  return window.requestAnimationFrame       ||
-         window.webkitRequestAnimationFrame ||
-         window.mozRequestAnimationFrame    ||
-         window.oRequestAnimationFrame      ||
-         window.msRequestAnimationFrame     ||
-         function( callback ){
-           window.setTimeout(callback, 1000 / 60);
-         };
-})();
-
 var background = document.getElementById("bgCanvas"),
     bgCtx = background.getContext("2d"),
     rawWidth = window.innerWidth,
@@ -25,26 +14,22 @@ var mScale = Math.min(sx, sy);
 
 var nebulaMult = 2.5;
 
-function lerp(a, b, t) { return a + (b - a) * t; }
-
 function noise2D(x, y, t) {
   return Math.sin(x * 0.003 + t * 0.0003) * 0.5 +
          Math.sin(y * 0.004 + t * 0.0002) * 0.3 +
          Math.sin((x + y) * 0.002 + t * 0.0004) * 0.2;
 }
 
-var specColours = ["white", "aliceBlue", "powderBlue", "azure", "moccasin", "sandyBrown", "coral"];
-
-function SpecStar() {
+function BgStar() {
   this.x = Math.random() * width;
   this.y = Math.random() * height;
   this.size = Math.random() * 2 + 0.2;
-  this.colour = specColours[Math.floor(Math.random() * specColours.length)];
+  this.colour = spectralToHex(randomSpectralType());
   this.phase = Math.random() * Math.PI * 2;
   this.speed = 0.01 + Math.random() * 0.02;
   this.bright = Math.random() < 0.02;
 }
-SpecStar.prototype.update = function(t) {
+BgStar.prototype.update = function(t) {
   var twinkle = Math.sin(t * this.speed + this.phase) * 0.4 + 0.6;
   bgCtx.globalAlpha = 0.2 + twinkle * 0.8;
   bgCtx.fillStyle = this.colour;
@@ -122,7 +107,7 @@ DustLane.prototype.update = function(t) {
 };
 
 var stars = [];
-for (var i = 1200; i > 0; i--) { stars.push(new SpecStar()); }
+for (var i = 1200; i > 0; i--) { stars.push(new BgStar()); }
 
 var dustLanes = [
   new DustLane(200 * sx, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
@@ -191,8 +176,8 @@ var cassSX = -6.5 * sx;
 var cassSY = -12 * sy;
 
 var cassWCoords = [];
-for (var i = 0; i < cassiopeiaStars.length; i++) {
-  var s = cassiopeiaStars[i];
+for (var i = 0; i < consData[1].stars.length; i++) {
+  var s = consData[1].stars[i];
   cassWCoords.push({
     x: cassBase.x + cassSX * s.ra,
     y: cassBase.y + cassSY * s.dec,
@@ -234,7 +219,7 @@ function drawConstellationStars(t) {
   bgCtx.strokeStyle = "rgba(255, 255, 255, 0.15)";
   bgCtx.lineWidth = 1;
   bgCtx.beginPath();
-  for (var c of cassiopeiaConnections) {
+  for (var c of consData[1].connections) {
     bgCtx.moveTo(cassWCoords[c[0]].x, cassWCoords[c[0]].y);
     bgCtx.lineTo(cassWCoords[c[1]].x, cassWCoords[c[1]].y);
   }
@@ -249,17 +234,6 @@ function drawConstellationStars(t) {
 }
 
 var time = 0;
-
-var specialDates = {
-  "27/07": "255, 215, 0", "12/08": "192, 192, 224",
-  "23/08": "255, 127, 127", "04/09": "255, 105, 180",
-  "26/10": "0, 229, 255", "31/03": "255, 143, 171"
-};
-function getDateRGB() {
-  var d = new Date();
-  var key = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2);
-  return specialDates[key] || null;
-}
 
 function animate() {
   time++;
@@ -277,15 +251,19 @@ function animate() {
 
   drawConstellationStars(time);
 
-  var dc = getDateRGB();
-  if (dc) {
-    var pulse = Math.sin(time * 0.02) * 0.4 + 0.6;
-    var grad = bgCtx.createRadialGradient(width * 0.4, height * 0.4, 0, width * 0.4, height * 0.4, 600 * mScale);
-    grad.addColorStop(0, "rgba(" + dc + ", " + pulse * 0.03 + ")");
-    grad.addColorStop(0.5, "rgba(" + dc + ", " + pulse * 0.015 + ")");
-    grad.addColorStop(1, "rgba(" + dc + ", 0)");
-    bgCtx.fillStyle = grad;
-    bgCtx.fillRect(0, 0, width, height);
+  var d = new Date();
+  var todayKey = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2);
+  for (var i = 0; i < consData.length; i++) {
+    if (consData[i].date === todayKey) {
+      var pulse = Math.sin(time * 0.02) * 0.4 + 0.6;
+      var grad = bgCtx.createRadialGradient(width * 0.4, height * 0.4, 0, width * 0.4, height * 0.4, 600 * mScale);
+      grad.addColorStop(0, "rgba(255, 215, 0, " + pulse * 0.03 + ")");
+      grad.addColorStop(0.5, "rgba(255, 215, 0, " + pulse * 0.015 + ")");
+      grad.addColorStop(1, "rgba(255, 215, 0, 0)");
+      bgCtx.fillStyle = grad;
+      bgCtx.fillRect(0, 0, width, height);
+      break;
+    }
   }
 
   requestAnimFrame(animate);
@@ -305,14 +283,14 @@ window.addEventListener("resize", function() {
   cassSX = -6.5 * sx;
   cassSY = -12 * sy;
   cassBase = { x: width * 0.13, y: height * 0.93 };
-  for (var i = 0; i < cassiopeiaStars.length; i++) {
-    var s = cassiopeiaStars[i];
+  for (var i = 0; i < consData[1].stars.length; i++) {
+    var s = consData[1].stars[i];
     cassWCoords[i].x = cassBase.x + cassSX * s.ra;
     cassWCoords[i].y = cassBase.y + cassSY * s.dec;
   }
   // regenerate stars for new dimensions
   stars = [];
-  for (var i = 1200; i > 0; i--) { stars.push(new SpecStar()); }
+  for (var i = 1200; i > 0; i--) { stars.push(new BgStar()); }
   dustLanes = [
     new DustLane(200 * sx, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
     new DustLane(900 * sx, 500 * sy, 700 * sx, 100 * sy, 0.3, 0.00015),

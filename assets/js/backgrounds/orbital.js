@@ -1,12 +1,3 @@
-var requestAnimFrame = (function(){
-  return window.requestAnimationFrame       ||
-         window.webkitRequestAnimationFrame ||
-         window.mozRequestAnimationFrame    ||
-         window.oRequestAnimationFrame      ||
-         window.msRequestAnimationFrame     ||
-         function(cb){ window.setTimeout(cb, 1000 / 60); };
-})();
-
 var c = document.getElementById("bgCanvas"),
     ctx = c.getContext("2d"),
     rawW = window.innerWidth, rawH = window.innerHeight;
@@ -36,20 +27,19 @@ var camScale = (function() {
 var MU = 120;
 
 // --- Stars ---
-var starCols = ["white","aliceBlue","powderBlue","azure","moccasin","sandyBrown","coral"];
-function Star(){
+function BgStar(){
   this.x = Math.random()*W; this.y = Math.random()*H;
   this.s = Math.random()*1.5+0.1;
-  this.col = starCols[Math.floor(Math.random()*starCols.length)];
+  this.col = spectralToHex(randomSpectralType());
   this.ph = Math.random()*Math.PI*2; this.sp = 0.01+Math.random()*0.02;
 }
-Star.prototype.draw = function(t){
+BgStar.prototype.draw = function(t){
   var tw = Math.sin(t*this.sp+this.ph)*0.3+0.7;
   ctx.globalAlpha = 0.4+tw*0.6; ctx.fillStyle = this.col;
   ctx.fillRect(this.x,this.y,this.s,this.s); ctx.globalAlpha = 1;
 };
 var stars = [];
-for(var i=600;i>0;i--) stars.push(new Star());
+for(var i=600;i>0;i--) stars.push(new BgStar());
 
 // --- Kepler utilities ---
 function solveKepler(M, e) {
@@ -773,17 +763,6 @@ function drawOffscreenIndicator(t) {
   ctx.restore();
 }
 
-// --- Special dates ---
-var specialDates = {
-  "27/07":"#FFD700","12/08":"#C0C0E0","23/08":"#FF7F7F",
-  "04/09":"#FF69B4","26/10":"#00E5FF","31/03":"#FF8FAB"
-};
-function getDateHex() {
-  var d = new Date();
-  var key = ("0"+d.getDate()).slice(-2)+"/"+("0"+(d.getMonth()+1)).slice(-2);
-  return specialDates[key] || null;
-}
-
 // --- Animation ---
 var time = 0;
 var launched = false;
@@ -939,14 +918,17 @@ orb.animate = function(timestamp) {
   }
 
   // Special date overlay
-  var dc = getDateHex();
-  if (dc) {
+  var todayStr = getDateKey();
+  var isSpecial = false;
+  for (var i = 0; i < consData.length; i++) {
+    if (consData[i].date === todayStr) { isSpecial = true; break; }
+  }
+  if (isSpecial) {
     var pu = Math.sin(time*0.02)*0.5+0.5;
     var g = ctx.createRadialGradient(sx,sy,0,sx,sy,500);
-    var r = parseInt(dc.slice(1,3),16), gr = parseInt(dc.slice(3,5),16), b = parseInt(dc.slice(5,7),16);
-    g.addColorStop(0,"rgba("+r+","+gr+","+b+",0)");
-    g.addColorStop(0.7,"rgba("+r+","+gr+","+b+","+pu*0.04+")");
-    g.addColorStop(1,"rgba("+r+","+gr+","+b+",0)");
+    g.addColorStop(0,"rgba(192,192,224,0)");
+    g.addColorStop(0.7,"rgba(192,192,224,"+pu*0.04+")");
+    g.addColorStop(1,"rgba(192,192,224,0)");
     ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
   }
 

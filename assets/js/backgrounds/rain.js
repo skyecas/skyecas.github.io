@@ -1,15 +1,3 @@
-// Let the browser handle the animation cycles
-var requestAnimFrame = (function () {
-  return window.requestAnimationFrame ||
-    window.webkitRequestAnimationFrame ||
-    window.mozRequestAnimationFrame ||
-    window.oRequestAnimationFrame ||
-    window.msRequestAnimationFrame ||
-    function (callback) {
-      window.setTimeout(callback, 1000 / 60);
-    };
-})();
-
 // Canvas setup
 var background = document.getElementById("bgCanvas"),
   bgCtx = background.getContext("2d"),
@@ -32,9 +20,6 @@ function drawWindow() {
   bgCtx.fillRect(0, top, width, height - top);
 }
 
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
 function smoothNoise(x, y, t) {
   return Math.sin(x * 0.05 + t * 0.002) * 0.5 +
     Math.sin(y * 0.07 + t * 0.001) * 0.3 +

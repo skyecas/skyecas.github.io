@@ -176,6 +176,7 @@ var consData = [
     connections: [[9, 7], [6, 0], [0, 1], [10, 9], [2, 3], [15, 14], [6, 8], [13, 10], [10, 11], [8, 13], [11, 5], [3, 4], [7, 6], [14, 13], [5, 7], [0, 2], [16, 14], [16, 15], [15, 12]],
     mainIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
   },
+
 { /* CASSIOPEIA */
     name: "Cassiopeia", always: true,
     stars: [
@@ -261,6 +262,7 @@ var consData = [
     connections: [[0, 1], [2, 4], [1, 2], [3, 1], [4, 3]],
     mainIndices: [0, 1, 2, 3, 4],
   },
+
 { /* CYGNUS */
     name: "Cygnus", date: "12/08",
     stars: [
@@ -460,6 +462,7 @@ var consData = [
     connections: [[10, 7], [7, 6], [4, 3], [3, 2], [11, 12], [12, 10], [5, 4], [3, 1], [3, 0], [9, 11], [6, 5], [8, 7], [8, 9]],
     mainIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
   },
+
 { /* ANDROMEDA */
     name: "Andromeda", date: "31/03",
     stars: [
@@ -521,6 +524,7 @@ var consData = [
 
 
 
+
 ];
 
 function randomSpectralType() {
@@ -559,3 +563,25 @@ function createBackgroundStar(width, height) {
     spec: spec,
   };
 }
+
+// ── Cross-file utilities ──────────────────────────────
+var requestAnimFrame = window.requestAnimationFrame ||
+  window.webkitRequestAnimationFrame ||
+  window.mozRequestAnimationFrame ||
+  window.oRequestAnimationFrame ||
+  window.msRequestAnimationFrame ||
+  function(cb) { window.setTimeout(cb, 1000 / 60); };
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+// ── Spectral weight distribution (for randomSpectralType) ───
+var SPECTRAL_WEIGHTS = [
+  { cls: "B", prob: 0.05, subRange: [0, 9], lum: ["V", "IV", "III"] },
+  { cls: "A", prob: 0.10, subRange: [0, 9], lum: ["V", "IV", "III"] },
+  { cls: "F", prob: 0.15, subRange: [0, 9], lum: ["V", "IV", "III"] },
+  { cls: "G", prob: 0.25, subRange: [0, 9], lum: ["V", "IV", "III"] },
+  { cls: "K", prob: 0.30, subRange: [0, 9], lum: ["V", "IV", "III"] },
+  { cls: "M", prob: 0.15, subRange: [0, 9], lum: ["V", "IV", "III"] },
+];
