@@ -725,7 +725,7 @@ function initCanvas(callback) {
     if (!isFinite(rh) || rh < 100) rh = 1080;
     w = rw; h = rh;
     c.width = w; c.height = h;
-    if (callback) callback(w, h);
+    if (callback) callback(w, h, c);
   }
 
   resize();
