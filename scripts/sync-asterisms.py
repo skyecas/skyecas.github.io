@@ -143,11 +143,12 @@ def fetch_wikipedia(constellation):
             if m: star["spec"] = m.group(1)
         # RA/Dec
         if "ra" in cols and cols["ra"] < len(cells):
-            raw = re.sub(r'<[^>]+>', '', cells[cols["ra"]]).strip()
+            raw = unescape(re.sub(r'<[^>]+>', '', cells[cols["ra"]]).strip())
             parts = re.findall(r"(\d+)[h\s:]+(\d+)[m\s:]*(\d+(?:\.\d+)?)", raw)
             if parts: star["ra"] = [float(x) for x in parts[0]]
         if "dec" in cols and cols["dec"] < len(cells):
-            raw = re.sub(r'<[^>]+>', '', cells[cols["dec"]]).strip()
+            raw = unescape(re.sub(r'<[^>]+>', '', cells[cols["dec"]]).strip())
+            raw = raw.replace("\u2212", "-")  # Unicode minus -> regular minus
             parts = re.findall(r"([+-]?\d+)[°\s]+(\d+)[′\s]*(\d+(?:\.\d+)?)", raw)
             if parts: star["dec"] = [float(x) for x in parts[0]]
         stars.append(star)
