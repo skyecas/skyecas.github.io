@@ -792,7 +792,7 @@ var time = 0;
 var launched = false;
 var lastFrameTime = 0;
 
-var animate = function(timestamp) {
+window.animate = function(timestamp) {
   // Fixed timestep: normalize to 60fps baseline
   if (lastFrameTime === 0) lastFrameTime = timestamp;
   var deltaMs = timestamp - lastFrameTime;
@@ -951,10 +951,10 @@ var animate = function(timestamp) {
     ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
   }
 
-  requestAnimFrame(function(t) { animate(t); });
+  requestAnimFrame(function(t) { window.animate(t); });
 }
 
-requestAnimFrame(function(t) { animate(t); });
+requestAnimFrame(function(t) { window.animate(t); });
 
 window.addEventListener("resize", function() {
   var rw = window.innerWidth, rh = window.innerHeight;
