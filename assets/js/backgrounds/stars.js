@@ -144,8 +144,8 @@ function animate() {
 	bgCtx.strokeStyle = '#ffffff';
 
 	cassTime++;
-	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.8);
-	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, scrollY, 0.8);
+	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.6);
+	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, scrollY, 0.6);
 
 	bgCtx.font = "11px sans-serif";
 	bgCtx.textAlign = "center";
@@ -159,8 +159,8 @@ function animate() {
 	}
 	bgCtx.fillText("Cassiopeia", labelX / Math.min(5, cassMains.length), minY - 20 + scrollY * 0.2);
 
-	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", scrollY, 0.85);
-	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, scrollY, 0.85);
+	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", scrollY, 0.65);
+	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, scrollY, 0.65);
 
 	bgCtx.font = "10px sans-serif";
 	bgCtx.textAlign = "center";

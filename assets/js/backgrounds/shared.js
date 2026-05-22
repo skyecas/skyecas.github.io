@@ -624,8 +624,8 @@ function createBgStars(count, width, height, opts) {
       speed: speed,
     };
     if (opts.yBias) star.y = Math.pow(Math.random(), opts.yBias) * height;
-    if (opts.parallax) star.depth = (opts.depthRange || [0.3, 1.0])[0] +
-      Math.random() * ((opts.depthRange || [0.3, 1.0])[1] - (opts.depthRange || [0.3, 1.0])[0]);
+    if (opts.parallax) star.depth = (opts.depthRange || [0.1, 0.5])[0] +
+      Math.random() * ((opts.depthRange || [0.1, 0.5])[1] - (opts.depthRange || [0.1, 0.5])[0]);
     stars.push(star);
   }
   return stars;
