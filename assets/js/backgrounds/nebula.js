@@ -19,10 +19,9 @@ if (!isFinite(rawHeight) || rawHeight < 100) rawHeight = 1080;
 background.width = rawWidth;
 background.height = rawHeight;
 
+var width = rawWidth, height = rawHeight;
 var sx = rawWidth / 1920, sy = rawHeight / 1080;
-var width = 1920, height = 1080;
-var scale = Math.min(sx, sy);
-var ox = (rawWidth - 1920 * scale) / 2, oy = (rawHeight - 1080 * scale) / 2;
+var mScale = Math.min(sx, sy);
 
 var nebulaMult = 2.5;
 
@@ -126,24 +125,24 @@ var stars = [];
 for (var i = 1200; i > 0; i--) { stars.push(new SpecStar()); }
 
 var dustLanes = [
-  new DustLane(200, 300, 800, 120, -0.2, 0.0002),
-  new DustLane(900, 500, 700, 100, 0.3, 0.00015),
-  new DustLane(400, 700, 600, 80, -0.1, 0.00025),
+  new DustLane(200 * sx, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
+  new DustLane(900 * sx, 500 * sy, 700 * sx, 100 * sy, 0.3, 0.00015),
+  new DustLane(400 * sx, 700 * sy, 600 * sx, 80 * sy, -0.1, 0.00025),
 ];
 
 function drawNebulaGas(t) {
   var centres = [
-    { x: 500, y: 350, rx: 450, ry: 300, colours: ["rgba(180, 40, 200, 0.1)", "rgba(120, 20, 160, 0.18)", "rgba(60, 10, 100, 0.08)"], speed: 0.00008, phase: 0 },
-    { x: 900, y: 500, rx: 500, ry: 350, colours: ["rgba(30, 80, 200, 0.08)", "rgba(20, 50, 160, 0.15)", "rgba(10, 20, 100, 0.05)"], speed: -0.00006, phase: 1.5 },
-    { x: 700, y: 350, rx: 350, ry: 250, colours: ["rgba(255, 80, 120, 0.08)", "rgba(200, 40, 80, 0.15)", "rgba(140, 20, 60, 0.05)"], speed: 0.0001, phase: -0.8 },
-    { x: 1100, y: 650, rx: 400, ry: 250, colours: ["rgba(200, 140, 40, 0.05)", "rgba(160, 100, 20, 0.1)", "rgba(100, 60, 10, 0.05)"], speed: -0.00005, phase: 2.5 },
-    { x: 400, y: 700, rx: 350, ry: 200, colours: ["rgba(40, 180, 160, 0.05)", "rgba(20, 140, 120, 0.1)", "rgba(10, 90, 80, 0.05)"], speed: 0.00007, phase: -1.5 },
-    { x: 1300, y: 350, rx: 300, ry: 350, colours: ["rgba(130, 40, 220, 0.05)", "rgba(90, 20, 180, 0.1)", "rgba(50, 10, 120, 0.05)"], speed: -0.00009, phase: 0.5 },
+    { x: 500 * sx, y: 350 * sy, rx: 450 * sx, ry: 300 * sy, colours: ["rgba(180, 40, 200, 0.1)", "rgba(120, 20, 160, 0.18)", "rgba(60, 10, 100, 0.08)"], speed: 0.00008, phase: 0 },
+    { x: 900 * sx, y: 500 * sy, rx: 500 * sx, ry: 350 * sy, colours: ["rgba(30, 80, 200, 0.08)", "rgba(20, 50, 160, 0.15)", "rgba(10, 20, 100, 0.05)"], speed: -0.00006, phase: 1.5 },
+    { x: 700 * sx, y: 350 * sy, rx: 350 * sx, ry: 250 * sy, colours: ["rgba(255, 80, 120, 0.08)", "rgba(200, 40, 80, 0.15)", "rgba(140, 20, 60, 0.05)"], speed: 0.0001, phase: -0.8 },
+    { x: 1100 * sx, y: 650 * sy, rx: 400 * sx, ry: 250 * sy, colours: ["rgba(200, 140, 40, 0.05)", "rgba(160, 100, 20, 0.1)", "rgba(100, 60, 10, 0.05)"], speed: -0.00005, phase: 2.5 },
+    { x: 400 * sx, y: 700 * sy, rx: 350 * sx, ry: 200 * sy, colours: ["rgba(40, 180, 160, 0.05)", "rgba(20, 140, 120, 0.1)", "rgba(10, 90, 80, 0.05)"], speed: 0.00007, phase: -1.5 },
+    { x: 1300 * sx, y: 350 * sy, rx: 300 * sx, ry: 350 * sy, colours: ["rgba(130, 40, 220, 0.05)", "rgba(90, 20, 180, 0.1)", "rgba(50, 10, 120, 0.05)"], speed: -0.00009, phase: 0.5 },
   ];
 
   var blurred = document.createElement("canvas");
-  blurred.width = 1920;
-  blurred.height = 1080;
+  blurred.width = width;
+  blurred.height = height;
   var bCtx = blurred.getContext("2d");
 
   for (var c of centres) {
@@ -170,9 +169,9 @@ function drawNebulaGas(t) {
 function drawBrightCore(t) {
   var pulse = Math.sin(t * 0.005) * 0.2 + 0.8;
   var cores = [
-    { x: 650, y: 380, r: 80, colour: "rgba(200, 150, 255, " + pulse * 0.18 + ")" },
-    { x: 850, y: 520, r: 60, colour: "rgba(100, 200, 255, " + pulse * 0.15 + ")" },
-    { x: 500, y: 300, r: 100, colour: "rgba(255, 150, 200, " + pulse * 0.12 + ")" },
+    { x: 650 * sx, y: 380 * sy, r: 80 * mScale, colour: "rgba(200, 150, 255, " + pulse * 0.18 + ")" },
+    { x: 850 * sx, y: 520 * sy, r: 60 * mScale, colour: "rgba(100, 200, 255, " + pulse * 0.15 + ")" },
+    { x: 500 * sx, y: 300 * sy, r: 100 * mScale, colour: "rgba(255, 150, 200, " + pulse * 0.12 + ")" },
   ];
   for (var c of cores) {
     var grad = bgCtx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
@@ -233,8 +232,8 @@ function rgbToHex(rgb) {
 }
 
 var cassBase = { x: width * 0.13, y: height * 0.93 };
-var cassSX = -6.5;
-var cassSY = -12;
+var cassSX = -6.5 * sx;
+var cassSY = -12 * sy;
 
 var cassiopeiaStars = [
   { name: "Schedar",  ra: raDeg(0, 40, 30.4411),  dec: decDeg(56, 32, 14.392), mag: 2.24, colour: "#FFB870",  spec: "K0IIIa"   },
@@ -337,12 +336,6 @@ function getDateRGB() {
 function animate() {
   time++;
 
-  bgCtx.setTransform(1, 0, 0, 1, 0, 0);
-  bgCtx.fillStyle = "#030308";
-  bgCtx.fillRect(0, 0, rawWidth, rawHeight);
-
-  bgCtx.setTransform(scale, 0, 0, scale, ox, oy);
-
   bgCtx.fillStyle = "#030308";
   bgCtx.fillRect(0, 0, width, height);
 
@@ -359,7 +352,7 @@ function animate() {
   var dc = getDateRGB();
   if (dc) {
     var pulse = Math.sin(time * 0.02) * 0.4 + 0.6;
-    var grad = bgCtx.createRadialGradient(width * 0.4, height * 0.4, 0, width * 0.4, height * 0.4, 600);
+    var grad = bgCtx.createRadialGradient(width * 0.4, height * 0.4, 0, width * 0.4, height * 0.4, 600 * mScale);
     grad.addColorStop(0, "rgba(" + dc + ", " + pulse * 0.03 + ")");
     grad.addColorStop(0.5, "rgba(" + dc + ", " + pulse * 0.015 + ")");
     grad.addColorStop(1, "rgba(" + dc + ", 0)");
@@ -378,7 +371,23 @@ window.addEventListener("resize", function() {
   if (!isFinite(rh) || rh < 100) rh = 1080;
   rawWidth = rw; rawHeight = rh;
   background.width = rawWidth; background.height = rawHeight;
+  width = rawWidth; height = rawHeight;
   sx = rawWidth / 1920; sy = rawHeight / 1080;
-  scale = Math.min(sx, sy);
-  ox = (rawWidth - 1920 * scale) / 2; oy = (rawHeight - 1080 * scale) / 2;
+  mScale = Math.min(sx, sy);
+  cassSX = -6.5 * sx;
+  cassSY = -12 * sy;
+  cassBase = { x: width * 0.13, y: height * 0.93 };
+  for (var i = 0; i < cassiopeiaStars.length; i++) {
+    var s = cassiopeiaStars[i];
+    cassWCoords[i].x = cassBase.x + cassSX * s.ra;
+    cassWCoords[i].y = cassBase.y + cassSY * s.dec;
+  }
+  // regenerate stars for new dimensions
+  stars = [];
+  for (var i = 1200; i > 0; i--) { stars.push(new SpecStar()); }
+  dustLanes = [
+    new DustLane(200 * sx, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
+    new DustLane(900 * sx, 500 * sy, 700 * sx, 100 * sy, 0.3, 0.00015),
+    new DustLane(400 * sx, 700 * sy, 600 * sx, 80 * sy, -0.1, 0.00025),
+  ];
 });

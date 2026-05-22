@@ -19,10 +19,9 @@ if (!isFinite(rawHeight) || rawHeight < 100) rawHeight = 1080;
 background.width = rawWidth;
 background.height = rawHeight;
 
+var width = rawWidth, height = rawHeight;
 var sx = rawWidth / 1920, sy = rawHeight / 1080;
-var width = 1920, height = 1080;
-var scale = Math.min(sx, sy);
-var ox = (rawWidth - 1920 * scale) / 2, oy = (rawHeight - 1080 * scale) / 2;
+var mScale = Math.min(sx, sy);
 
 var starColours = ["white", "aliceBlue", "powderBlue", "azure", "moccasin"];
 
@@ -97,13 +96,13 @@ var stars = [];
 for (var i = 500; i > 0; i--) { stars.push(new Star()); }
 
 var bands = [
-  new AuroraBand(120, 250, [
+  new AuroraBand(120 * sy, 250, [
     "rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"
   ], 0.0008, 0),
-  new AuroraBand(180, 200, [
+  new AuroraBand(180 * sy, 200, [
     "rgba(0, 220, 120, 0.25)", "rgba(50, 255, 150, 0.2)", "rgba(150, 50, 255, 0.15)"
   ], 0.001, 2.1),
-  new AuroraBand(80, 180, [
+  new AuroraBand(80 * sy, 180, [
     "rgba(100, 255, 200, 0.2)", "rgba(200, 100, 255, 0.2)", "rgba(0, 255, 80, 0.15)"
   ], 0.0006, 4.3),
 ];
@@ -180,9 +179,9 @@ function rgbToHex(rgb) {
 
 // Cassiopeia stars with accurate coordinates and spectral classification
 // Magnitudes and spectral types from SIMBAD / HR catalog
-var cassBase = { x: 250, y: 1000 };
-var cassSX = -6.5;
-var cassSY = -12;
+var cassBase = { x: 250 * sx, y: 1000 * sy };
+var cassSX = -6.5 * sx;
+var cassSY = -12 * sy;
 
 var cassiopeiaStars = [
   // Bright W asterism (hardcoded colours for accuracy)
@@ -245,27 +244,27 @@ function defConst(name, cx, cy, sc, rC, dC, stars, main, connections) {
 }
 
 var extraCons = [
-  defConst("Lyra", 200, 135, 16, 281.92, 35.61, [
+  defConst("Lyra", 200 * sx, 135 * sy, 16 * mScale, 281.92, 35.61, [
     { ra: raDeg(18,36,56.34), dec: decDeg(38,47,1.3),  mag: 0.03, spec: "A0V",  name: "Vega" },
     { ra: raDeg(18,50,4.80),  dec: decDeg(33,21,45.6), mag: 3.52, spec: "A4V",  name: "Sheliak" },
     { ra: raDeg(18,58,56.62), dec: decDeg(32,41,22.4), mag: 3.25, spec: "B9V",  name: "Sulafat" },
     { ra: raDeg(18,44,31.4),  dec: decDeg(37,36,2.0),  mag: 4.34, spec: "A4V",  name: "ζ¹ Lyr" },
   ], [0,1,2,3], [[0,3],[3,1],[3,2],[1,2]]),
-  defConst("Cygnus", 1700, 145, 9, 304.64, 37.77, [
+  defConst("Cygnus", 1700 * sx, 145 * sy, 9 * mScale, 304.64, 37.77, [
     { ra: raDeg(20,41,25.91), dec: decDeg(45,16,49.2),  mag: 1.25, spec: "A2Ia",  name: "Deneb" },
     { ra: raDeg(20,22,13.70), dec: decDeg(40,15,24.0),  mag: 2.23, spec: "F8Iab", name: "Sadr" },
     { ra: raDeg(19,30,43.29), dec: decDeg(27,57,34.9),  mag: 3.08, spec: "K0III", name: "Albireo" },
     { ra: raDeg(19,44,58.44), dec: decDeg(45,7,50.5),   mag: 2.86, spec: "B9III", name: "δ Cyg" },
     { ra: raDeg(21,13,28.37), dec: decDeg(30,14,24.7),  mag: 3.21, spec: "G8III", name: "ζ Cyg" },
   ], [0,1,2,3,4], [[0,1],[1,2],[3,1],[1,4]]),
-  defConst("Gemini", 180, 580, 10, 108.09, 24.69, [
+  defConst("Gemini", 180 * sx, 580 * sy, 10 * mScale, 108.09, 24.69, [
     { ra: raDeg(7,34,36.00),  dec: decDeg(31,53,18.0),  mag: 1.58, spec: "A1V",  name: "Castor" },
     { ra: raDeg(7,45,18.95),  dec: decDeg(28,1,34.3),   mag: 1.14, spec: "K0III", name: "Pollux" },
     { ra: raDeg(6,37,42.71),  dec: decDeg(16,23,57.4),  mag: 1.93, spec: "A0IV",  name: "Alhena" },
     { ra: raDeg(7,20,7.39),   dec: decDeg(21,58,56.4),  mag: 3.53, spec: "A1V",  name: "Wasat" },
     { ra: raDeg(6,43,55.93),  dec: decDeg(25,7,52.2),   mag: 2.98, spec: "G5III", name: "Mebsuta" },
   ], [0,1,2,3,4], [[0,3],[3,1],[2,3],[1,4],[4,3]]),
-  defConst("Scorpius", 1730, 640, 8, 251.69, -29.88, [
+  defConst("Scorpius", 1730 * sx, 640 * sy, 8 * mScale, 251.69, -29.88, [
     { ra: raDeg(16,0,20.01),  dec: decDeg(-22,37,17.3), mag: 2.29, spec: "B0.5IV", name: "Dschubba" },
     { ra: raDeg(16,5,26.23),  dec: decDeg(-19,48,19.4), mag: 2.56, spec: "B1V",    name: "Graffias" },
     { ra: raDeg(16,29,24.46), dec: decDeg(-26,25,55.2), mag: 0.96, spec: "M1.5I",  name: "Antares" },
@@ -275,7 +274,7 @@ var extraCons = [
     { ra: raDeg(17,33,36.52), dec: decDeg(-37,6,13.8),  mag: 1.63, spec: "B2IV",   name: "Shaula" },
     { ra: raDeg(17,30,45.82), dec: decDeg(-37,17,44.9), mag: 2.70, spec: "B2V",    name: "Lesath" },
   ], [0,1,2,3,4,5,6,7], [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7]]),
-  defConst("Andromeda", 960, 165, 13, 14.50, 36.25, [
+  defConst("Andromeda", 960 * sx, 165 * sy, 13 * mScale, 14.50, 36.25, [
     { ra: raDeg(0,8,23.26),   dec: decDeg(29,5,25.6),   mag: 2.06, spec: "B9IV",  name: "Alpheratz" },
     { ra: raDeg(0,39,19.67),  dec: decDeg(30,51,39.7),  mag: 3.27, spec: "K1III", name: "δ And" },
     { ra: raDeg(1,9,43.92),   dec: decDeg(35,37,14.0),  mag: 2.05, spec: "M0III", name: "Mirach" },
@@ -283,7 +282,7 @@ var extraCons = [
     { ra: raDeg(2,3,53.95),   dec: decDeg(42,19,47.2),  mag: 2.10, spec: "K3III", name: "Almach" },
     { ra: raDeg(0,56,45.21),  dec: decDeg(38,29,57.6),  mag: 3.86, spec: "A0V",   name: "μ And" },
   ], [0,1,2,3,4,5], [[0,1],[1,2],[2,4],[2,3],[3,5]]),
-  defConst("Orion", 1700, 420, 10, 83.96, -1.62, [
+  defConst("Orion", 1700 * sx, 420 * sy, 10 * mScale, 83.96, -1.62, [
     { ra: raDeg(5,55,10.29),  dec: decDeg(7,24,25.4),   mag: 0.45, spec: "M2I",  name: "Betelgeuse" },
     { ra: raDeg(5,25,7.86),   dec: decDeg(6,20,58.9),   mag: 1.64, spec: "B2III", name: "Bellatrix" },
     { ra: raDeg(5,40,45.53),  dec: decDeg(-1,56,34.3),  mag: 1.77, spec: "O9.5I", name: "Alnitak" },
@@ -429,11 +428,8 @@ function drawLandscape() {
 function animate() {
   time++;
 
-  bgCtx.setTransform(1, 0, 0, 1, 0, 0);
   bgCtx.fillStyle = "#08081a";
   bgCtx.fillRect(0, 0, rawWidth, rawHeight);
-
-  bgCtx.setTransform(scale, 0, 0, scale, ox, oy);
 
   var skyGrad = bgCtx.createLinearGradient(0, 0, 0, height * 0.85);
   skyGrad.addColorStop(0, "#08081a");
@@ -494,7 +490,85 @@ window.addEventListener("resize", function() {
   if (!isFinite(rh) || rh < 100) rh = 1080;
   rawWidth = rw; rawHeight = rh;
   background.width = rawWidth; background.height = rawHeight;
+  width = rawWidth; height = rawHeight;
   sx = rawWidth / 1920; sy = rawHeight / 1080;
-  scale = Math.min(sx, sy);
-  ox = (rawWidth - 1920 * scale) / 2; oy = (rawHeight - 1080 * scale) / 2;
+  mScale = Math.min(sx, sy);
+  cassBase = { x: 250 * sx, y: 1000 * sy };
+  cassSX = -6.5 * sx;
+  cassSY = -12 * sy;
+  // recompute all Cassiopeia star coordinates
+  for (var i = 0; i < cassiopeiaStars.length; i++) {
+    var s = cassiopeiaStars[i];
+    cassWCoords[i].x = cassBase.x + cassSX * s.ra;
+    cassWCoords[i].y = cassBase.y + cassSY * s.dec;
+  }
+  // rebuild band definitions with new sy
+  bands = [
+    new AuroraBand(120 * sy, 250, [
+      "rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"
+    ], 0.0008, 0),
+    new AuroraBand(180 * sy, 200, [
+      "rgba(0, 220, 120, 0.25)", "rgba(50, 255, 150, 0.2)", "rgba(150, 50, 255, 0.15)"
+    ], 0.001, 2.1),
+    new AuroraBand(80 * sy, 180, [
+      "rgba(100, 255, 200, 0.2)", "rgba(200, 100, 255, 0.2)", "rgba(0, 255, 80, 0.15)"
+    ], 0.0006, 4.3),
+  ];
+  // rebuild extra constellation positions
+  extraCons = [
+    defConst("Lyra", 200 * sx, 135 * sy, 16 * mScale, 281.92, 35.61, [
+      { ra: raDeg(18,36,56.34), dec: decDeg(38,47,1.3),  mag: 0.03, spec: "A0V",  name: "Vega" },
+      { ra: raDeg(18,50,4.80),  dec: decDeg(33,21,45.6), mag: 3.52, spec: "A4V",  name: "Sheliak" },
+      { ra: raDeg(18,58,56.62), dec: decDeg(32,41,22.4), mag: 3.25, spec: "B9V",  name: "Sulafat" },
+      { ra: raDeg(18,44,31.4),  dec: decDeg(37,36,2.0),  mag: 4.34, spec: "A4V",  name: "ζ¹ Lyr" },
+    ], [0,1,2,3], [[0,3],[3,1],[3,2],[1,2]]),
+    defConst("Cygnus", 1700 * sx, 145 * sy, 9 * mScale, 304.64, 37.77, [
+      { ra: raDeg(20,41,25.91), dec: decDeg(45,16,49.2),  mag: 1.25, spec: "A2Ia",  name: "Deneb" },
+      { ra: raDeg(20,22,13.70), dec: decDeg(40,15,24.0),  mag: 2.23, spec: "F8Iab", name: "Sadr" },
+      { ra: raDeg(19,30,43.29), dec: decDeg(27,57,34.9),  mag: 3.08, spec: "K0III", name: "Albireo" },
+      { ra: raDeg(19,44,58.44), dec: decDeg(45,7,50.5),   mag: 2.86, spec: "B9III", name: "δ Cyg" },
+      { ra: raDeg(21,13,28.37), dec: decDeg(30,14,24.7),  mag: 3.21, spec: "G8III", name: "ζ Cyg" },
+    ], [0,1,2,3,4], [[0,1],[1,2],[3,1],[1,4]]),
+    defConst("Gemini", 180 * sx, 580 * sy, 10 * mScale, 108.09, 24.69, [
+      { ra: raDeg(7,34,36.00),  dec: decDeg(31,53,18.0),  mag: 1.58, spec: "A1V",  name: "Castor" },
+      { ra: raDeg(7,45,18.95),  dec: decDeg(28,1,34.3),   mag: 1.14, spec: "K0III", name: "Pollux" },
+      { ra: raDeg(6,37,42.71),  dec: decDeg(16,23,57.4),  mag: 1.93, spec: "A0IV",  name: "Alhena" },
+      { ra: raDeg(7,20,7.39),   dec: decDeg(21,58,56.4),  mag: 3.53, spec: "A1V",  name: "Wasat" },
+      { ra: raDeg(6,43,55.93),  dec: decDeg(25,7,52.2),   mag: 2.98, spec: "G5III", name: "Mebsuta" },
+    ], [0,1,2,3,4], [[0,3],[3,1],[2,3],[1,4],[4,3]]),
+    defConst("Scorpius", 1730 * sx, 640 * sy, 8 * mScale, 251.69, -29.88, [
+      { ra: raDeg(16,0,20.01),  dec: decDeg(-22,37,17.3), mag: 2.29, spec: "B0.5IV", name: "Dschubba" },
+      { ra: raDeg(16,5,26.23),  dec: decDeg(-19,48,19.4), mag: 2.56, spec: "B1V",    name: "Graffias" },
+      { ra: raDeg(16,29,24.46), dec: decDeg(-26,25,55.2), mag: 0.96, spec: "M1.5I",  name: "Antares" },
+      { ra: raDeg(16,21,11.32), dec: decDeg(-25,35,34.5), mag: 2.88, spec: "B2III",  name: "σ Sco" },
+      { ra: raDeg(16,35,52.95), dec: decDeg(-28,12,57.6), mag: 2.82, spec: "B0.5V",  name: "τ Sco" },
+      { ra: raDeg(17,37,19.13), dec: decDeg(-43,0,9.0),   mag: 1.86, spec: "F2II",   name: "Sargas" },
+      { ra: raDeg(17,33,36.52), dec: decDeg(-37,6,13.8),  mag: 1.63, spec: "B2IV",   name: "Shaula" },
+      { ra: raDeg(17,30,45.82), dec: decDeg(-37,17,44.9), mag: 2.70, spec: "B2V",    name: "Lesath" },
+    ], [0,1,2,3,4,5,6,7], [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7]]),
+    defConst("Andromeda", 960 * sx, 165 * sy, 13 * mScale, 14.50, 36.25, [
+      { ra: raDeg(0,8,23.26),   dec: decDeg(29,5,25.6),   mag: 2.06, spec: "B9IV",  name: "Alpheratz" },
+      { ra: raDeg(0,39,19.67),  dec: decDeg(30,51,39.7),  mag: 3.27, spec: "K1III", name: "δ And" },
+      { ra: raDeg(1,9,43.92),   dec: decDeg(35,37,14.0),  mag: 2.05, spec: "M0III", name: "Mirach" },
+      { ra: raDeg(0,49,48.85),  dec: decDeg(41,4,20.1),   mag: 4.53, spec: "B5V",   name: "ν And" },
+      { ra: raDeg(2,3,53.95),   dec: decDeg(42,19,47.2),  mag: 2.10, spec: "K3III", name: "Almach" },
+      { ra: raDeg(0,56,45.21),  dec: decDeg(38,29,57.6),  mag: 3.86, spec: "A0V",   name: "μ And" },
+    ], [0,1,2,3,4,5], [[0,1],[1,2],[2,4],[2,3],[3,5]]),
+    defConst("Orion", 1700 * sx, 420 * sy, 10 * mScale, 83.96, -1.62, [
+      { ra: raDeg(5,55,10.29),  dec: decDeg(7,24,25.4),   mag: 0.45, spec: "M2I",  name: "Betelgeuse" },
+      { ra: raDeg(5,25,7.86),   dec: decDeg(6,20,58.9),   mag: 1.64, spec: "B2III", name: "Bellatrix" },
+      { ra: raDeg(5,40,45.53),  dec: decDeg(-1,56,34.3),  mag: 1.77, spec: "O9.5I", name: "Alnitak" },
+      { ra: raDeg(5,36,12.81),  dec: decDeg(-1,12,6.9),   mag: 1.69, spec: "B0I",   name: "Alnilam" },
+      { ra: raDeg(5,32,0.40),   dec: decDeg(-0,17,4.4),   mag: 2.25, spec: "O9.5II",name: "Mintaka" },
+      { ra: raDeg(5,35,16.48),  dec: decDeg(-5,23,23.2),  mag: 3.43, spec: "B3V",   name: "Sword" },
+      { ra: raDeg(5,47,45.34),  dec: decDeg(-9,40,10.6),  mag: 2.06, spec: "B1.5I", name: "Saiph" },
+      { ra: raDeg(5,14,32.28),  dec: decDeg(-8,12,5.9),   mag: 0.13, spec: "B8I",   name: "Rigel" },
+    ], [0,1,2,3,4,5,6,7], [[0,2],[1,4],[2,3],[3,4],[2,5],[4,5],[2,6],[4,7],[6,7],[0,1]]),
+  ];
+  extraCons[0].date = "27/07";
+  extraCons[1].date = "12/08";
+  extraCons[2].date = "04/09";
+  extraCons[3].date = "26/10";
+  extraCons[4].date = "31/03";
+  extraCons[5].always = true;
 });

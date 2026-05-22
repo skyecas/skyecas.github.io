@@ -487,11 +487,11 @@ function animate() {
   drawConstellationLines(orionStars, orionConnections);
   drawConstellationLines(cassiopeiaStars, cassiopeiaConnections);
 
-  // Sea and sun should layer next
+  // Sea and sun — sun first so it's always behind water
+  drawSun();
   drawSea();
   for (let wave of waves) { wave.update(time); };
   drawShimmer();
-  drawSun();
 
   var dc = getDateRGB();
   if (dc) {
