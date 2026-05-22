@@ -26,20 +26,7 @@ var camScale = (function() {
 // --- Constants ---
 var MU = 120;
 
-// --- Stars ---
-function BgStar(){
-  this.x = Math.random()*W; this.y = Math.random()*H;
-  this.s = Math.random()*1.5+0.1;
-  this.col = spectralToHex(randomSpectralType());
-  this.ph = Math.random()*Math.PI*2; this.sp = 0.01+Math.random()*0.02;
-}
-BgStar.prototype.draw = function(t){
-  var tw = Math.sin(t*this.sp+this.ph)*0.3+0.7;
-  ctx.globalAlpha = 0.4+tw*0.6; ctx.fillStyle = this.col;
-  ctx.fillRect(this.x,this.y,this.s,this.s); ctx.globalAlpha = 1;
-};
-var stars = [];
-for(var i=600;i>0;i--) stars.push(new BgStar());
+var stars = createBgStars(600, W, H);
 
 // --- Kepler utilities ---
 function solveKepler(M, e) {
@@ -779,7 +766,7 @@ orb.animate = function(timestamp) {
 
   ctx.fillStyle = "#03040c";
   ctx.fillRect(0,0,W,H);
-  for (var s of stars) s.draw(time);
+  renderBgStars(ctx, stars, time);
 
   // Launch
   if (!launched) { launch(time); launched = true; }

@@ -12,21 +12,7 @@ var width = rawWidth, height = rawHeight;
 var sx = rawWidth / 1920, sy = rawHeight / 1080;
 var mScale = Math.min(sx, sy);
 
-function BgStar() {
-	this.x = Math.random() * width;
-	this.y = Math.random() * height * 0.8;
-	this.size = Math.random() * 1.5 + 0.1;
-	this.colour = spectralToHex(randomSpectralType());
-	this.phase = Math.random() * Math.PI * 2;
-	this.speed = 0.02 + Math.random() * 0.03;
-}
-BgStar.prototype.update = function(t) {
-	var twinkle = Math.sin(t * this.speed + this.phase) * 0.5 + 0.5;
-	bgCtx.globalAlpha = 0.5 + twinkle * 0.5;
-	bgCtx.fillStyle = this.colour;
-	bgCtx.fillRect(this.x, this.y, this.size, this.size);
-	bgCtx.globalAlpha = 1;
-};
+var stars = createBgStars(500, width, height);
 
 function AuroraBand(yBase, height, colours, speed, phase) {
 	this.yBase = yBase;
@@ -79,9 +65,6 @@ AuroraBand.prototype.update = function(t) {
 	bgCtx.filter = "none";
 };
 
-var stars = [];
-for (var i = 500; i > 0; i--) { stars.push(new BgStar()); }
-
 var bands = [
 	new AuroraBand(120 * sy, 250, [
 		"rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"
@@ -100,16 +83,16 @@ function getDateColour() {
 	var key = getDateKey();
 	for (var i = 0; i < consData.length; i++) {
 		if (consData[i].date === key) {
-			var c = new Constellation(consData[i]);
+			var s = consData[i].stars;
 			var bri = null, briMag = Infinity;
-			for (var j = 0; j < c.stars.length; j++) {
-				if (c.stars[j].mag < briMag) {
-					briMag = c.stars[j].mag;
-					bri = c.stars[j];
+			for (var j = 0; j < s.length; j++) {
+				if (s[j].mag < briMag) {
+					briMag = s[j].mag;
+					bri = s[j];
 				}
 			}
 			if (bri) {
-				var hex = bri.getColour();
+				var hex = spectralToHex(bri.spec || "G2V");
 				return [
 					parseInt(hex.slice(1,3), 16),
 					parseInt(hex.slice(3,5), 16),
@@ -121,158 +104,30 @@ function getDateColour() {
 	return null;
 }
 
-// Cassiopeia stars projected to their screen position
-var cassBase = { x: 250 * sx, y: 1000 * sy };
-var cassSX = -6.5 * sx;
-var cassSY = -12 * sy;
-
-var cassConst = new Constellation(consData[1]);
-var cassWCoords = [];
-for (var i = 0; i < cassConst.stars.length; i++) {
-	var s = cassConst.stars[i];
-	cassWCoords.push({
-		x: cassBase.x + cassSX * s.ra,
-		y: cassBase.y + cassSY * s.dec,
-		size: s.getSize(),
-		colour: s.getColour(),
-		name: s.name,
-		mag: s.mag,
-	});
-}
-var cassiopeiaConnections = cassConst.connections;
-
-// Build extra constellation display objects from shared consData
 function buildExtraCons() {
 	var cons = [];
-	var spec = [
-		{ name:"Lyra",		cx:200*sx,	cy:135*sy,	sc:16*mScale, rC:281.92, dC:35.61 },
-		{ name:"Cygnus",	cx:1700*sx, cy:145*sy,	sc:9*mScale,  rC:304.64, dC:37.77 },
-		{ name:"Gemini",	cx:180*sx,	cy:580*sy,	sc:10*mScale, rC:108.09, dC:24.69 },
-		{ name:"Scorpius",	cx:1730*sx, cy:640*sy,	sc:8*mScale,  rC:251.69, dC:-29.88 },
-		{ name:"Andromeda", cx:960*sx,	cy:165*sy,	sc:13*mScale, rC:14.50,  dC:36.25 },
-		{ name:"Orion",		cx:1700*sx, cy:420*sy,	sc:10*mScale, rC:83.96,  dC:-1.62 },
+	var configs = [
+		{ idx: 1, cx: width * 0.4, cy: height * 0.2, sc: 2, rC: 0, dC: 60 },
+		{ idx: 0, cx: width * 0.6, cy: height * 0.35, sc: 8, rC: 5.5, dC: 0 },
+		{ idx: 2, cx: width * 0.8, cy: height * 0.2, sc: 8, rC: 18.6, dC: 38 },
+		{ idx: 3, cx: width * 0.85, cy: height * 0.3, sc: 10, rC: 20.5, dC: 40 },
+		{ idx: 5, cx: width * 0.5, cy: height * 0.7, sc: 6, rC: 16.8, dC: -35 },
+		{ idx: 6, cx: width * 0.2, cy: height * 0.5, sc: 3, rC: 1.5, dC: 40 },
 	];
-	for (var i = 0; i < spec.length; i++) {
-		var s = spec[i];
-		var consDataEntry = null;
-		for (var j = 0; j < consData.length; j++) {
-			if (consData[j].name === s.name) { consDataEntry = consData[j]; break; }
-		}
-		if (!consDataEntry) continue;
-		var c = new Constellation(consDataEntry);
+	for (var i = 0; i < configs.length; i++) {
+		var c = configs[i];
+		var data = consData[c.idx];
+		if (!data) continue;
+		if (!data.always && data.date !== getDateKey()) continue;
 		cons.push({
-			n: c.name,
-			cx: s.cx, cy: s.cy, sc: s.sc, rC: s.rC, dC: s.dC,
-			pts: c.project(s.cx, s.cy, s.sc, s.rC, s.dC),
-			m: c.mainIndices,
-			c: c.connections,
-			date: consDataEntry.date,
-			always: consDataEntry.always,
+			pts: projectConstellation(data, c.cx, c.cy, c.sc, c.rC, c.dC),
+			connections: data.connections,
+			mainIndices: data.mainIndices,
 		});
 	}
 	return cons;
 }
 var extraCons = buildExtraCons();
-
-function drawConstellationDef(d, t) {
-	var prom = d.always || (d.date && d.date === getDateKey()) ? 1.0 : 0.35;
-	var pts = d.pts;
-
-	var connAlpha = 0.04 + prom * 0.12;
-	var glowMul = 0.15 + prom * 0.15;
-	var starMul = 0.3 + prom * 0.5;
-
-	var minMag = Infinity;
-	for (var pi of pts) if (pi.mag !== undefined && pi.mag < minMag) minMag = pi.mag;
-
-	for (var pi of pts) {
-		var tw = Math.sin(t * 0.02 + pi.x * 0.005) * 0.3 + 0.7;
-		var magFactor = pi.mag !== undefined ? Math.max(0.12, 1 - (pi.mag - minMag) * 0.35) : 1;
-		var a = (starMul + tw * (1 - starMul)) * magFactor;
-		var gs = pi.size * (2 + prom * 1.5);
-
-		bgCtx.save();
-		var gl = bgCtx.createRadialGradient(pi.x, pi.y, 0, pi.x, pi.y, gs);
-		gl.addColorStop(0, hexToRgba(pi.colour, a * glowMul));
-		gl.addColorStop(1, hexToRgba(pi.colour, 0));
-		bgCtx.fillStyle = gl;
-		bgCtx.beginPath();
-		bgCtx.arc(pi.x, pi.y, gs, 0, Math.PI * 2);
-		bgCtx.fill();
-		bgCtx.restore();
-
-		bgCtx.fillStyle = pi.colour;
-		bgCtx.globalAlpha = a;
-		bgCtx.beginPath();
-		bgCtx.arc(pi.x, pi.y, pi.size, 0, Math.PI * 2);
-		bgCtx.fill();
-		bgCtx.globalAlpha = 1;
-	}
-
-	bgCtx.strokeStyle = "rgba(255, 255, 255, " + connAlpha + ")";
-	bgCtx.lineWidth = 1;
-	bgCtx.beginPath();
-	for (var ci of d.c) {
-		bgCtx.moveTo(pts[ci[0]].x, pts[ci[0]].y);
-		bgCtx.lineTo(pts[ci[1]].x, pts[ci[1]].y);
-	}
-	bgCtx.stroke();
-
-	bgCtx.font = "11px sans-serif";
-	bgCtx.textAlign = "center";
-	bgCtx.fillStyle = "rgba(255, 255, 255, " + (0.06 + prom * 0.12) + ")";
-	var lx = 0, maxY = -Infinity;
-	for (var mi of d.m) {
-		lx += pts[mi].x;
-		if (pts[mi].y > maxY) maxY = pts[mi].y;
-	}
-	bgCtx.fillText(d.n, lx / d.m.length, maxY + 18);
-}
-
-function drawConstellationStars(t) {
-	var minMag = Infinity;
-	for (var s of cassWCoords) if (s.mag < minMag) minMag = s.mag;
-
-	for (var s of cassWCoords) {
-		var twinkle = Math.sin(t * 0.02 + s.x * 0.005) * 0.3 + 0.7;
-		var magFactor = Math.max(0.12, 1 - (s.mag - minMag) * 0.35);
-		var alpha = (0.7 + twinkle * 0.3) * magFactor;
-		var glowSize = s.size * 3.5;
-
-		bgCtx.save();
-		var glow = bgCtx.createRadialGradient(s.x, s.y, 0, s.x, s.y, glowSize);
-		glow.addColorStop(0, hexToRgba(s.colour, alpha * 0.3));
-		glow.addColorStop(1, hexToRgba(s.colour, 0));
-		bgCtx.fillStyle = glow;
-		bgCtx.beginPath();
-		bgCtx.arc(s.x, s.y, glowSize, 0, Math.PI * 2);
-		bgCtx.fill();
-		bgCtx.restore();
-
-		bgCtx.fillStyle = s.colour;
-		bgCtx.globalAlpha = alpha;
-		bgCtx.beginPath();
-		bgCtx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-		bgCtx.fill();
-		bgCtx.globalAlpha = 1;
-	}
-
-	bgCtx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-	bgCtx.lineWidth = 1;
-	bgCtx.beginPath();
-	for (var c of cassiopeiaConnections) {
-		bgCtx.moveTo(cassWCoords[c[0]].x, cassWCoords[c[0]].y);
-		bgCtx.lineTo(cassWCoords[c[1]].x, cassWCoords[c[1]].y);
-	}
-	bgCtx.stroke();
-
-	bgCtx.font = "11px sans-serif";
-	bgCtx.textAlign = "center";
-	bgCtx.fillStyle = "rgba(255, 255, 255, 0.24)";
-	var labelX = 0, minY = Infinity;
-	for (var i = 0; i < 5; i++) { var s = cassWCoords[i]; labelX += s.x; if (s.y < minY) minY = s.y; }
-	bgCtx.fillText("Cassiopeia", labelX / 5, minY - 20);
-}
 
 function drawLandscape() {
 	bgCtx.fillStyle = "#060612";
@@ -301,11 +156,6 @@ function animate() {
 	skyGrad.addColorStop(1, "#0a0a14");
 	bgCtx.fillStyle = skyGrad;
 	bgCtx.fillRect(0, 0, width, height);
-
-	for (var s of stars) { s.update(time); }
-
-	drawConstellationStars(time);
-	for (var ec of extraCons) { drawConstellationDef(ec, time); }
 
 	var dc = getDateColour();
 	if (dc) {
@@ -340,6 +190,13 @@ function animate() {
 		for (var b of bands) { b.update(time); }
 	}
 
+	renderBgStars(bgCtx, stars, time);
+
+	for (var ec of extraCons) {
+		renderConstellationStars(bgCtx, ec.pts, ec.mainIndices, time);
+		renderConstellationLines(bgCtx, ec.pts, ec.connections, "rgba(255, 255, 255, 0.15)");
+	}
+
 	drawLandscape();
 
 	requestAnimFrame(animate);
@@ -356,17 +213,7 @@ window.addEventListener("resize", function() {
 	width = rawWidth; height = rawHeight;
 	sx = rawWidth / 1920; sy = rawHeight / 1080;
 	mScale = Math.min(sx, sy);
-	cassBase = { x: 250 * sx, y: 1000 * sy };
-	cassSX = -6.5 * sx;
-	cassSY = -12 * sy;
-	cassConst = new Constellation(consData[1]);
-	for (var i = 0; i < cassConst.stars.length; i++) {
-		var s = cassConst.stars[i];
-		cassWCoords[i].x = cassBase.x + cassSX * s.ra;
-		cassWCoords[i].y = cassBase.y + cassSY * s.dec;
-		cassWCoords[i].size = s.getSize();
-		cassWCoords[i].colour = s.getColour();
-	}
+	stars = createBgStars(500, width, height);
 	bands = [
 		new AuroraBand(120 * sy, 250, [
 			"rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"
