@@ -332,26 +332,6 @@ function launch(t) {
   burn.rate = burnRate; burn.remaining = dvm;
 }
 
-function doCorrection(t) {
-  if (mission.target < 0 || mission.target >= planets.length) return false;
-  var dt = Math.min(mission.legDur * 0.5, 5000);
-  var tp = pPos(planets[mission.target], t + dt);
-  var lam = lambert(sc.rx, sc.ry, tp.rx, tp.ry, dt);
-  if (lam) {
-    var dvx = lam.vx - sc.vx, dvy = lam.vy - sc.vy;
-    var dvm = Math.sqrt(dvx*dvx + dvy*dvy);
-    if (dvm > 0.05) { dvx = dvx/dvm*0.05; dvy = dvy/dvm*0.05; dvm = 0.05; }
-    mission.phase = "burning";
-    burn.active = true; burn.dvx = dvx; burn.dvy = dvy;
-    burn.rate = burnRate; burn.remaining = dvm;
-    mission.correctionsLeft--;
-    mission.lastCCtime = t;
-    logEvent('correction', "Correction (Δv=" + dvm.toFixed(3) + ") → " + planets[mission.target].n);
-    return true;
-  }
-  return false;
-}
-
 // --- Verlet integration (patched conic) ---
 function integrate(t, dt) {
   // Check SOI
@@ -951,12 +931,20 @@ function animate(timestamp) {
       }
     }
 
-    // Course corrections
-    var elapsed = time - mission.legStart;
-    if (mission.correctionsLeft > 0 && mission.inSOI < 0) {
-      if ((mission.correctionsLeft > 1 && elapsed > mission.legDur*0.3 && time > mission.lastCCtime + 200) ||
-          (mission.correctionsLeft > 0 && elapsed > mission.legDur*0.7 && time > mission.lastCCtime + 200)) {
-        doCorrection(time);
+    // Course corrections — tiny nudges based on predicted encounters
+    if (mission.inSOI < 0 && prediction.valid && prediction.encounters.length > 0 && time > mission.lastCCtime + 500) {
+      var enc = prediction.encounters[0];
+      if (enc.type === "enter" || enc.type === "flyby") {
+        mission.lastCCtime = time;
+        // Small prograde/retrograde nudge to adjust encounter timing
+        var spd = Math.sqrt(sc.vx*sc.vx + sc.vy*sc.vy);
+        if (spd > 0.01) {
+          var nudge = 0.015;
+          sc.vx += sc.vx / spd * nudge;
+          sc.vy += sc.vy / spd * nudge;
+          totalDV += nudge;
+          logEvent('correction', "Nudge +" + nudge.toFixed(3) + " → " + planets[enc.planet].n);
+        }
       }
     }
 
@@ -970,43 +958,16 @@ function animate(timestamp) {
       var vInf = Math.sqrt(rvx*rvx + rvy*rvy);
 
       if (pd < planets[mission.inSOI].r * 4) {
-        // Close approach - the hyperbolic flyby is done by the patched conic,
-        // but we log it and update the target
         logEvent('flyby', "✦ " + planets[mission.inSOI].n + " flyby (v∞=" + vInf.toFixed(2) + ")");
         emit(sx + sc.rx * camScale, sy + sc.ry * camScale, 25, 40, 4);
         emit(sx + sc.rx * camScale, sy + sc.ry * camScale, 15, 200, 3);
-
         mission.visited.push(mission.inSOI);
         mission.prevPlanet = mission.inSOI;
-
-        var newT = pickTarget(mission.inSOI, mission.visited, time);
-        if (newT >= 0) {
-          mission.target = newT;
-          mission.legStart = time;
-          mission.correctionsLeft = 2;
-          var np = pPos(planets[newT], time);
-          var ndx = np.rx - sc.rx, ndy = np.ry - sc.ry;
-          mission.legDur = Math.max(1000, Math.min(15000, Math.sqrt(ndx*ndx+ndy*ndy) * 5));
-          logEvent('target', "New target: " + planets[newT].n);
-          if (mission.visited.length >= planets.length) {
-            mission.visited = [mission.prevPlanet];
-          }
-        } else {
-          // All visited, reset
-          mission.visited = [mission.prevPlanet];
-          var rt = pickTarget(mission.prevPlanet, visited, time);
-          if (rt >= 0) {
-            mission.target = rt;
-            mission.legStart = time;
-            mission.correctionsLeft = 2;
-            var np = pPos(planets[rt], time);
-            var ndx = np.rx - sc.rx, ndy = np.ry - sc.ry;
-            mission.legDur = Math.max(1000, Math.min(15000, Math.sqrt(ndx*ndx+ndy*ndy) * 5));
-            logEvent('target', "New target: " + planets[rt].n);
-            if (visited) {} // suppress unused
-          }
-        }
+        mission.target = pickTarget(mission.inSOI, mission.visited, time);
         mission.flybyCooldown = time;
+        if (mission.visited.length >= planets.length) {
+          mission.visited = [mission.prevPlanet];
+        }
       }
     }
   }
