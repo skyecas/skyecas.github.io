@@ -82,10 +82,13 @@ for (var i = 0; i < cassiopeiaStars.length; i++) {
 var cassTime = 0;
 
 function drawConstellationStars(t) {
+  // Normalize brightness per constellation: brightest star = 100%
+  var minMag = Infinity;
+  for (var s of cassWCoords) if (s.mag < minMag) minMag = s.mag;
+
   for (var s of cassWCoords) {
     var twinkle = Math.sin(t * 0.02 + s.x * 0.005) * 0.3 + 0.7;
-    // Magnitude-based dimming: mag 2.0 = full, mag 5.5 = 15%
-    var magFactor = Math.max(0.15, 1.15 - s.mag * 0.2);
+    var magFactor = Math.max(0.12, 1 - (s.mag - minMag) * 0.35);
     var alpha = (0.7 + twinkle * 0.3) * magFactor;
     var glowSize = s.size * 3.5;
 
@@ -168,9 +171,8 @@ ShootingStar.prototype.update = function() {
     // update it's position
     this.x -= this.speed;
     this.y += this.speed;
-    // if it goes out of the viewport, reset
-    var screenY = this.y - scrollY;
-    if (this.x < -this.len || screenY > height + this.len || screenY < -this.len) {
+    // if it goes out of the page bounds, reset
+    if (this.x < -this.len || this.y > pageHeight + this.len || this.y < -this.len) {
       this.speed = 0;
       // if the shooting star is special, and it's the right time
       if (this.special) {
@@ -201,8 +203,8 @@ Satellite.prototype.update = function() {
   if (this.active) {
     // update it's position
     this.x -= this.speed;
-    // if it goes out of the window, reset
-    if (this.x < 0) {
+    // if it goes out of the page bounds, reset
+    if (this.x < 0 || this.y > pageHeight || this.y < 0) {
       this.reset();
     } else {
       // set the colour
@@ -279,11 +281,8 @@ function animate() {
   bgCtx.fillStyle = "#110E19";
   bgCtx.fillRect(0, 0, width, pageHeight);
 
-  // Parallax: absolute canvas scrolls naturally; counter-offset downwards
-  // so entities appear fixed in the sky (0% scroll). Shooting stars and satellites
-  // get a slightly different rate for subtle depth.
-  var parOffset = scrollY * 1.0;
-  var cassOffset = scrollY * 1.0;
+  // Parallax: constellations drift very slowly (5% of scroll speed) for subtle depth
+  var cassOffset = scrollY * 0.05;
 
   bgCtx.fillStyle = '#ffffff';
   bgCtx.strokeStyle = '#ffffff';
