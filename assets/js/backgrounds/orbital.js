@@ -932,20 +932,48 @@ function animate(timestamp) {
     }
 
     // Course corrections — tiny nudges based on predicted encounters
-    if (mission.inSOI < 0 && prediction.valid && prediction.encounters.length > 0 && time > mission.lastCCtime + 500) {
-      var enc = prediction.encounters[0];
-      if (enc.type === "enter" || enc.type === "flyby") {
-        mission.lastCCtime = time;
-        // Small prograde/retrograde nudge to adjust encounter timing
-        var spd = Math.sqrt(sc.vx*sc.vx + sc.vy*sc.vy);
-        if (spd > 0.01) {
-          var nudge = 0.015;
-          sc.vx += sc.vx / spd * nudge;
-          sc.vy += sc.vy / spd * nudge;
-          totalDV += nudge;
-          logEvent('correction', "Nudge +" + nudge.toFixed(3) + " → " + planets[enc.planet].n);
+    if (mission.inSOI < 0 && time > mission.lastCCtime + 500) {
+      if (prediction.valid && prediction.encounters.length > 0) {
+        var enc = prediction.encounters[0];
+        if (enc.type === "enter" || enc.type === "flyby") {
+          mission.lastCCtime = time;
+          var spd = Math.sqrt(sc.vx*sc.vx + sc.vy*sc.vy);
+          if (spd > 0.01) {
+            var nudge = 0.015;
+            sc.vx += sc.vx / spd * nudge;
+            sc.vy += sc.vy / spd * nudge;
+            totalDV += nudge;
+            logEvent('correction', "Nudge +" + nudge.toFixed(3) + " → " + planets[enc.planet].n);
+          }
+        }
+      } else {
+        // No encounters predicted — ultra-low-energy Lambert from current position
+        var bestDV = 0.03, bestTarget = -1, bestLam = null;
+        for (var i = 0; i < planets.length; i++) {
+          if (i === mission.prevPlanet) continue;
+          var tp = pPos(planets[i], time + 5000);
+          var lam = lambert(sc.rx, sc.ry, tp.rx, tp.ry, 5000);
+          if (!lam) {
+            tp = pPos(planets[i], time + 15000);
+            lam = lambert(sc.rx, sc.ry, tp.rx, tp.ry, 15000);
+          }
+          if (!lam) continue;
+          var dvx = lam.vx - sc.vx, dvy = lam.vy - sc.vy;
+          var dv = Math.sqrt(dvx*dvx + dvy*dvy);
+          if (dv < bestDV) { bestDV = dv; bestTarget = i; bestLam = lam; }
+        }
+        if (bestLam) {
+          mission.lastCCtime = time;
+          var dvx = bestLam.vx - sc.vx, dvy = bestLam.vy - sc.vy;
+          var dvm = Math.sqrt(dvx*dvx + dvy*dvy);
+          if (dvm > 0.03) { dvx = dvx/dvm*0.03; dvy = dvy/dvm*0.03; dvm = 0.03; }
+          sc.vx += dvx; sc.vy += dvy;
+          totalDV += dvm;
+          mission.target = bestTarget;
+          logEvent('correction', "Weak capture → " + planets[bestTarget].n + " (Δv=" + dvm.toFixed(3) + ")");
         }
       }
+    }
     }
 
     // Flyby detection (inside SOI, close approach)
