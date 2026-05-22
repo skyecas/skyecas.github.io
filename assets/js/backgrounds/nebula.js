@@ -204,9 +204,12 @@ for (var i = 0; i < cassiopeiaStars.length; i++) {
 }
 
 function drawConstellationStars(t) {
+  var minMag = Infinity;
+  for (var s of cassWCoords) if (s.mag < minMag) minMag = s.mag;
+
   for (var s of cassWCoords) {
     var twinkle = Math.sin(t * 0.02 + s.x * 0.005) * 0.3 + 0.7;
-    var magFactor = Math.max(0.15, 1.15 - s.mag * 0.2);
+    var magFactor = Math.max(0.12, 1 - (s.mag - minMag) * 0.35);
     var alpha = (0.7 + twinkle * 0.3) * magFactor;
     var glowSize = s.size * 3.5;
 

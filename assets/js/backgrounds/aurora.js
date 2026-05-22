@@ -207,9 +207,13 @@ function drawConstellationDef(d, t) {
   var glowMul = 0.15 + prom * 0.15;
   var starMul = 0.3 + prom * 0.5;
 
+  // Normalize brightness per constellation: brightest star = 100%
+  var minMag = Infinity;
+  for (var pi of pts) if (pi.mag !== undefined && pi.mag < minMag) minMag = pi.mag;
+
   for (var pi of pts) {
     var tw = Math.sin(t * 0.02 + pi.x * 0.005) * 0.3 + 0.7;
-    var magFactor = pi.mag !== undefined ? Math.max(0.15, 1.15 - pi.mag * 0.2) : 1;
+    var magFactor = pi.mag !== undefined ? Math.max(0.12, 1 - (pi.mag - minMag) * 0.35) : 1;
     var a = (starMul + tw * (1 - starMul)) * magFactor;
     var gs = pi.size * (2 + prom * 1.5);
 
@@ -252,9 +256,12 @@ function drawConstellationDef(d, t) {
 }
 
 function drawConstellationStars(t) {
+  var minMag = Infinity;
+  for (var s of cassWCoords) if (s.mag < minMag) minMag = s.mag;
+
   for (var s of cassWCoords) {
     var twinkle = Math.sin(t * 0.02 + s.x * 0.005) * 0.3 + 0.7;
-    var magFactor = Math.max(0.15, 1.15 - s.mag * 0.2);
+    var magFactor = Math.max(0.12, 1 - (s.mag - minMag) * 0.35);
     var alpha = (0.7 + twinkle * 0.3) * magFactor;
     var glowSize = s.size * 3.5;
 
