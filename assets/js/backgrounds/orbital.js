@@ -323,9 +323,9 @@ function integrate(t, dt) {
   if (soiIdx >= 0 && mission.inSOI < 0) {
     mission.inSOI = soiIdx;
     mission.soiTime = t;
-    logEvent('soi', "≈≈ " + planets[soiIdx].n + " SOI entry ≈≈");
+    logEvent('soi', "== " + planets[soiIdx].n + " SOI entry ==");
   } else if (soiIdx < 0 && mission.inSOI >= 0) {
-    logEvent('soi', "≈≈ " + planets[mission.inSOI].n + " SOI exit ≈≈");
+    logEvent('soi', "== " + planets[mission.inSOI].n + " SOI exit ==");
     mission.inSOI = -1;
     mission.legStart = t;
     if (mission.target >= 0 && mission.target < planets.length) {
@@ -646,7 +646,7 @@ function drawHUD(t) {
   ctx.font = "11px 'Courier New',monospace";
   ctx.fillStyle = "rgba(120,200,255,0.4)";
   ctx.textAlign = "left";
-  var status = inSOI ? ("≈ " + planets[mission.inSOI].n + " SOI ≈") : "● SOLAR COAST";
+  var status = inSOI ? ("= " + planets[mission.inSOI].n + " SOI =") : "● SOLAR COAST";
   ctx.fillText(status, col, H - 5);
   ctx.textAlign = "right";
   ctx.fillText("FLY: " + mission.visited.length + " | DV: " + totalDV.toFixed(2), px + pw - 16, H - 5);
@@ -996,7 +996,7 @@ function animate(timestamp) {
   requestAnimFrame(animate);
 }
 
-animate();
+requestAnimFrame(animate);
 
 window.addEventListener("resize", function() {
   var rw = window.innerWidth, rh = window.innerHeight;
