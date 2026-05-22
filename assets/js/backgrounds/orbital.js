@@ -25,10 +25,11 @@ if (!isFinite(orScale) || orScale < 0.05) orScale = 1;
 var AU = 180;
 var camScale = (function() {
   var maxA = 0;
-  // Assumes planets is populated; compute max semi-major axis
   try { for (var p of planets) if (p.a > maxA) maxA = p.a; } catch(e) { maxA = 300; }
   if (maxA < 50) maxA = 300;
-  return Math.min(window.innerWidth, window.innerHeight || 1080) / (maxA * 2.4);
+  var cs = Math.min(W, H) / (maxA * 2.4);
+  if (!isFinite(cs) || cs < 0.01) cs = 1;
+  return cs;
 })();
 
 // --- Constants ---
@@ -267,6 +268,7 @@ function findBestTransfer(fromIdx, toIdx, t) {
 function launch(t) {
   var ep = pPos(planets[2], t);
   var ev = pVel(planets[2], t);
+  console.log("orbital: launch t=" + t + " Earth=" + ep.rx.toFixed(1) + "," + ep.ry.toFixed(1));
   // Find best target by trying Lambert transfers to each planet
   var bestTarget = -1, bestDV = Infinity, bestTrans = null;
   for (var i = 0; i < planets.length; i++) {
@@ -276,7 +278,37 @@ function launch(t) {
       bestDV = trans.dv; bestTarget = i; bestTrans = trans;
     }
   }
-  if (bestTarget < 0) return;
+  // Fallback: if Lambert fails, use a fixed prograde burn toward the nearest planet
+  if (bestTarget < 0 || !bestTrans || !bestTrans.lam) {
+    for (var i = 0; i < planets.length; i++) {
+      if (i === 2) continue;
+      var tp = pPos(planets[i], t);
+      var dx = tp.rx - ep.rx, dy = tp.ry - ep.ry;
+      var dist = Math.sqrt(dx*dx + dy*dy);
+      if (bestTarget < 0 || dist < bestDV) {
+        bestDV = dist; bestTarget = i;
+      }
+    }
+    var tp = pPos(planets[bestTarget], t);
+    var dvx = tp.rx - ep.rx, dvy = tp.ry - ep.ry;
+    var vInf = Math.sqrt(dvx*dvx + dvy*dvy);
+    if (vInf < 1) { dvx = vInf > 0.01 ? dvx / vInf : 1; dvy = vInf > 0.01 ? dvy / vInf : 0; vInf = 1; }
+    var dvm = Math.sqrt(0.365 * 0.365 + 0.1 * 0.1);
+    sc.rx = ep.rx + 15 * dvx / vInf;
+    sc.ry = ep.ry + 15 * dvy / vInf;
+    sc.vx = ev.vx; sc.vy = ev.vy;
+    totalDV = 0;
+    mission.phase = "burning"; mission.legStart = t; mission.prevPlanet = 2;
+    mission.visited = [2]; mission.correctionsLeft = 2; mission.inSOI = -1;
+    mission.flybyCooldown = 0;
+    mission.target = bestTarget;
+    mission.legDur = 5000;
+    logEvent('launch', "Launch from Earth → " + planets[bestTarget].n + " (fallback)");
+    burn.active = true; burn.dvx = dvx / vInf * dvm; burn.dvy = dvy / vInf * dvm;
+    burn.rate = burnRate; burn.remaining = dvm;
+    console.log("orbital: launch fallback target=" + planets[bestTarget].n + " sc=" + sc.rx.toFixed(1) + "," + sc.ry.toFixed(1));
+    return;
+  }
   var dvx = bestTrans.lam.vx - ev.vx, dvy = bestTrans.lam.vy - ev.vy;
   var vInf = Math.sqrt(dvx*dvx + dvy*dvy);
   var dvm = bestTrans.dv;
@@ -290,6 +322,7 @@ function launch(t) {
   mission.target = bestTarget;
   mission.legDur = bestTrans.dt;
   logEvent('launch', "Launch from Earth → " + planets[bestTarget].n + " (Δv=" + dvm.toFixed(3) + ")");
+  console.log("orbital: launch Lambert target=" + planets[bestTarget].n + " dv=" + dvm.toFixed(3) + " sc=" + sc.rx.toFixed(1) + "," + sc.ry.toFixed(1));
   burn.active = true; burn.dvx = dvx / vInf * dvm; burn.dvy = dvy / vInf * dvm;
   burn.rate = burnRate; burn.remaining = dvm;
 }
