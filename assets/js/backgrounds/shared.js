@@ -93,7 +93,7 @@ function getDateKey() {
 
 // --- All constellations (Wikipedia-verified, mag <= 5.5) ---
 var consData = [
-                            { /* ORION */
+                                          { /* ORION */
     name: "Orion", always: true,
     stars: [
       { name:"Bellatrix", ra:[5.0, 25.0, 7.87], dec:[6.0, 20.0, 59.0], mag:1.64, spec:"B2III" },
@@ -103,33 +103,35 @@ var consData = [
       { name:"Mintaka AB", ra:[5.0, 32.0, 0.4], dec:[-0.0, 17.0, 56.7], mag:2.20, spec:"B0III" },
       { name:"Saiph", ra:[5.0, 47.0, 45.39], dec:[-9.0, 40.0, 10.6], mag:2.07, spec:"B0.5Ia" },
       { name:"Rigel", ra:[5.0, 14.0, 32.27], dec:[-8.0, 12.0, 5.9], mag:0.18, spec:"B8Ia" },
-      { name:"\u03b9 Ori", ra:[5.0, 35.0, 25.98], dec:[-5.0, 54.0, 35.6], mag:2.75, spec:"O9III" },
       { name:"\u03c03 Ori", ra:[4.0, 49.0, 50.14], dec:[6.0, 57.0, 40.5], mag:3.19, spec:"F6V" },
-      { name:"\u03b7 Ori", ra:[5.0, 24.0, 28.62], dec:[-2.0, 23.0, 49.7], mag:3.35, spec:"B1V" },
-      { name:"Meissa B", ra:[5.0, 35.0, 8.28], dec:[9.0, 56.0, 3.0], mag:3.47, spec:"O8III" },
-      { name:"\u03c4 Ori", ra:[5.0, 17.0, 36.4], dec:[-6.0, 50.0, 39.8], mag:3.59, spec:"B5III" },
+      { name:"Meissa A", ra:[5.0, 35.0, 8.28], dec:[9.0, 56.0, 3.0], mag:3.47, spec:"O8III" },
       { name:"\u03c04 Ori", ra:[4.0, 51.0, 12.37], dec:[5.0, 36.0, 18.4], mag:3.68, spec:"B2III" },
       { name:"\u03c05 Ori", ra:[4.0, 54.0, 15.1], dec:[2.0, 26.0, 26.4], mag:3.71, spec:"B2III" },
-      { name:"\u03c3 Ori AB", ra:[5.0, 38.0, 44.77], dec:[-2.0, 36.0, 0.2], mag:3.77, spec:"O9.5V" },
-      { name:"\u03bf2 Ori", ra:[4.0, 56.0, 22.32], dec:[13.0, 30.0, 52.5], mag:4.06, spec:"K2III" },
-      { name:"\u03c62 Ori", ra:[5.0, 36.0, 54.33], dec:[9.0, 17.0, 29.1], mag:4.09, spec:"G8III" },
       { name:"\u03bc Ori", ra:[6.0, 2.0, 22.99], dec:[9.0, 38.0, 50.5], mag:4.12, spec:null },
-      { name:"29 Ori", ra:[5.0, 23.0, 56.84], dec:[-7.0, 48.0, 28.6], mag:4.13, spec:"G8III" },
-      { name:"32 Ori", ra:[5.0, 30.0, 47.05], dec:[5.0, 56.0, 53.6], mag:4.20, spec:"B5V" },
       { name:"\u03c02 Ori", ra:[4.0, 50.0, 36.72], dec:[8.0, 54.0, 0.9], mag:4.35, spec:"A1V" },
-      { name:"\u03c61 Ori", ra:[5.0, 34.0, 49.24], dec:[9.0, 29.0, 22.5], mag:4.39, spec:"B0IV" },
       { name:"\u03c71 Ori", ra:[5.0, 54.0, 23.08], dec:[20.0, 16.0, 35.1], mag:4.39, spec:"G0V" },
       { name:"\u03bd Ori", ra:[6.0, 7.0, 34.32], dec:[14.0, 46.0, 6.7], mag:4.42, spec:"B3IV" },
       { name:"\u03be Ori", ra:[6.0, 11.0, 56.4], dec:[14.0, 12.0, 31.7], mag:4.45, spec:"B3IV" },
-      { name:"\u03c1 Ori", ra:[5.0, 13.0, 17.48], dec:[2.0, 51.0, 40.5], mag:4.46, spec:"K3III" },
       { name:"\u03c06 Ori", ra:[4.0, 58.0, 32.9], dec:[1.0, 42.0, 50.5], mag:4.47, spec:"K2II" },
+      { name:"\u03c72 Ori", ra:[6.0, 3.0, 55.18], dec:[20.0, 8.0, 18.5], mag:4.64, spec:"B2Ia" },
+      { name:"\u03c01 Ori", ra:[4.0, 54.0, 53.7], dec:[10.0, 9.0, 4.1], mag:4.64, spec:"A0V" },
+      { name:"69 Ori", ra:[6.0, 12.0, 3.28], dec:[16.0, 7.0, 49.6], mag:4.95, spec:"B5V" },
+      { name:"5 Ori", ra:[4.0, 53.0, 22.76], dec:[2.0, 30.0, 29.8], mag:5.33, spec:"M1III" },
+      { name:"\u03b9 Ori", ra:[5.0, 35.0, 25.98], dec:[-5.0, 54.0, 35.6], mag:2.75, spec:"O9III" },
+      { name:"\u03b7 Ori", ra:[5.0, 24.0, 28.62], dec:[-2.0, 23.0, 49.7], mag:3.35, spec:"B1V" },
+      { name:"\u03c4 Ori", ra:[5.0, 17.0, 36.4], dec:[-6.0, 50.0, 39.8], mag:3.59, spec:"B5III" },
+      { name:"\u03c3 Ori AB", ra:[5.0, 38.0, 44.77], dec:[-2.0, 36.0, 0.2], mag:3.77, spec:"O9.5V" },
+      { name:"\u03bf2 Ori", ra:[4.0, 56.0, 22.32], dec:[13.0, 30.0, 52.5], mag:4.06, spec:"K2III" },
+      { name:"\u03c62 Ori", ra:[5.0, 36.0, 54.33], dec:[9.0, 17.0, 29.1], mag:4.09, spec:"G8III" },
+      { name:"29 Ori", ra:[5.0, 23.0, 56.84], dec:[-7.0, 48.0, 28.6], mag:4.13, spec:"G8III" },
+      { name:"32 Ori", ra:[5.0, 30.0, 47.05], dec:[5.0, 56.0, 53.6], mag:4.20, spec:"B5V" },
+      { name:"\u03c61 Ori", ra:[5.0, 34.0, 49.24], dec:[9.0, 29.0, 22.5], mag:4.39, spec:"B0IV" },
+      { name:"\u03c1 Ori", ra:[5.0, 13.0, 17.48], dec:[2.0, 51.0, 40.5], mag:4.46, spec:"K3III" },
       { name:"\u03c9 Ori", ra:[5.0, 39.0, 11.15], dec:[4.0, 7.0, 17.3], mag:4.50, spec:"B3III" },
       { name:"HD 40657", ra:[6.0, 0.0, 3.35], dec:[-3.0, 4.0, 26.7], mag:4.53, spec:"K2III" },
       { name:"42 Ori", ra:[5.0, 35.0, 23.16], dec:[-4.0, 50.0, 18.0], mag:4.58, spec:"B2III" },
       { name:"\u03c82 Ori", ra:[5.0, 26.0, 50.23], dec:[3.0, 5.0, 44.4], mag:4.59, spec:"B2IV" },
       { name:"\u03c5 Ori", ra:[5.0, 31.0, 55.86], dec:[-7.0, 18.0, 5.5], mag:4.62, spec:"B0V" },
-      { name:"\u03c01 Ori", ra:[4.0, 54.0, 53.7], dec:[10.0, 9.0, 4.1], mag:4.64, spec:"A0V" },
-      { name:"\u03c72 Ori", ra:[6.0, 3.0, 55.18], dec:[20.0, 8.0, 18.5], mag:4.64, spec:"B2Ia" },
       { name:"11 Ori", ra:[5.0, 4.0, 34.14], dec:[15.0, 24.0, 15.1], mag:4.65, spec:"A0" },
       { name:"\u03bf1 Ori", ra:[4.0, 52.0, 31.96], dec:[14.0, 15.0, 2.8], mag:4.71, spec:"M3" },
       { name:"31 Ori", ra:[5.0, 29.0, 43.98], dec:[-1.0, 5.0, 31.8], mag:4.71, spec:"K5III" },
@@ -142,7 +144,6 @@ var consData = [
       { name:"51 Ori", ra:[5.0, 42.0, 28.66], dec:[1.0, 28.0, 28.8], mag:4.90, spec:"K1III" },
       { name:"HD 44131", ra:[6.0, 19.0, 59.6], dec:[-2.0, 56.0, 40.2], mag:4.91, spec:"M1III" },
       { name:"HD 37756", ra:[5.0, 40.0, 50.72], dec:[-1.0, 7.0, 43.6], mag:4.95, spec:"B2IV" },
-      { name:"69 Ori", ra:[6.0, 12.0, 3.28], dec:[16.0, 7.0, 49.6], mag:4.95, spec:"B5V" },
       { name:"\u03b82 Ori A", ra:[5.0, 35.0, 22.9], dec:[-5.0, 24.0, 57.8], mag:4.98, spec:"O9.5V" },
       { name:"23 Ori", ra:[5.0, 22.0, 50.0], dec:[3.0, 32.0, 40.0], mag:5.00, spec:"B1V" },
       { name:"74 Ori", ra:[6.0, 16.0, 26.57], dec:[12.0, 16.0, 18.2], mag:5.04, spec:"F5IV" },
@@ -156,7 +157,6 @@ var consData = [
       { name:"45 Ori", ra:[5.0, 35.0, 39.49], dec:[-4.0, 51.0, 21.9], mag:5.24, spec:"F0III" },
       { name:"52 Ori", ra:[5.0, 48.0, 0.23], dec:[6.0, 27.0, 15.2], mag:5.26, spec:"A5V" },
       { name:"38 Ori", ra:[5.0, 34.0, 16.79], dec:[3.0, 46.0, 1.0], mag:5.32, spec:"A2V" },
-      { name:"5 Ori", ra:[4.0, 53.0, 22.76], dec:[2.0, 30.0, 29.8], mag:5.33, spec:"M1III" },
       { name:"HD 31296", ra:[4.0, 54.0, 47.79], dec:[7.0, 46.0, 45.0], mag:5.33, spec:"K1III" },
       { name:"14 Ori", ra:[5.0, 7.0, 52.87], dec:[8.0, 29.0, 54.9], mag:5.33, spec:null },
       { name:"21 Ori", ra:[5.0, 19.0, 11.23], dec:[2.0, 35.0, 45.4], mag:5.34, spec:"F5II" },
@@ -176,7 +176,7 @@ var consData = [
     connections: [[0, 1], [2, 3], [3, 4], [0, 3], [1, 2], [2, 5], [4, 6], [5, 6]],
     mainIndices: [0, 1, 2, 3, 4, 5, 6],
   },
-            { /* CASSIOPEIA */
+                          { /* CASSIOPEIA */
     name: "Cassiopeia", always: true,
     stars: [
       { name:"Caph", ra:[1.0, 25.0, 48.6], dec:[60.0, 14.0, 7.5], mag:2.68, spec:"A5V" },
@@ -231,15 +231,15 @@ var consData = [
     connections: [[0, 1], [1, 2], [2, 3], [3, 4]],
     mainIndices: [0, 1, 2, 3, 4],
   },
-            { /* LYRA */
+                  { /* LYRA */
     name: "Lyra", date: "27/07",
     stars: [
       { name:"Vega", ra:[18.0, 36.0, 56.19], dec:[38.0, 46.0, 58.8], mag:0.03, spec:"A0V" },
       { name:"Sheliak", ra:[18.0, 44.0, 46.34], dec:[37.0, 36.0, 18.2], mag:4.34, spec:null },
       { name:"Sulafat", ra:[18.0, 50.0, 4.79], dec:[33.0, 21.0, 45.6], mag:3.52, spec:"A8" },
       { name:"\u03b3 Lyr", ra:[18.0, 58.0, 56.62], dec:[32.0, 41.0, 22.4], mag:3.25, spec:"B9III" },
-      { name:"R Lyr", ra:[18.0, 55.0, 20.09], dec:[43.0, 56.0, 45.2], mag:4.08, spec:"M5III" },
       { name:"\u03b42 Lyr", ra:[18.0, 54.0, 30.29], dec:[36.0, 53.0, 55.0], mag:4.22, spec:"M4II" },
+      { name:"R Lyr", ra:[18.0, 55.0, 20.09], dec:[43.0, 56.0, 45.2], mag:4.08, spec:"M5III" },
       { name:"\u03ba Lyr", ra:[18.0, 19.0, 51.72], dec:[36.0, 3.0, 52.0], mag:4.33, spec:"K2III" },
       { name:"\u03b8 Lyr", ra:[19.0, 16.0, 22.1], dec:[38.0, 8.0, 1.4], mag:4.35, spec:"K0II" },
       { name:"\u03b7 Lyr", ra:[19.0, 13.0, 45.49], dec:[39.0, 8.0, 45.5], mag:4.43, spec:"B2.5IV" },
@@ -261,7 +261,7 @@ var consData = [
     connections: [[0, 2], [2, 1], [1, 0]],
     mainIndices: [0, 1, 2],
   },
-            { /* CYGNUS */
+                  { /* CYGNUS */
     name: "Cygnus", date: "12/08",
     stars: [
       { name:"Deneb", ra:[20.0, 41.0, 25.91], dec:[45.0, 16.0, 49.2], mag:1.25, spec:"A2Ia" },
@@ -272,10 +272,11 @@ var consData = [
       { name:"\u03b4 Cyg", ra:[19.0, 44.0, 58.44], dec:[45.0, 7.0, 50.5], mag:2.86, spec:"B9.5III" },
       { name:"Albireo A", ra:[19.0, 30.0, 43.29], dec:[27.0, 57.0, 34.9], mag:3.05, spec:"K3II" },
       { name:"\u03b6 Cyg", ra:[21.0, 12.0, 56.18], dec:[30.0, 13.0, 37.5], mag:3.21, spec:"G8II" },
+      { name:"\u03b7 Cyg", ra:[19.0, 56.0, 18.4], dec:[35.0, 5.0, 0.6], mag:3.89, spec:"K0III" },
+      { name:"\u03bc1 Cyg", ra:[21.0, 44.0, 8.59], dec:[28.0, 44.0, 33.4], mag:4.69, spec:"F6V" },
       { name:"\u03be Cyg", ra:[21.0, 4.0, 55.86], dec:[43.0, 55.0, 40.3], mag:3.72, spec:"K5Ib" },
       { name:"\u03c4 Cyg", ra:[21.0, 14.0, 47.35], dec:[38.0, 2.0, 39.6], mag:3.74, spec:"F1IV" },
       { name:"\u03bf1 Cyg", ra:[20.0, 13.0, 37.9], dec:[46.0, 44.0, 28.8], mag:3.80, spec:"K2II" },
-      { name:"\u03b7 Cyg", ra:[19.0, 56.0, 18.4], dec:[35.0, 5.0, 0.6], mag:3.89, spec:"K0III" },
       { name:"\u03bd Cyg", ra:[20.0, 57.0, 10.41], dec:[41.0, 10.0, 1.9], mag:3.94, spec:"A1V" },
       { name:"\u03bf2 Cyg", ra:[20.0, 15.0, 28.32], dec:[47.0, 42.0, 51.1], mag:3.96, spec:"K3Ib" },
       { name:"\u03c1 Cyg", ra:[21.0, 33.0, 58.87], dec:[45.0, 35.0, 31.4], mag:3.98, spec:"G8III" },
@@ -292,7 +293,6 @@ var consData = [
       { name:"47 Cyg A", ra:[20.0, 33.0, 54.19], dec:[35.0, 15.0, 3.1], mag:4.61, spec:"K2Ib" },
       { name:"\u03c6 Cyg", ra:[19.0, 39.0, 22.6], dec:[30.0, 9.0, 11.6], mag:4.68, spec:"G8III" },
       { name:"\u03c01 Cyg", ra:[21.0, 42.0, 5.66], dec:[51.0, 11.0, 22.7], mag:4.69, spec:"B3IV" },
-      { name:"\u03bc1 Cyg", ra:[21.0, 44.0, 8.59], dec:[28.0, 44.0, 33.4], mag:4.69, spec:"F6V" },
       { name:"8 Cyg", ra:[19.0, 31.0, 46.32], dec:[34.0, 27.0, 10.7], mag:4.74, spec:"B3IV" },
       { name:"59 Cyg", ra:[20.0, 59.0, 49.55], dec:[47.0, 31.0, 15.4], mag:4.74, spec:"B1" },
       { name:"P Cyg", ra:[20.0, 17.0, 47.2], dec:[38.0, 1.0, 58.6], mag:4.77, spec:"B2" },
@@ -342,7 +342,7 @@ var consData = [
     connections: [[0, 1], [1, 2], [3, 1], [1, 4]],
     mainIndices: [0, 1, 2, 3, 4],
   },
-            { /* GEMINI */
+                  { /* GEMINI */
     name: "Gemini", date: "04/09",
     stars: [
       { name:"Castor A", ra:[7.0, 34.0, 36.0], dec:[31.0, 53.0, 19.1], mag:1.90, spec:"A2V" },
@@ -361,9 +361,9 @@ var consData = [
       { name:"\u03b6 Gem", ra:[7.0, 4.0, 6.54], dec:[20.0, 34.0, 13.1], mag:4.01, spec:"G1Ib" },
       { name:"\u03bd Gem A", ra:[6.0, 28.0, 57.79], dec:[20.0, 12.0, 43.8], mag:4.13, spec:"B6III" },
       { name:"1 Gem", ra:[6.0, 4.0, 7.22], dec:[23.0, 15.0, 49.1], mag:4.16, spec:"G7III" },
+      { name:"\u03c4 Gem", ra:[7.0, 11.0, 8.39], dec:[30.0, 14.0, 43.0], mag:4.41, spec:"K2III" },
       { name:"\u03c1 Gem", ra:[7.0, 29.0, 6.61], dec:[31.0, 47.0, 2.7], mag:4.16, spec:"F0V" },
       { name:"\u03c3 Gem", ra:[7.0, 43.0, 18.69], dec:[28.0, 53.0, 2.7], mag:4.23, spec:"K1III" },
-      { name:"\u03c4 Gem", ra:[7.0, 11.0, 8.39], dec:[30.0, 14.0, 43.0], mag:4.41, spec:"K2III" },
       { name:"30 Gem", ra:[6.0, 43.0, 59.29], dec:[13.0, 13.0, 41.3], mag:4.49, spec:"K1III" },
       { name:"38 Gem", ra:[6.0, 54.0, 38.59], dec:[13.0, 10.0, 40.9], mag:4.71, spec:"F0V" },
       { name:"\u03bf Gem", ra:[7.0, 39.0, 9.96], dec:[34.0, 35.0, 4.7], mag:4.89, spec:"F3III" },
@@ -393,7 +393,7 @@ var consData = [
     connections: [[0, 1], [1, 4], [0, 3], [3, 1], [4, 3]],
     mainIndices: [0, 1, 2, 3, 4],
   },
-            { /* SCORPIUS */
+                { /* SCORPIUS */
     name: "Scorpius", date: "26/10",
     stars: [
       { name:"Dschubba", ra:[16.0, 0.0, 20.01], dec:[-22.0, 37.0, 17.8], mag:2.29, spec:"B0.2IV" },
@@ -406,11 +406,12 @@ var consData = [
       { name:"Girtab", ra:[17.0, 42.0, 29.28], dec:[-39.0, 1.0, 47.7], mag:2.39, spec:"B1.5III" },
       { name:"\u03b5 Sco", ra:[16.0, 50.0, 10.24], dec:[-34.0, 17.0, 33.4], mag:2.29, spec:"K2IIIb" },
       { name:"\u03c4 Sco", ra:[16.0, 35.0, 52.96], dec:[-28.0, 12.0, 57.5], mag:2.82, spec:"B0V" },
-      { name:"\u03c3 Sco", ra:[16.0, 21.0, 11.32], dec:[-25.0, 35.0, 33.9], mag:2.90, spec:"B1III" },
       { name:"\u03b91 Sco", ra:[17.0, 47.0, 35.08], dec:[-40.0, 7.0, 37.1], mag:2.99, spec:"F3Ia" },
       { name:"\u03bc1 Sco", ra:[16.0, 51.0, 52.24], dec:[-38.0, 2.0, 50.4], mag:3.00, spec:"B1.5IV" },
-      { name:"G Sco", ra:[17.0, 49.0, 51.45], dec:[-37.0, 2.0, 36.1], mag:3.19, spec:"K0" },
       { name:"\u03b7 Sco", ra:[17.0, 12.0, 9.18], dec:[-43.0, 14.0, 18.6], mag:3.32, spec:"F3" },
+      { name:"\u03b61 Sco", ra:[16.0, 53.0, 59.73], dec:[-42.0, 21.0, 43.3], mag:4.70, spec:"B1Ia" },
+      { name:"\u03c3 Sco", ra:[16.0, 21.0, 11.32], dec:[-25.0, 35.0, 33.9], mag:2.90, spec:"B1III" },
+      { name:"G Sco", ra:[17.0, 49.0, 51.45], dec:[-37.0, 2.0, 36.1], mag:3.19, spec:"K0" },
       { name:"\u03bc2 Sco", ra:[16.0, 52.0, 20.15], dec:[-38.0, 1.0, 2.9], mag:3.56, spec:"B2IV" },
       { name:"\u03b62 Sco", ra:[16.0, 54.0, 35.11], dec:[-42.0, 21.0, 38.7], mag:3.62, spec:"K4III" },
       { name:"\u03c1 Sco", ra:[15.0, 56.0, 53.09], dec:[-29.0, 12.0, 50.4], mag:3.87, spec:"B2IV" },
@@ -424,7 +425,6 @@ var consData = [
       { name:"13 Sco", ra:[16.0, 12.0, 18.21], dec:[-27.0, 55.0, 34.7], mag:4.58, spec:"B2V" },
       { name:"2 Sco", ra:[15.0, 53.0, 36.73], dec:[-25.0, 19.0, 37.5], mag:4.59, spec:"B2.5V" },
       { name:"1 Sco", ra:[15.0, 50.0, 58.75], dec:[-25.0, 45.0, 4.4], mag:4.63, spec:"B1.5V" },
-      { name:"\u03b61 Sco", ra:[16.0, 53.0, 59.73], dec:[-42.0, 21.0, 43.3], mag:4.70, spec:"B1Ia" },
       { name:"\u03b92 Sco", ra:[17.0, 50.0, 11.11], dec:[-40.0, 5.0, 25.5], mag:4.78, spec:"A6Ib" },
       { name:"22 Sco", ra:[16.0, 30.0, 12.48], dec:[-25.0, 6.0, 54.6], mag:4.79, spec:"B3V" },
       { name:"HD&#160;161840", ra:[17.0, 49.0, 10.47], dec:[-31.0, 42.0, 11.5], mag:4.79, spec:"B8Ib" },
@@ -460,7 +460,7 @@ var consData = [
     connections: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7]],
     mainIndices: [0, 1, 2, 3, 4, 5, 6, 7],
   },
-            { /* ANDROMEDA */
+                    { /* ANDROMEDA */
     name: "Andromeda", date: "31/03",
     stars: [
       { name:"Alpheratz", ra:[0.0, 8.0, 23.17], dec:[29.0, 5.0, 27.0], mag:2.07, spec:"B9" },
@@ -469,6 +469,7 @@ var consData = [
       { name:"\u03b4 And", ra:[2.0, 3.0, 53.92], dec:[42.0, 19.0, 47.5], mag:2.10, spec:"K3IIb" },
       { name:"51 And", ra:[0.0, 56.0, 45.1], dec:[38.0, 29.0, 57.3], mag:3.86, spec:"A5V" },
       { name:"Udkadua", ra:[0.0, 49.0, 48.83], dec:[41.0, 4.0, 44.2], mag:4.53, spec:"B5V" },
+      { name:"51 And", ra:[1.0, 37.0, 59.5], dec:[48.0, 37.0, 42.6], mag:3.59, spec:"K3III" },
       { name:"\u03bf And", ra:[23.0, 1.0, 55.25], dec:[42.0, 19.0, 33.5], mag:3.62, spec:"B6" },
       { name:"\u03bb And", ra:[23.0, 37.0, 33.71], dec:[46.0, 27.0, 33.0], mag:3.81, spec:"G8III" },
       { name:"\u03b6 And", ra:[0.0, 47.0, 20.39], dec:[24.0, 16.0, 2.6], mag:4.08, spec:"K1II" },
@@ -513,7 +514,7 @@ var consData = [
       { name:"2942", ra:[0.0, 37.0, 21.23], dec:[35.0, 23.0, 58.2], mag:5.45, spec:"G5III" },
       { name:"36 And", ra:[0.0, 54.0, 58.02], dec:[23.0, 37.0, 42.4], mag:5.46, spec:"K1IV" },
     ],
-    connections: [[0, 1], [1, 2], [2, 4], [2, 3], [3, 5]],
+    connections: [[0, 1], [1, 2], [2, 6], [2, 3], [3, 5]],
     mainIndices: [0, 1, 2, 3, 4, 5],
   },
 ];];
