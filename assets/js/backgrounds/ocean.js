@@ -304,58 +304,12 @@ ShootingStar.prototype.reset = function (x = "0") {
 	this.active = false;
 }
 
-// BgStar entity, twinkles (renamed to avoid shadowing shared.js Star)
-function BgStar(x, y, size, colour, isConstellation = false) {
-	this.x = x || Math.random() * width;
-	this.y = y || Math.random() ** 1.4 * height * 0.3;
-	this.size = size || Math.random() * 2 + 0.1;
-	this.colour = colour || spectralToHex(randomSpectralType());
-	this.isConstellation = isConstellation;  // Boolean flag to check if star is in a constellation
-}
-BgStar.prototype.update = function () {
-	// Draw the glow effect if it's part of a constellation
-	this.drawGlow();
-
-	// Adjust the size of the star due to twinkling
-	this.size = Math.max(.1, Math.min(2, this.size + 0.1 * Math.random() - 0.05));
-
-	// Draw the star
-	bgCtx.fillStyle = this.colour;
-	bgCtx.fillRect(this.x, this.y, this.size, this.size);
-};
-BgStar.prototype.drawGlow = function () {
-	if (this.isConstellation) {
-		bgCtx.save();
-		bgCtx.globalAlpha = 0.8;  // Glow transparency
-		bgCtx.shadowColor = this.colour;
-		bgCtx.shadowBlur = 15;  // Glow size
-		bgCtx.fillStyle = this.colour;
-		bgCtx.beginPath();
-		bgCtx.arc(this.x, this.y, 3, 0, Math.PI * 2);
-		bgCtx.fill();
-		bgCtx.restore();
-	}
-};
-
-// Constellations!
-function drawConstellationLines(stars, connections) {
-	bgCtx.beginPath();
-	connections.forEach(connection => {
-		const star1 = stars[connection[0]];
-		const star2 = stars[connection[1]];
-		bgCtx.moveTo(star1.x, star1.y);
-		bgCtx.lineTo(star2.x, star2.y);
-	});
-	bgCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';  // Soft white color for lines
-	bgCtx.lineWidth = 1.5;  // Line width
-	bgCtx.stroke();
-};
 // set the canvas size
 background.width = width;
 background.height = height;
 
 // create an array of animated entities
-var stars = [];
+var stars = createBgStars(600, width, height, {yBias: 1.4});
 var shootingstars = [];
 var clouds = [];
 var bubbles = [];
@@ -373,16 +327,10 @@ for (var i = wavecount; i > 0; i--) {
 }
 // Add shooting stars
 for (var i = 10; i > 0; i--) { shootingstars.push(new ShootingStar()); }
-// Add random stars
-for (var i = 600; i > 0; i--) { stars.push(new BgStar()); }
 
 // Project constellations from shared.js data
-var orionPts = new Constellation(consData[0]).project(2400, 200, 8, 0, 0);
-var cassPts = new Constellation(consData[1]).project(400, 120, 8, 0, 60);
-
-// Create BgStar instances for constellation stars
-for (let pt of orionPts) { stars.push(new BgStar(pt.x, pt.y, pt.size, pt.colour, true)); }
-for (let pt of cassPts) { stars.push(new BgStar(pt.x, pt.y, pt.size, pt.colour, true)); }
+var orionPts = projectConstellation(consData[0], 2400, 200, 8, 0, 0);
+var cassPts = projectConstellation(consData[1], 400, 120, 8, 0, 60);
 
 // animate the background
 function animate() {
@@ -391,9 +339,11 @@ function animate() {
 	drawSky();
 
 	// Draw constellations and stars
-	for (let star of stars) { star.update(); };
-	drawConstellationLines(orionPts, consData[0].connections);
-	drawConstellationLines(cassPts, consData[1].connections);
+	renderBgStars(bgCtx, stars, time, 1);
+	renderConstellationLines(bgCtx, orionPts, consData[0].connections);
+	renderConstellationLines(bgCtx, cassPts, consData[1].connections);
+	renderConstellationStars(bgCtx, orionPts, consData[0].mainIndices, time);
+	renderConstellationStars(bgCtx, cassPts, consData[1].mainIndices, time);
 
 	// Sea and sun — sun first so it's always behind water
 	drawSun();

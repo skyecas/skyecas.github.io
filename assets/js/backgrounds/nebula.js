@@ -20,49 +20,6 @@ function noise2D(x, y, t) {
          Math.sin((x + y) * 0.002 + t * 0.0004) * 0.2;
 }
 
-function BgStar() {
-  this.x = Math.random() * width;
-  this.y = Math.random() * height;
-  this.size = Math.random() * 2 + 0.2;
-  this.colour = spectralToHex(randomSpectralType());
-  this.phase = Math.random() * Math.PI * 2;
-  this.speed = 0.01 + Math.random() * 0.02;
-  this.bright = Math.random() < 0.02;
-}
-BgStar.prototype.update = function(t) {
-  var twinkle = Math.sin(t * this.speed + this.phase) * 0.4 + 0.6;
-  bgCtx.globalAlpha = 0.2 + twinkle * 0.8;
-  bgCtx.fillStyle = this.colour;
-  bgCtx.fillRect(this.x, this.y, this.size, this.size);
-
-  if (this.bright) {
-    bgCtx.save();
-    bgCtx.globalAlpha = 0.15 * twinkle;
-    bgCtx.filter = "blur(3px)";
-    bgCtx.fillStyle = this.colour;
-    bgCtx.beginPath();
-    bgCtx.arc(this.x, this.y, this.size * 4, 0, Math.PI * 2);
-    bgCtx.fill();
-    bgCtx.restore();
-    bgCtx.filter = "none";
-
-    bgCtx.strokeStyle = "rgba(255, 255, 255, 0.08)";
-    bgCtx.lineWidth = 0.5;
-    bgCtx.beginPath();
-    bgCtx.moveTo(this.x - 8, this.y);
-    bgCtx.lineTo(this.x - 2, this.y);
-    bgCtx.moveTo(this.x + 2, this.y);
-    bgCtx.lineTo(this.x + 8, this.y);
-    bgCtx.moveTo(this.x, this.y - 8);
-    bgCtx.lineTo(this.x, this.y - 2);
-    bgCtx.moveTo(this.x, this.y + 2);
-    bgCtx.lineTo(this.x, this.y + 8);
-    bgCtx.stroke();
-  }
-
-  bgCtx.globalAlpha = 1;
-};
-
 function DustLane(xBase, yBase, width, height, angle, speed) {
   this.xBase = xBase;
   this.yBase = yBase;
@@ -106,8 +63,7 @@ DustLane.prototype.update = function(t) {
   bgCtx.restore();
 };
 
-var stars = [];
-for (var i = 1200; i > 0; i--) { stars.push(new BgStar()); }
+var stars = createBgStars(1200, width, height);
 
 var dustLanes = [
   new DustLane(200 * sx, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
@@ -171,65 +127,31 @@ function drawBrightCore(t) {
 
 // === Cassiopeia Constellation ===
 
-var cassBase = { x: width * 0.13, y: height * 0.93 };
-var cassSX = -6.5 * sx;
-var cassSY = -12 * sy;
+var cassData = consData[1];
+var cassPts = [];
 
-var cassWCoords = [];
-for (var i = 0; i < consData[1].stars.length; i++) {
-  var s = consData[1].stars[i];
-  cassWCoords.push({
-    x: cassBase.x + cassSX * s.ra,
-    y: cassBase.y + cassSY * s.dec,
-    size: starSize(s.mag),
-    colour: spectralToHex(s.spec),
-    name: s.name,
-    mag: s.mag,
-  });
+function projectConstellationLocal() {
+  var sc = 12 * sy;
+  var cosFac = 6.5 * sx / (12 * sy);
+  if (cosFac > 1) cosFac = 1;
+  var dC = Math.acos(cosFac) * 180 / Math.PI;
+  var cx = width * 0.13;
+  var cy = height * 0.93 - sc * dC;
+  cassPts = projectConstellation(cassData, cx, cy, sc, 0, dC);
 }
 
-function drawConstellationStars(t) {
-  var minMag = Infinity;
-  for (var s of cassWCoords) if (s.mag < minMag) minMag = s.mag;
+projectConstellationLocal();
 
-  for (var s of cassWCoords) {
-    var twinkle = Math.sin(t * 0.02 + s.x * 0.005) * 0.3 + 0.7;
-    var magFactor = Math.max(0.12, 1 - (s.mag - minMag) * 0.35);
-    var alpha = (0.7 + twinkle * 0.3) * magFactor;
-    var glowSize = s.size * 3.5;
-
-    bgCtx.save();
-    var glow = bgCtx.createRadialGradient(s.x, s.y, 0, s.x, s.y, glowSize);
-    glow.addColorStop(0, hexToRgba(s.colour, alpha * 0.3));
-    glow.addColorStop(1, hexToRgba(s.colour, 0));
-    bgCtx.fillStyle = glow;
-    bgCtx.beginPath();
-    bgCtx.arc(s.x, s.y, glowSize, 0, Math.PI * 2);
-    bgCtx.fill();
-    bgCtx.restore();
-
-    bgCtx.fillStyle = s.colour;
-    bgCtx.globalAlpha = alpha;
-    bgCtx.beginPath();
-    bgCtx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-    bgCtx.fill();
-    bgCtx.globalAlpha = 1;
-  }
-
-  bgCtx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-  bgCtx.lineWidth = 1;
-  bgCtx.beginPath();
-  for (var c of consData[1].connections) {
-    bgCtx.moveTo(cassWCoords[c[0]].x, cassWCoords[c[0]].y);
-    bgCtx.lineTo(cassWCoords[c[1]].x, cassWCoords[c[1]].y);
-  }
-  bgCtx.stroke();
-
+function drawConstellationLabel() {
   bgCtx.font = "11px sans-serif";
   bgCtx.textAlign = "center";
   bgCtx.fillStyle = "rgba(255, 255, 255, 0.24)";
   var labelX = 0, minY = Infinity;
-  for (var i = 0; i < 5; i++) { var s = cassWCoords[i]; labelX += s.x; if (s.y < minY) minY = s.y; }
+  for (var i = 0; i < 5; i++) {
+    var s = cassPts[i];
+    labelX += s.x;
+    if (s.y < minY) minY = s.y;
+  }
   bgCtx.fillText("Cassiopeia", labelX / 5, minY - 20);
 }
 
@@ -247,12 +169,13 @@ function animate() {
 
   drawBrightCore(time);
 
-  for (var s of stars) { s.update(time); }
+  renderBgStars(bgCtx, stars, time);
 
-  drawConstellationStars(time);
+  renderConstellationLines(bgCtx, cassPts, cassData.connections, "rgba(255, 255, 255, 0.15)");
+  renderConstellationStars(bgCtx, cassPts, cassData.mainIndices, time);
+  drawConstellationLabel();
 
-  var d = new Date();
-  var todayKey = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2);
+  var todayKey = getDateKey();
   for (var i = 0; i < consData.length; i++) {
     if (consData[i].date === todayKey) {
       var pulse = Math.sin(time * 0.02) * 0.4 + 0.6;
@@ -280,20 +203,11 @@ window.addEventListener("resize", function() {
   width = rawWidth; height = rawHeight;
   sx = rawWidth / 1920; sy = rawHeight / 1080;
   mScale = Math.min(sx, sy);
-  cassSX = -6.5 * sx;
-  cassSY = -12 * sy;
-  cassBase = { x: width * 0.13, y: height * 0.93 };
-  for (var i = 0; i < consData[1].stars.length; i++) {
-    var s = consData[1].stars[i];
-    cassWCoords[i].x = cassBase.x + cassSX * s.ra;
-    cassWCoords[i].y = cassBase.y + cassSY * s.dec;
-  }
-  // regenerate stars for new dimensions
-  stars = [];
-  for (var i = 1200; i > 0; i--) { stars.push(new BgStar()); }
+  stars = createBgStars(1200, width, height);
   dustLanes = [
     new DustLane(200 * sx, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
     new DustLane(900 * sx, 500 * sy, 700 * sx, 100 * sy, 0.3, 0.00015),
     new DustLane(400 * sx, 700 * sy, 600 * sx, 80 * sy, -0.1, 0.00025),
   ];
+  projectConstellationLocal();
 });

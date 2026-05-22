@@ -525,6 +525,7 @@ var consData = [
 
 
 
+
 ];
 
 function randomSpectralType() {
@@ -585,3 +586,108 @@ var SPECTRAL_WEIGHTS = [
   { cls: "K", prob: 0.30, subRange: [0, 9], lum: ["V", "IV", "III"] },
   { cls: "M", prob: 0.15, subRange: [0, 9], lum: ["V", "IV", "III"] },
 ];
+
+// ── Shared background star system ─────────────────────
+// Generate background stars with consistent twinkle properties.
+// opts can include:
+//   parallax: bool     — add depth for scroll-based parallax
+//   depthRange: [min, max] — range of parallax depth values
+//   yBias: float       — exponent for vertical distribution (ocean: 1.4)
+//   sizeRange: [min, max] — range of star sizes
+function createBgStars(count, width, height, opts) {
+  opts = opts || {};
+  var stars = [];
+  for (var i = 0; i < count; i++) {
+    var spec = randomSpectralType();
+    var mag = randomStarMagnitude();
+    var star = {
+      x: Math.random() * width,
+      y: Math.random() * height,
+      size: (opts.sizeRange ? opts.sizeRange[0] + Math.random() * (opts.sizeRange[1] - opts.sizeRange[0])
+                           : Math.pow(2.512, (5 - mag) / 5) * 1.2),
+      colour: spectralToHex(spec),
+      mag: mag,
+      spec: spec,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.01 + Math.random() * 0.03,
+    };
+    if (opts.yBias) star.y = Math.pow(Math.random(), opts.yBias) * height;
+    if (opts.parallax) star.depth = (opts.depthRange || [0.3, 1.0])[0] +
+      Math.random() * ((opts.depthRange || [0.3, 1.0])[1] - (opts.depthRange || [0.3, 1.0])[0]);
+    stars.push(star);
+  }
+  return stars;
+}
+
+// Render a single background star with twinkle
+function renderBgStar(ctx, star, time, alpha) {
+  var twinkle = 0.5 + 0.5 * Math.sin(time * star.speed + star.phase);
+  var a = (alpha !== undefined ? alpha : 1) * (0.3 + 0.7 * twinkle);
+  ctx.fillStyle = hexToRgba(star.colour, a);
+  ctx.beginPath();
+  ctx.arc(star.x, star.y, star.size * (0.5 + 0.5 * twinkle), 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// Render all background stars
+function renderBgStars(ctx, stars, time, alpha) {
+  for (var i = 0; i < stars.length; i++) {
+    renderBgStar(ctx, stars[i], time, alpha);
+  }
+}
+
+// Project a constellation to screen coordinates
+// Returns array of {x, y, size, colour, name}
+function projectConstellation(consData, cx, cy, sc, rC, dC) {
+  var cosFac = Math.cos(dC * Math.PI / 180);
+  var pts = [];
+  for (var i = 0; i < consData.stars.length; i++) {
+    var s = consData.stars[i];
+    var ra = typeof s.ra === "number" ? s.ra : raDeg(s.ra[0], s.ra[1], s.ra[2] || 0);
+    var dec = typeof s.dec === "number" ? s.dec : decDeg(s.dec[0], s.dec[1], s.dec[2] || 0);
+    pts.push({
+      x: cx - sc * (ra - rC) * cosFac,
+      y: cy - sc * (dec - dC),
+      size: starSize(s.mag),
+      colour: spectralToHex(s.spec || "G2V"),
+      mag: s.mag,
+      name: s.name,
+    });
+  }
+  return pts;
+}
+
+// Draw constellation connection lines
+function renderConstellationLines(ctx, pts, connections, style) {
+  ctx.strokeStyle = style || "rgba(200, 200, 255, 0.15)";
+  ctx.lineWidth = 1;
+  for (var i = 0; i < connections.length; i++) {
+    var c = connections[i];
+    var from = pts[c[0]], to = pts[c[1]];
+    if (from && to) {
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.stroke();
+    }
+  }
+}
+
+// Draw constellation stars (projected) with glow
+function renderConstellationStars(ctx, pts, mainIndices, time) {
+  for (var i = 0; i < pts.length; i++) {
+    var p = pts[i];
+    var isMain = mainIndices && mainIndices.indexOf(i) !== -1;
+    var glow = isMain ? 1 : 0.4;
+    var twinkle = 0.6 + 0.4 * Math.sin(time * 0.02 + i * 1.7);
+    var r = hexToRgba(p.colour, glow * 0.3 * twinkle);
+    ctx.fillStyle = r;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = hexToRgba(p.colour, glow * twinkle);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
