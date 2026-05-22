@@ -455,7 +455,7 @@ function drawPlanet(p, t) {
   var sunAng = Math.atan2(-pos.ry, -pos.rx);
   ctx.save();
   ctx.beginPath();
-  ctx.arc(pos.rx, pos.ry, rv, sunAng - Math.PI / 2, sunAng + Math.PI / 2);
+  ctx.arc(pos.rx, pos.ry, rv, sunAng + Math.PI / 2, sunAng - Math.PI / 2);
   ctx.lineTo(pos.rx, pos.ry);
   ctx.closePath();
   ctx.fillStyle = "rgba(0,0,0,0.35)";
@@ -838,7 +838,7 @@ function drawOffscreenIndicator(t) {
   ctx.rotate(ang);
 
   // Glow ring
-  var gr = 16 + 4 * pulse;
+  var gr = 26 + 6 * pulse;
   var glow = ctx.createRadialGradient(0, 0, 0, 0, 0, gr);
   glow.addColorStop(0, "rgba(100,200,255,0.15)");
   glow.addColorStop(1, "rgba(100,200,255,0)");
@@ -847,15 +847,15 @@ function drawOffscreenIndicator(t) {
 
   // Outer ring
   ctx.strokeStyle = "rgba(100,200,255," + (0.3 + 0.3 * pulse) + ")";
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.stroke();
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.stroke();
 
   // Arrow head pointing toward SC
   ctx.fillStyle = "rgba(100,200,255,0.7)";
   ctx.beginPath();
-  ctx.moveTo(18, 0);
-  ctx.lineTo(12, -5);
-  ctx.lineTo(12, 5);
+  ctx.moveTo(28, 0);
+  ctx.lineTo(18, -7);
+  ctx.lineTo(18, 7);
   ctx.closePath();
   ctx.fill();
 
@@ -865,9 +865,9 @@ function drawOffscreenIndicator(t) {
   ctx.rotate(scAng);
   ctx.fillStyle = "rgba(180,220,255,0.6)";
   ctx.beginPath();
-  ctx.moveTo(5, 0);
-  ctx.lineTo(-3, -3);
-  ctx.lineTo(-3, 3);
+  ctx.moveTo(8, 0);
+  ctx.lineTo(-5, -5);
+  ctx.lineTo(-5, 5);
   ctx.closePath();
   ctx.fill();
 
