@@ -1,19 +1,23 @@
+var pageHeight;
 var bg = initCanvas(function(w, h) {
 	rawWidth = w; rawHeight = h;
 	width = w; height = h;
+	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
+	bg.canvas.height = pageHeight;
+	bg.canvas.style.height = pageHeight + "px";
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
-	stars = createBgStars(500, w, h);
+	stars = createBgStars(500, w, pageHeight);
 	bands = [
 		new AuroraBand(120 * sy, 250, [
 			"rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"
-		], 0.0008, 0),
+		], 0.0008, 0, 0.9),
 		new AuroraBand(180 * sy, 200, [
 			"rgba(0, 220, 120, 0.25)", "rgba(50, 255, 150, 0.2)", "rgba(150, 50, 255, 0.15)"
-		], 0.001, 2.1),
+		], 0.001, 2.1, 0.85),
 		new AuroraBand(80 * sy, 180, [
 			"rgba(100, 255, 200, 0.2)", "rgba(200, 100, 255, 0.2)", "rgba(0, 255, 80, 0.15)"
-		], 0.0006, 4.3),
+		], 0.0006, 4.3, 0.8),
 	];
 	extraCons = buildExtraCons();
 });
@@ -22,17 +26,22 @@ var bgCtx = bg.ctx;
 var width = rawWidth, height = rawHeight;
 var sx = bg.sx(), sy = bg.sy(), mScale = bg.mScale();
 
-stars = createBgStars(500, width, height);
+stars = createBgStars(500, width, pageHeight);
 
-function AuroraBand(yBase, height, colours, speed, phase) {
+var scrollY = 0;
+window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
+
+function AuroraBand(yBase, height, colours, speed, phase, bandParallax) {
 	this.yBase = yBase;
 	this.height = height;
 	this.colours = colours;
 	this.speed = speed;
 	this.phase = phase;
+	this.bandParallax = bandParallax !== undefined ? bandParallax : 0.9;
 }
 AuroraBand.prototype.update = function(t) {
-	var grad = bgCtx.createLinearGradient(0, this.yBase - 30, 0, this.yBase + this.height + 30);
+	var adjY = this.yBase + scrollY * (1 - this.bandParallax);
+	var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + this.height + 30);
 	for (var i = 0; i < this.colours.length; i++) {
 		grad.addColorStop(i / (this.colours.length - 1), this.colours[i]);
 	}
@@ -40,16 +49,16 @@ AuroraBand.prototype.update = function(t) {
 	bgCtx.globalAlpha = 0.18;
 	bgCtx.fillStyle = grad;
 	bgCtx.beginPath();
-	bgCtx.moveTo(0, this.yBase);
+	bgCtx.moveTo(0, adjY);
 	for (var x = 0; x <= width; x += 8) {
-		var y = this.yBase
+		var y = adjY
 			+ Math.sin(x * 0.008 + t * this.speed + this.phase) * 25
 			+ Math.sin(x * 0.015 + t * this.speed * 0.7 + this.phase * 1.3) * 15
 			+ Math.sin(x * 0.003 + t * this.speed * 1.3 + this.phase * 0.7) * 20;
 		bgCtx.lineTo(x, y);
 	}
-	bgCtx.lineTo(width, this.yBase + this.height);
-	bgCtx.lineTo(0, this.yBase + this.height);
+	bgCtx.lineTo(width, adjY + this.height);
+	bgCtx.lineTo(0, adjY + this.height);
 	bgCtx.closePath();
 	bgCtx.fill();
 	bgCtx.restore();
@@ -59,16 +68,16 @@ AuroraBand.prototype.update = function(t) {
 	bgCtx.filter = "blur(20px)";
 	bgCtx.fillStyle = grad;
 	bgCtx.beginPath();
-	bgCtx.moveTo(0, this.yBase);
+	bgCtx.moveTo(0, adjY);
 	for (var x = 0; x <= width; x += 8) {
-		var y = this.yBase
+		var y = adjY
 			+ Math.sin(x * 0.008 + t * this.speed + this.phase) * 25
 			+ Math.sin(x * 0.015 + t * this.speed * 0.7 + this.phase * 1.3) * 15
 			+ Math.sin(x * 0.003 + t * this.speed * 1.3 + this.phase * 0.7) * 20;
 		bgCtx.lineTo(x, y);
 	}
-	bgCtx.lineTo(width, this.yBase + this.height + 40);
-	bgCtx.lineTo(0, this.yBase + this.height + 40);
+	bgCtx.lineTo(width, adjY + this.height + 40);
+	bgCtx.lineTo(0, adjY + this.height + 40);
 	bgCtx.closePath();
 	bgCtx.fill();
 	bgCtx.restore();
@@ -78,13 +87,13 @@ AuroraBand.prototype.update = function(t) {
 bands = [
 	new AuroraBand(120 * sy, 250, [
 		"rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"
-	], 0.0008, 0),
+	], 0.0008, 0, 0.9),
 	new AuroraBand(180 * sy, 200, [
 		"rgba(0, 220, 120, 0.25)", "rgba(50, 255, 150, 0.2)", "rgba(150, 50, 255, 0.15)"
-	], 0.001, 2.1),
+	], 0.001, 2.1, 0.85),
 	new AuroraBand(80 * sy, 180, [
 		"rgba(100, 255, 200, 0.2)", "rgba(200, 100, 255, 0.2)", "rgba(0, 255, 80, 0.15)"
-	], 0.0006, 4.3),
+	], 0.0006, 4.3, 0.8),
 ];
 
 var time = 0;
@@ -118,12 +127,12 @@ function getDateColour() {
 function buildExtraCons() {
 	var cons = [];
 	var configs = [
-		{ name: "CASSIOPEIA", cx: width * 0.4, cy: height * 0.2, sc: 2, rC: 0, dC: 60 },
-		{ name: "ORION", cx: width * 0.6, cy: height * 0.35, sc: 8, rC: 5.5, dC: 0 },
-		{ name: "LYRA", cx: width * 0.8, cy: height * 0.2, sc: 8, rC: 18.6, dC: 38 },
-		{ name: "CYGNUS", cx: width * 0.85, cy: height * 0.3, sc: 10, rC: 20.5, dC: 40 },
-		{ name: "SCORPIUS", cx: width * 0.5, cy: height * 0.7, sc: 6, rC: 16.8, dC: -35 },
-		{ name: "ANDROMEDA", cx: width * 0.2, cy: height * 0.5, sc: 3, rC: 1.5, dC: 40 },
+		{ name: "CASSIOPEIA", cx: width * 0.1, cy: height * 0.12, sc: 2, rC: 0, dC: 60, plx: 0.9 },
+		{ name: "ORION", cx: width * 0.85, cy: height * 0.78, sc: 8, rC: 5.5, dC: 0, plx: 0.85 },
+		{ name: "LYRA", cx: width * 0.92, cy: height * 0.1, sc: 8, rC: 18.6, dC: 38, plx: 0.88 },
+		{ name: "CYGNUS", cx: width * 0.88, cy: height * 0.32, sc: 10, rC: 20.5, dC: 40, plx: 0.82 },
+		{ name: "SCORPIUS", cx: width * 0.12, cy: height * 0.85, sc: 6, rC: 16.8, dC: -35, plx: 0.86 },
+		{ name: "ANDROMEDA", cx: width * 0.06, cy: height * 0.45, sc: 3, rC: 1.5, dC: 40, plx: 0.9 },
 	];
 	for (var i = 0; i < configs.length; i++) {
 		var c = configs[i];
@@ -134,6 +143,7 @@ function buildExtraCons() {
 			pts: projectConstellation(data, c.cx, c.cy, c.sc, c.rC, c.dC),
 			connections: data.connections,
 			mainIndices: data.mainIndices,
+			parallax: c.plx,
 		});
 	}
 	return cons;
@@ -172,10 +182,11 @@ function animate() {
 	if (dc) {
 		var pulse = Math.sin(time * 0.02) * 0.5 + 0.5;
 		for (var b of bands) {
+			var adjY = b.yBase + scrollY * (1 - b.bandParallax);
 			var extra = "rgba(" + dc[0] + ", " + dc[1] + ", " + dc[2] + ", " + pulse * 0.08 + ")";
 			var colours = b.colours.slice();
 			colours.push(extra);
-			var grad = bgCtx.createLinearGradient(0, b.yBase - 30, 0, b.yBase + b.height + 30);
+			var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + b.height + 30);
 			for (var i = 0; i < colours.length; i++) {
 				grad.addColorStop(i / (colours.length - 1), colours[i]);
 			}
@@ -183,16 +194,16 @@ function animate() {
 			bgCtx.globalAlpha = 0.3;
 			bgCtx.fillStyle = grad;
 			bgCtx.beginPath();
-			bgCtx.moveTo(0, b.yBase);
+			bgCtx.moveTo(0, adjY);
 			for (var x = 0; x <= width; x += 8) {
-				var y = b.yBase
+				var y = adjY
 					+ Math.sin(x * 0.008 + time * b.speed + b.phase) * 25
 					+ Math.sin(x * 0.015 + time * b.speed * 0.7 + b.phase * 1.3) * 15
 					+ Math.sin(x * 0.003 + time * b.speed * 1.3 + b.phase * 0.7) * 20;
 				bgCtx.lineTo(x, y);
 			}
-			bgCtx.lineTo(width, b.yBase + b.height);
-			bgCtx.lineTo(0, b.yBase + b.height);
+			bgCtx.lineTo(width, adjY + b.height);
+			bgCtx.lineTo(0, adjY + b.height);
 			bgCtx.closePath();
 			bgCtx.fill();
 			bgCtx.restore();
@@ -201,11 +212,11 @@ function animate() {
 		for (var b of bands) { b.update(time); }
 	}
 
-	renderBgStars(bgCtx, stars, time);
+	renderBgStars(bgCtx, stars, time, undefined, scrollY);
 
 	for (var ec of extraCons) {
-		renderConstellationStars(bgCtx, ec.pts, ec.mainIndices, time);
-		renderConstellationLines(bgCtx, ec.pts, ec.connections, "rgba(255, 255, 255, 0.15)");
+		renderConstellationStars(bgCtx, ec.pts, ec.mainIndices, time, scrollY, ec.parallax);
+		renderConstellationLines(bgCtx, ec.pts, ec.connections, "rgba(255, 255, 255, 0.15)", scrollY, ec.parallax);
 	}
 
 	drawLandscape();

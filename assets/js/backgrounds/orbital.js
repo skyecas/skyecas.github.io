@@ -34,7 +34,10 @@ var camScale = (function() {
 // --- Constants ---
 var MU = 120;
 
-var stars = createBgStars(600, W, H);
+var stars = createBgStars(800, W, H);
+
+var scrollY = 0;
+window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
 
 // --- Kepler utilities ---
 function solveKepler(M, e) {
@@ -774,7 +777,7 @@ orb.animate = function(timestamp) {
 
   ctx.fillStyle = "#03040c";
   ctx.fillRect(0,0,W,H);
-  renderBgStars(ctx, stars, time);
+	renderBgStars(ctx, stars, time, undefined, scrollY);
 
   // Launch
   if (!launched) { launch(time); launched = true; }

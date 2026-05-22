@@ -300,7 +300,7 @@ ShootingStar.prototype.reset = function (x = "0") {
 }
 
 // create an array of animated entities
-var stars = createBgStars(600, width, height, {yBias: 1.4});
+var stars = createBgStars(300, width, height, {yBias: 1.4, speedRange: [0.003, 0.01]});
 var shootingstars = [];
 var clouds = [];
 var bubbles = [];
