@@ -534,3 +534,51 @@ for (var i = 0; i < consData.length; i++) {
 // Backward-compatible aliases (lowercase, matching original background code)
 var cassiopeiaStars = CONSTELLATIONS.CASSIOPEIA.stars;
 var cassiopeiaConnections = CONSTELLATIONS.CASSIOPEIA.connections;
+
+// --- Random background star generation ---
+// Weighted spectral type distribution (visible star population)
+var SPECTRAL_WEIGHTS = [
+  { cls: "B", prob: 0.05, subRange: [0, 9], lum: ["V","V","V","IV","III"] },
+  { cls: "A", prob: 0.10, subRange: [0, 9], lum: ["V","V","V","IV","III"] },
+  { cls: "F", prob: 0.15, subRange: [0, 9], lum: ["V","V","V","IV","III","III"] },
+  { cls: "G", prob: 0.25, subRange: [0, 9], lum: ["V","V","V","IV","III","III","II"] },
+  { cls: "K", prob: 0.30, subRange: [0, 9], lum: ["V","V","V","IV","III","III","II"] },
+  { cls: "M", prob: 0.15, subRange: [0, 5], lum: ["V","V","V","III","III","II"] },
+];
+
+function randomSpectralType() {
+  var r = Math.random();
+  var cum = 0;
+  for (var i = 0; i < SPECTRAL_WEIGHTS.length; i++) {
+    cum += SPECTRAL_WEIGHTS[i].prob;
+    if (r < cum) {
+      var sw = SPECTRAL_WEIGHTS[i];
+      var sub = sw.subRange[0] + Math.floor(Math.random() * (sw.subRange[1] - sw.subRange[0] + 1));
+      var lum = sw.lum[Math.floor(Math.random() * sw.lum.length)];
+      return sw.cls + sub + lum;
+    }
+  }
+  return "M0V";
+}
+
+function randomStarMagnitude() {
+  // Most stars are faint, distribution peaks around mag 5-6
+  var r = Math.random();
+  if (r < 0.05) return Math.random() * 2;        // 5%: very bright (0-2)
+  if (r < 0.20) return 2 + Math.random() * 2;     // 15%: bright (2-4)
+  if (r < 0.50) return 4 + Math.random() * 1.5;   // 30%: moderate (4-5.5)
+  return 5.5 + Math.random() * 1.5;                // 50%: faint (5.5-7)
+}
+
+function createBackgroundStar(width, height) {
+  var spec = randomSpectralType();
+  var mag = randomStarMagnitude();
+  return {
+    x: Math.random() * width,
+    y: Math.random() * height,
+    size: Math.pow(2.512, (5 - mag) / 5) * 1.2,
+    colour: spectralToHex(spec),
+    mag: mag,
+    spec: spec,
+  };
+}
