@@ -22,8 +22,8 @@ bgCtx.fillRect(0, 0, width, height);
 // === Constellations ===
 var cassWCoords = projectConstellation(consDataByName.CASSIOPEIA,
 	width * 0.13, height * 0.93,
-	6.5 * (width / 1920),
-	0, 0
+	13 * (width / 1920),
+	1, 60
 );
 
 var orionCenterRA = 82.5, orionCenterDec = 5;
