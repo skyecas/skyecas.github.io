@@ -443,6 +443,8 @@ function animate() {
 
 animate();
 
+var prevW = width, prevH = height;
+
 window.addEventListener("resize", function() {
   var rw = window.innerWidth, rh = window.innerHeight;
   if (!isFinite(rw) || rw < 100) rw = 1920;
@@ -453,4 +455,11 @@ window.addEventListener("resize", function() {
   mugY = height - mugHeight - 30;
   secondMugX = mugX - mugWidth - 40;
   secondMugY = mugY + 10;
+  var xr = width / prevW, yr = height / prevH;
+  if (isFinite(xr) && isFinite(yr)) {
+    for (var p of pools) { p.x *= xr; p.y *= yr; }
+    for (var d of drops) { d.x *= xr; d.y *= yr; }
+    for (var t of dripTrails) { t.x *= xr; t.y *= yr; }
+  }
+  prevW = width; prevH = height;
 });

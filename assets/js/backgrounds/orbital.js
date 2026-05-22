@@ -1,5 +1,3 @@
-(function() {
-
 var requestAnimFrame = (function(){
   return window.requestAnimationFrame       ||
          window.webkitRequestAnimationFrame ||
@@ -270,7 +268,6 @@ function findBestTransfer(fromIdx, toIdx, t) {
 function launch(t) {
   var ep = pPos(planets[2], t);
   var ev = pVel(planets[2], t);
-  console.log("orbital: launch t=" + t + " Earth=" + ep.rx.toFixed(1) + "," + ep.ry.toFixed(1));
   // Find best target by trying Lambert transfers to each planet
   var bestTarget = -1, bestDV = Infinity, bestTrans = null;
   for (var i = 0; i < planets.length; i++) {
@@ -313,7 +310,6 @@ function launch(t) {
     logEvent('launch', "Launch from Earth → " + planets[bestTarget].n + " (fallback)");
     burn.active = true; burn.dvx = dvx / vInf * dvm; burn.dvy = dvy / vInf * dvm;
     burn.rate = burnRate; burn.remaining = dvm;
-    console.log("orbital: launch fallback target=" + planets[bestTarget].n + " sc=" + sc.rx.toFixed(1) + "," + sc.ry.toFixed(1));
     return;
   }
   var dvx = bestTrans.lam.vx - ev.vx, dvy = bestTrans.lam.vy - ev.vy;
@@ -329,7 +325,6 @@ function launch(t) {
   mission.target = bestTarget;
   mission.legDur = bestTrans.dt;
   logEvent('launch', "Launch from Earth → " + planets[bestTarget].n + " (Δv=" + dvm.toFixed(3) + ")");
-  console.log("orbital: launch Lambert target=" + planets[bestTarget].n + " dv=" + dvm.toFixed(3) + " sc=" + sc.rx.toFixed(1) + "," + sc.ry.toFixed(1));
   burn.active = true; burn.dvx = dvx / vInf * dvm; burn.dvy = dvy / vInf * dvm;
   burn.rate = burnRate; burn.remaining = dvm;
 }
@@ -975,5 +970,3 @@ window.addEventListener("resize", function() {
   if (maxA < 50) maxA = 300;
   camScale = Math.min(W, H) / (maxA * 2.4);
 });
-
-})();
