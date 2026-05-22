@@ -168,8 +168,9 @@ ShootingStar.prototype.update = function() {
     // update it's position
     this.x -= this.speed;
     this.y += this.speed;
-    // if it goes out of the window, reset
-    if (this.x < -this.len || this.y >= height+this.len) {
+    // if it goes out of the viewport, reset
+    var screenY = this.y - scrollY;
+    if (this.x < -this.len || screenY > height + this.len || screenY < -this.len) {
       this.speed = 0;
       // if the shooting star is special, and it's the right time
       if (this.special) {
@@ -218,9 +219,9 @@ Satellite.prototype.update = function() {
 
 // function to reset the shooting stars
 ShootingStar.prototype.reset = function(x="0") {
-  // select the starting position, along the two screen axes
+  // spawn within the current viewport (scroll-aware)
   var pos = Math.random() * (width + height);
-  this.y = Math.max(0, pos - width);
+  this.y = scrollY + Math.max(0, pos - width);
   (x=="0") ? this.x = Math.min(width, pos) : this.x=x;
   // the other bits
   this.len = (Math.random() * 80) + 10;
@@ -233,7 +234,7 @@ ShootingStar.prototype.reset = function(x="0") {
 
 // function to reset the satellites
 Satellite.prototype.reset = function() {
-  this.y = Math.random() * height;
+  this.y = scrollY + Math.random() * height;
   this.x = width;
   this.speed = (Math.random() * .19) + .01;
   this.size = (Math.random() * 2) + 0.1;
@@ -252,20 +253,21 @@ var dateColours = {
 // boolean for if this date is special
 var isSpecialDate = false;
 
-// create an array of animated entities
-var entities = [];
+// create arrays of animated entities - separate fixed stars from moving objects
+var stars = [];
+var movers = [];
 
 // initialise the star field - cover full page for parallax
-for (var i = 0; i < 600; i++) { entities.push(new Star()); }
+for (var i = 0; i < 600; i++) { stars.push(new Star()); }
 
 // add a few satellites
-for (var i = 10; i > 0; i--) { entities.push(new Satellite()); }
+for (var i = 10; i > 0; i--) { movers.push(new Satellite()); }
 
 // add a shooting star
-for (var i = 1; i > 0; i--) { entities.push(new ShootingStar()); }
+for (var i = 1; i > 0; i--) { movers.push(new ShootingStar()); }
 
 // add the special shooting stars
-for (var i = 20; i > 0; i--) { entities.push(new ShootingStar(true)); }
+for (var i = 20; i > 0; i--) { movers.push(new ShootingStar(true)); }
 
 // animate the background
 function animate() {
@@ -278,9 +280,10 @@ function animate() {
   bgCtx.fillRect(0, 0, width, pageHeight);
 
   // Parallax: absolute canvas scrolls naturally; counter-offset downwards
-  // so entities scroll at a fraction of the page speed
-  var parOffset = scrollY * 0.7;
-  var cassOffset = scrollY * 0.5;
+  // so entities appear fixed in the sky (0% scroll). Shooting stars and satellites
+  // get a slightly different rate for subtle depth.
+  var parOffset = scrollY * 1.0;
+  var cassOffset = scrollY * 1.0;
 
   bgCtx.fillStyle = '#ffffff';
   bgCtx.strokeStyle = '#ffffff';
@@ -289,18 +292,21 @@ function animate() {
     bgCtx.strokeStyle = dateColour;
   }
 
-  // draw Cassiopeia constellation with its own parallax
+  // draw Cassiopeia constellation (fixed in the sky)
   cassTime++;
   bgCtx.save();
-  bgCtx.translate(0, cassOffset);
+  bgCtx.translate(0, scrollY);
   drawConstellationStars(cassTime);
   bgCtx.restore();
 
-  // update all entities with parallax
+  // update fixed stars (counter-offset so they appear fixed)
   bgCtx.save();
-  bgCtx.translate(0, parOffset);
-  for (let entity of entities) { entity.update(); };
+  bgCtx.translate(0, scrollY);
+  for (let s of stars) { s.update(); };
   bgCtx.restore();
+
+  // update moving objects (shooting stars, satellites) — scroll naturally
+  for (let m of movers) { m.update(); };
 
   //schedule the next animation frame
   requestAnimFrame(animate);
