@@ -201,6 +201,10 @@ function getDateRGB() {
 function animate() {
   time++;
 
+  bgCtx.setTransform(1, 0, 0, 1, 0, 0);
+  bgCtx.fillStyle = "#030308";
+  bgCtx.fillRect(0, 0, rawWidth, rawHeight);
+
   bgCtx.setTransform(scale, 0, 0, scale, ox, oy);
 
   bgCtx.fillStyle = "#030308";

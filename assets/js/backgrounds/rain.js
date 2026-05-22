@@ -274,10 +274,10 @@ for (let i = 0; i < 200; i++) {
 
 const mugWidth = 69;
 const mugHeight = 100;
-const mugX = width - 2 * mugWidth;
-const mugY = height - mugHeight - 30;
-const secondMugX = mugX - mugWidth - 40;
-const secondMugY = mugY + 10;
+var mugX = width - 2 * mugWidth;
+var mugY = height - mugHeight - 30;
+var secondMugX = mugX - mugWidth - 40;
+var secondMugY = mugY + 10;
 
 // Cozy mug
 function drawMug(ctx, x = mugX, y = mugY) {
@@ -449,4 +449,8 @@ window.addEventListener("resize", function() {
   if (!isFinite(rh) || rh < 100) rh = 1080;
   width = rw; height = rh;
   background.width = width; background.height = height;
+  mugX = width - 2 * mugWidth;
+  mugY = height - mugHeight - 30;
+  secondMugX = mugX - mugWidth - 40;
+  secondMugY = mugY + 10;
 });
