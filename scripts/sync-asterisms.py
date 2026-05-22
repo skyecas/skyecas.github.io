@@ -265,9 +265,19 @@ def build_entry(name):
                             if n1 in oidx and n2 in oidx:
                                 conns.append([oidx[n1], oidx[n2]])
 
+    # Known visibility tags: `always: true` for circumpolar/always-visible
+    # constellations; specific date for the rest (peak midnight transit).
     main_names = [hip_stars[h]["best_name"] for h in main_hips]
-    mean_ra = sum(hip_stars[h].get("ra", [6, 0, 0])[0] for h in main_hips) / len(main_hips) if main_hips else 6
-    tag = f'date: "{best_month(mean_ra):02d}/01"'
+    SPECIAL_TAGS = {
+        "Orion": "always: true",
+        "Cassiopeia": "always: true",
+        "Lyra": 'date: "27/07"',
+        "Cygnus": 'date: "12/08"',
+        "Gemini": 'date: "04/09"',
+        "Scorpius": 'date: "26/10"',
+        "Andromeda": 'date: "31/03"',
+    }
+    tag = SPECIAL_TAGS.get(name, "always: true")
 
     ck = name.upper().replace(" ", "_")
     js = [
@@ -289,10 +299,13 @@ def build_entry(name):
 
 def update_shared(ck, entry):
     with open(SHARED_JS) as f: c = f.read()
-    p = r'{ /\* ' + ck + r' \*/(.*?)\n  },'
-    m = re.search(p, c, re.DOTALL)
-    if m: c = c[:m.start()] + entry + c[m.end():]
-    else: c = c.replace("];", entry + "\n];")
+    # Match with any leading whitespace on both start and end
+    p = r'^\s*\{ /\* ' + ck + r' \*/(.*?)\n\s*\},'
+    m = re.search(p, c, re.DOTALL | re.MULTILINE)
+    if m:
+        c = c[:m.start()] + entry.strip() + "\n" + c[m.end():]
+    else:
+        c = c.replace("];", entry.strip() + "\n];")
     with open(SHARED_JS, "w") as f: f.write(c)
     print(f"  Updated {SHARED_JS}")
 
