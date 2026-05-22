@@ -13,8 +13,9 @@ var bg = params.get("name");
 if (bg && bgNames.indexOf(bg) !== -1) {
   document.querySelector(".content").style.display = "none";
   document.body.style.paddingBottom = "0";
-  document.body.style.minHeight = "200vh";
-  if (bg === "stars") { document.body.style.minHeight = "400vh"; }
+  var spacer = document.createElement("div");
+  spacer.style.height = "400vh"; spacer.style.pointerEvents = "none";
+  document.body.appendChild(spacer);
   var script = document.createElement("script");
   script.src = "/assets/js/backgrounds/" + bg + ".js?v=" + Date.now();
   document.body.appendChild(script);
