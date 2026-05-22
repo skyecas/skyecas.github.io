@@ -1,3 +1,5 @@
+(function(global) {
+
 var requestAnimFrame = (function(){
   return window.requestAnimationFrame       ||
          window.webkitRequestAnimationFrame ||
@@ -973,3 +975,5 @@ window.addEventListener("resize", function() {
   if (maxA < 50) maxA = 300;
   camScale = Math.min(W, H) / (maxA * 2.4);
 });
+
+})(typeof window !== 'undefined' ? window : this);
