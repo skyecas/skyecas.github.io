@@ -32,11 +32,12 @@ background.height = height;
 
 // Parallax scroll offset
 var scrollY = 0;
+var pageHeight = height * 4;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
-
-// set the canvase size
-background.width = width;
-background.height = height;
+// Detect page content height for absolute canvas sizing
+function updatePageHeight() { pageHeight = Math.max(height * 4, document.body.scrollHeight || height * 4); }
+updatePageHeight();
+window.addEventListener("resize", updatePageHeight, { passive: true });
 
 // draw the night sky
 bgCtx.fillStyle = "#110E19";
@@ -187,7 +188,7 @@ const starColour = ["white", "floralWhite", "aliceBlue", "powderBlue", "azure", 
 function Star() {
   this.size = Math.random() * 2 + .1;
   this.x = Math.random() * width;
-  this.y = Math.random() * height * 3;
+  this.y = Math.random() * pageHeight;
   // select it's colour
   this.colour = starColour[Math.floor(Math.random() * starColour.length)]
 }
@@ -311,8 +312,8 @@ var isSpecialDate = false;
 // create an array of animated entities
 var entities = [];
 
-// initialise the star field - extra height for parallax scrolling
-for (var i = height * 3; i > 0; i--) { entities.push(new Star()); }
+// initialise the star field - cover full page for parallax
+for (var i = 0; i < 600; i++) { entities.push(new Star()); }
 
 // add a few satellites
 for (var i = 10; i > 0; i--) { entities.push(new Satellite()); }
@@ -333,9 +334,9 @@ function animate() {
   bgCtx.fillStyle = "#110E19";
   bgCtx.fillRect(0, 0, width, height);
 
-  // Parallax offset: stars and entities shift up as user scrolls
-  var parOffset = scrollY * 0.05;
-  var cassOffset = scrollY * 0.1;
+  // Parallax: stars drift up at 30% of scroll speed (like distant sky)
+  var parOffset = scrollY * 0.3;
+  var cassOffset = scrollY * 0.5;
 
   bgCtx.fillStyle = '#ffffff';
   bgCtx.strokeStyle = '#ffffff';
