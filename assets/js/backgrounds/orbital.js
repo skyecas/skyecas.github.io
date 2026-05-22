@@ -559,47 +559,146 @@ function fmtTime(tt) {
 }
 
 function drawHUD(t) {
-  var pw = 460, px = W - pw;
+  var pw = 520, px = W - pw;
   ctx.fillStyle = "rgba(0,6,18,0.82)";
   ctx.fillRect(px, 0, pw, H);
   ctx.strokeStyle = "rgba(0,80,180,0.25)";
   ctx.lineWidth = 1;
   ctx.strokeRect(px, 0, pw, H);
 
-  var col = px + 16;
-  var row = 18;
+  var col = px + 20;
+  var row = 22;
 
   // Header
-  ctx.font = "bold 14px 'Courier New',monospace";
+  ctx.font = "bold 16px 'Courier New',monospace";
   ctx.textAlign = "left";
   ctx.fillStyle = "rgba(80,180,255,0.7)";
-  ctx.fillText("MISSION CONTROL", col, row); row += 20;
-  ctx.font = "12px 'Courier New',monospace";
-  ctx.textAlign = "right";
+  ctx.fillText("MISSION CONTROL", col, row); row += 22;
+  ctx.font = "14px 'Courier New',monospace";
+  ctx.textAlign = "left";
   ctx.fillStyle = "rgba(120,200,255,0.5)";
-  ctx.fillText("T+" + fmtTime(t), px + pw - 16, row); row += 4;
+  ctx.fillText("T+" + fmtTime(t), col, row); row += 4;
 
   ctx.strokeStyle = "rgba(0,80,180,0.2)";
-  ctx.beginPath(); ctx.moveTo(px + 8, row); ctx.lineTo(px + pw - 8, row); ctx.stroke(); row += 8;
+  ctx.beginPath(); ctx.moveTo(px + 10, row); ctx.lineTo(px + pw - 10, row); ctx.stroke(); row += 10;
 
   var oe = orbitalElements(sc.rx, sc.ry, sc.vx, sc.vy, mission.inSOI >= 0 ? planets[mission.inSOI].mu : MU);
   var inSOI = mission.inSOI >= 0;
 
-  ctx.font = "13px 'Courier New',monospace";
+  ctx.font = "15px 'Courier New',monospace";
 
   // Navigation
-  ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("NAVIGATION", col, row); row += 18;
+  ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("NAVIGATION", col, row); row += 20;
   ctx.fillStyle = "rgba(180,255,180,0.8)";
-  ctx.fillText("VEL " + oe.v.toFixed(3) + " px/f", col, row); row += 18;
-  ctx.fillText("Vx  " + sc.vx.toFixed(3), col, row); row += 18;
-  ctx.fillText("Vy  " + sc.vy.toFixed(3), col, row); row += 18;
-  ctx.fillText("RNG " + oe.r.toFixed(1) + " px", col, row); row += 18;
+  ctx.fillText("VEL " + oe.v.toFixed(3) + " px/f", col, row); row += 20;
+  ctx.fillText("Vx  " + sc.vx.toFixed(3), col, row); row += 20;
+  ctx.fillText("Vy  " + sc.vy.toFixed(3), col, row); row += 20;
+  ctx.fillText("RNG " + oe.r.toFixed(1) + " px", col, row); row += 20;
   if (inSOI) {
     var pp = pPos(planets[mission.inSOI], t);
     var dx = sc.rx - pp.rx, dy = sc.ry - pp.ry;
     var sd = Math.sqrt(dx*dx + dy*dy);
-    ctx.fillText("SOI " + sd.toFixed(1) + "/" + planets[mission.inSOI].so, col, row); row += 18;
+    ctx.fillText("SOI " + sd.toFixed(1) + "/" + planets[mission.inSOI].so, col, row); row += 20;
   }
+
+  // Orbit
+  ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("ORBIT" + (inSOI ? " (SOI)" : ""), col, row); row += 20;
+  ctx.fillStyle = "rgba(180,255,180,0.8)";
+  ctx.fillText("a   " + oe.a, col, row); row += 20;
+  ctx.fillText("e   " + oe.e, col, row); row += 20;
+  if (oe.T < Infinity) ctx.fillText("T   " + fmtTime(oe.T), col, row);
+  else ctx.fillText("T   ∞", col, row); row += 20;
+  if (oe.eps < 0) {
+    ctx.fillText("rp  " + oe.rp.toFixed(1), col, row); row += 20;
+    ctx.fillText("ra  " + oe.ra.toFixed(1), col, row); row += 20;
+  }
+
+  // Mission
+  ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("MISSION", col, row); row += 20;
+  ctx.fillStyle = "rgba(180,255,180,0.8)";
+  var phaseStr = mission.phase.toUpperCase();
+  if (inSOI) phaseStr += " [SOI:" + planets[mission.inSOI].n + "]";
+  ctx.fillText("PHASE " + phaseStr, col, row); row += 20;
+  ctx.fillText("DV   " + totalDV.toFixed(3) + " px/f", col, row); row += 20;
+  if (mission.target >= 0 && mission.target < planets.length) {
+    var tp = pPos(planets[mission.target], t);
+    var dx = tp.rx - sc.rx, dy = tp.ry - sc.ry;
+    ctx.fillText("TGT  " + planets[mission.target].n, col, row); row += 20;
+    ctx.fillText("RNG  " + Math.round(Math.sqrt(dx*dx+dy*dy)) + " px", col, row); row += 20;
+  }
+  ctx.fillText("CRR  " + mission.correctionsLeft + " left", col, row); row += 20;
+  ctx.fillText("FRP  " + mission.visited.length + "/" + planets.length, col, row); row += 10;
+
+  ctx.strokeStyle = "rgba(0,80,180,0.2)";
+  ctx.beginPath(); ctx.moveTo(px + 10, row); ctx.lineTo(px + pw - 10, row); ctx.stroke(); row += 10;
+
+  // Event log
+  ctx.font = "14px 'Courier New',monospace";
+  ctx.fillStyle = "rgba(120,200,255,0.5)";
+  ctx.textAlign = "left";
+  ctx.fillText("EVENT LOG", col, row); row += 20;
+
+  var logTop = row;
+  var logBottom = H - 24;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(col, logTop, pw - 40, logBottom - logTop);
+  ctx.clip();
+
+  var logStart = Math.max(0, eventLog.length - Math.floor((logBottom - logTop) / 20));
+  for (var i = logStart; i < eventLog.length; i++) {
+    var ev = eventLog[i];
+    var yOff = logTop + (i - logStart) * 20;
+    var col2;
+    switch (ev.type) {
+      case 'launch': col2 = "#80ff80"; break;
+      case 'target': col2 = "#80d0ff"; break;
+      case 'correction': col2 = "#ffc060"; break;
+      case 'soi': col2 = "#60ffc0"; break;
+      case 'flyby': col2 = "#ffd080"; break;
+      case 'burn': col2 = "#80d0ff"; break;
+      default: col2 = "#c0c0d0";
+    }
+    ctx.fillStyle = col2;
+    ctx.fillText("T+" + fmtTime(ev.t), col, yOff);
+    ctx.fillText(ev.msg, col + 100, yOff);
+  }
+  ctx.restore();
+
+  // Predicted encounters
+  if (prediction.valid && prediction.encounters.length > 0) {
+    row = logBottom + 6;
+    ctx.font = "14px 'Courier New',monospace";
+    ctx.fillStyle = "rgba(120,200,255,0.5)";
+    ctx.fillText("UPCOMING", col, row); row += 18;
+    ctx.font = "13px 'Courier New',monospace";
+    for (var ei = 0; ei < Math.min(prediction.encounters.length, 5); ei++) {
+      var enc = prediction.encounters[ei];
+      if (enc.type === "enter") {
+        ctx.fillStyle = "rgba(100,255,200,0.6)";
+        ctx.fillText("→ " + planets[enc.planet].n + " SOI", col, row);
+      } else if (enc.type === "flyby") {
+        ctx.fillStyle = "rgba(255,200,100,0.6)";
+        ctx.fillText("✦ " + planets[enc.planet].n + " flyby", col, row);
+      } else {
+        ctx.fillStyle = "rgba(255,100,100,0.4)";
+        ctx.fillText("← " + planets[enc.planet].n + " exit", col, row);
+      }
+      row += 16;
+    }
+  }
+
+  // Status bar
+  ctx.fillStyle = "rgba(0,80,180,0.15)";
+  ctx.fillRect(px, H - 22, pw, 22);
+  ctx.font = "13px 'Courier New',monospace";
+  ctx.fillStyle = "rgba(120,200,255,0.4)";
+  ctx.textAlign = "left";
+  var status = inSOI ? ("≈ " + planets[mission.inSOI].n + " SOI ≈") : "● SOLAR COAST";
+  ctx.fillText(status, col, H - 6);
+  ctx.textAlign = "right";
+  ctx.fillText("FLY: " + mission.visited.length + " | DV: " + totalDV.toFixed(2), px + pw - 20, H - 6);
+}
 
   // Orbit
   ctx.fillStyle = "rgba(120,200,255,0.5)"; ctx.fillText("ORBIT" + (inSOI ? " (SOI)" : ""), col, row); row += 18;
