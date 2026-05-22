@@ -788,11 +788,13 @@ function getDateHex() {
 }
 
 // --- Animation ---
+console.log("orbital: before animate definition");
 var time = 0;
 var launched = false;
 var lastFrameTime = 0;
 
 function animate(timestamp) {
+  console.log("orbital: animate called, time=" + time);
   // Fixed timestep: normalize to 60fps baseline
   if (lastFrameTime === 0) lastFrameTime = timestamp;
   var deltaMs = timestamp - lastFrameTime;
@@ -951,7 +953,8 @@ function animate(timestamp) {
     ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
   }
 
-  requestAnimFrame(animate);
+console.log("orbital: before initial animate call, typeof animate=" + (typeof animate));
+requestAnimFrame(animate);
 }
 
 requestAnimFrame(animate);
