@@ -3,7 +3,7 @@
 Asterism sync pipeline: fetch, construct, and write one constellation.
 Usage:
   python3 scripts/sync-asterisms.py Orion
-  python3 scripts/sync-asterisms.py --all         # rebuild all in shared.js
+  python3 scripts/sync-asterisms.py --all         # rebuild all known
   python3 scripts/sync-asterisms.py --list        # list IAU constellations
 """
 import json, re, os, sys, urllib.request
@@ -17,38 +17,6 @@ STEL_URL = ("https://api.github.com/repos/Stellarium/stellarium/"
 STEL_CACHE = os.path.join(JSON_DIR, "stellarium_index.json")
 MAG_CUT = 5.5
 
-# ── Known constellations ───────────────────────────────
-KNOWN = {
-    "Orion": {"tag": "always: true",
-        "main": [("Bellatrix",25336),("Betelgeuse",27989),("Alnitak A",26727),
-                 ("Alnilam",26311),("Mintaka AB",25930),("Saiph",27366),("Rigel",24436)],
-        "conns": [[0,1],[2,3],[3,4],[0,3],[1,2],[2,5],[4,6],[5,6]]},
-    "Cassiopeia": {"tag": "always: true",
-        "main": [("Caph",6686),("Schedar",8886),("Tiansi",3179),("Ruchbah",4427),("Segin",746)],
-        "conns": [[0,1],[1,2],[2,3],[3,4]]},
-    "Lyra": {"tag": 'date: "27/07"',
-        "main": [("Vega",91262),("Sheliak",91971),("Sulafat",92420)],
-        "conns": [[0,2],[2,1],[1,0]]},
-    "Cygnus": {"tag": 'date: "12/08"',
-        "main": [("Deneb",102098),("Sadr",100453),("Albireo",102488),
-                 ("Fawaris",94779),("Aljanah",95853)],
-        "conns": [[0,1],[1,2],[3,1],[1,4]]},
-    "Gemini": {"tag": 'date: "04/09"',
-        "main": [("Castor A",36850),("Pollux",37826),("Alhena",32362),
-                 ("Wasat",36962),("Mebsuta",35550)],
-        "conns": [[0,1],[1,4],[0,3],[3,1],[4,3]]},
-    "Scorpius": {"tag": 'date: "26/10"',
-        "main": [("Dschubba",78401),("Acrab",78820),("Antares",80763),
-                 ("Wei",78265),("Lesath",85696),("Shaula",85927),
-                 ("Sargas",86228),("Girtab",86670)],
-        "conns": [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7]]},
-    "Andromeda": {"tag": 'date: "31/03"',
-        "main": [("Alpheratz",677),("Mirach",3092),("Almach",5447),
-                 ("\u03b4 And",9640),("51 And",4436),("Udkadua",3881)],
-        "conns": [[0,1],[1,2],[2,4],[2,3],[3,5]]},
-}
-
-# ── Fetchers ───────────────────────────────────────────
 def fetch(url):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req, timeout=30) as resp:
@@ -79,144 +47,238 @@ def fetch_wikipedia(constellation):
             header = True
             for i, t in enumerate(texts):
                 l = t.lower()
-                if t=="Name": cols["name"]=i
-                elif "hip" in l: cols["hip"]=i
-                elif l=="ra": cols["ra"]=i
-                elif l=="dec": cols["dec"]=i
+                if t == "Name": cols["name"] = i
+                elif "hip" in l: cols["hip"] = i
+                elif l == "ra": cols["ra"] = i
+                elif l == "dec": cols["dec"] = i
                 elif "vis" in l or "mag" in l:
-                    if "mag" not in cols: cols["mag"]=i
-                elif "sp" in l: cols["spec"]=i
+                    if "mag" not in cols: cols["mag"] = i
+                elif "sp" in l: cols["spec"] = i
+                elif "notes" in l or "note" in l: cols["notes"] = i
             continue
         if not header: continue
         hip = None
-        if "hip" in cols and cols["hip"]<len(texts):
-            m=re.search(r"(\d+)",texts[cols["hip"]]); hip=int(m.group(1)) if m else None
+        if "hip" in cols and cols["hip"] < len(texts):
+            m = re.search(r"(\d+)", texts[cols["hip"]])
+            hip = int(m.group(1)) if m else None
         if hip is None: continue
-        star={"hip":hip}
-        if "name" in cols and cols["name"]<len(cells):
-            raw=re.sub(r'<[^>]+>','',cells[cols["name"]]).strip()
-            if raw: star["name"]=raw
-        if "mag" in cols and cols["mag"]<len(texts):
-            try: star["mag"]=float(texts[cols["mag"]])
+        star = {"hip": hip}
+        # Name from Name column
+        if "name" in cols and cols["name"] < len(cells):
+            raw = re.sub(r'<[^>]+>', '', cells[cols["name"]]).strip()
+            if raw: star["name"] = raw
+        # Common name from Notes column (if it looks like a proper name)
+        if "notes" in cols and cols["notes"] < len(cells):
+            notes_raw = cells[cols["notes"]]
+            # Common name is often the initial text before any tags/semicolons
+            # Strip tags and take the first semicolon-delimited part
+            text = re.sub(r'<sup[^>]*>.*?</sup>', ' ', notes_raw).strip()
+            text = re.sub(r'<[^>]+>', ' ', text).strip()
+            text = unescape(text)
+            # Split by ; or , and take the first meaningful part
+            chunks = re.split(r'[;,]\s*', text)
+            potential = chunks[0].strip() if chunks else ""
+            # Filter out junk
+            if potential and len(potential) > 1 and not potential.startswith("[") and not potential.startswith("&"):
+                # Clean up any trailing brackets
+                potential = re.sub(r'\s*\[.*?\]', '', potential).strip()
+                if not re.search(r'(star|variable|binary|spectroscopic|brightest|planet|cluster|nebula|NGC|HD|HIP|max|min|ΔV|P\s*=)', potential, re.I):
+                    star["notes_name"] = potential
+        if "mag" in cols and cols["mag"] < len(texts):
+            try: star["mag"] = float(texts[cols["mag"]])
             except: pass
-        if "spec" in cols and cols["spec"]<len(texts):
-            m=re.search(r'([OBAFGKMLT]\d+(?:\.\d+)?(?:[IV]+(?:\s?[ab])?)?)',texts[cols["spec"]])
-            if m: star["spec"]=m.group(1)
-        if "ra" in cols and cols["ra"]<len(cells):
-            raw=unescape(re.sub(r'<[^>]+>','',cells[cols["ra"]])).strip()
-            parts=re.findall(r"(\d+)[h\s:]+(\d+)[m\s:]*(\d+(?:\.\d+)?)",raw)
-            if parts: star["ra"]=[float(x) for x in parts[0]]
-        if "dec" in cols and cols["dec"]<len(cells):
-            raw=unescape(re.sub(r'<[^>]+>','',cells[cols["dec"]])).strip().replace("\u2212","-")
-            parts=re.findall(r"([+-]?\d+)[°\s]+(\d+)[′\s]*(\d+(?:\.\d+)?)",raw)
-            if parts: star["dec"]=[float(x) for x in parts[0]]
+        if "spec" in cols and cols["spec"] < len(texts):
+            m = re.search(r'([OBAFGKMLT]\d+(?:\.\d+)?(?:[IV]+(?:\s?[ab])?)?)', texts[cols["spec"]])
+            if m: star["spec"] = m.group(1)
+        if "ra" in cols and cols["ra"] < len(cells):
+            raw = unescape(re.sub(r'<[^>]+>', '', cells[cols["ra"]])).strip()
+            parts = re.findall(r"(\d+)[h\s:]+(\d+)[m\s:]*(\d+(?:\.\d+)?)", raw)
+            if parts: star["ra"] = [float(x) for x in parts[0]]
+        if "dec" in cols and cols["dec"] < len(cells):
+            raw = unescape(re.sub(r'<[^>]+>', '', cells[cols["dec"]])).strip().replace("\u2212", "-")
+            parts = re.findall(r"([+-]?\d+)[°\s]+(\d+)[′\s]*(\d+(?:\.\d+)?)", raw)
+            if parts: star["dec"] = [float(x) for x in parts[0]]
         stars.append(star)
     print(f"  Parsed {len(stars)} stars"); return stars
 
+def star_name(s):
+    """Best name: prefer Notes column common name if Name column is a Bayer letter."""
+    n = (s.get("name") or "").strip()
+    nn = s.get("notes_name", "")
+    if not n:
+        return nn if nn else str(s.get("hip", ""))
+    # If Name is a Bayer designation (Greek letter + constellation), prefer Notes
+    if re.search(r'^[α-ωΑ-Ω]', n):
+        return nn if nn else n
+    # Also handle spelled-out Greek letters
+    greek_words = ['Alpha','Beta','Gamma','Delta','Epsilon','Zeta','Eta','Theta',
+                   'Iota','Kappa','Lambda','Mu','Nu','Xi','Omicron','Pi','Rho',
+                   'Sigma','Tau','Upsilon','Phi','Chi','Psi','Omega']
+    parts = n.split()
+    if parts and parts[0] in greek_words:
+        return nn if nn else n
+    return n
+
 def find_cons(stel, name):
     name_l = name.lower()
-    for cons in stel.get("constellations",[]):
-        cn=cons.get("common_name",{})
-        if cn.get("english","").lower()==name_l or cn.get("native","").lower()==name_l or cn.get("byname","").lower()==name_l:
+    for cons in stel.get("constellations", []):
+        cn = cons.get("common_name", {})
+        if cn.get("english", "").lower() == name_l or \
+           cn.get("native", "").lower() == name_l:
             return cons
     return None
 
 def best_month(ra_hours):
-    sun_ra=(ra_hours+12)%24; m=int((sun_ra-6)/2)+1
-    return max(1,min(12,m))
+    sun_ra = (ra_hours + 12) % 24; m = int((sun_ra - 6) / 2) + 1
+    return max(1, min(12, m))
 
 def fmt_pos(v):
-    if isinstance(v,(list,tuple)) and len(v)>=3: return f"[{v[0]}, {v[1]}, {v[2]}]"
-    return "[0,0,0]"
+    if isinstance(v, (list, tuple)) and len(v) >= 3:
+        return f"[{v[0]}, {v[1]}, {v[2]}]"
+    return "[0, 0, 0]"
 
 def build_entry(name):
-    stel=fetch_stellarium(); wiki=fetch_wikipedia(name)
-    sc=find_cons(stel,name)
-    if not sc: print(f"  ERROR: '{name}' not found in Stellarium"); return None,[]
-    lines=sc.get("lines",[]); print(f"  Stellarium lines: {len(lines)}")
-    hip_stars={}
+    stel = fetch_stellarium(); wiki = fetch_wikipedia(name)
+    sc = find_cons(stel, name)
+    if not sc: print(f"  ERROR: '{name}' not found in Stellarium"); return None, []
+    lines = sc.get("lines", []); print(f"  Stellarium lines: {len(lines)}")
+
+    # Deduplicate Wikipedia stars by HIP (keep brightest)
+    hip_stars = {}
     for ws in wiki:
-        h=ws["hip"]
-        if h not in hip_stars or ws.get("mag",99)<hip_stars[h].get("mag",99):
-            hip_stars[h]=ws
-    line_hips=set()
+        h = ws["hip"]
+        if h not in hip_stars or ws.get("mag", 99) < hip_stars[h].get("mag", 99):
+            hip_stars[h] = ws
+
+    # Resolve names: use best name from Wikipedia data
+    for s in hip_stars.values():
+        s["best_name"] = star_name(s)
+
+    # Collect HIPs from Stellarium lines
+    line_hips = set()
     for ln in lines:
         for h in ln:
-            if isinstance(h,int): line_hips.add(h)
-    bright_hips={}
+            if isinstance(h, int): line_hips.add(h)
+
+    # Bright stars that are in both Stellarium and Wikipedia
+    bright_line = {}
     for h in line_hips:
-        ws=hip_stars.get(h)
-        if ws and "mag" in ws and ws["mag"]<=MAG_CUT: bright_hips[h]=ws
-    if not bright_hips:
-        print("  ERROR: no bright stars matched between Wikipedia and Stellarium"); return None,[]
+        ws = hip_stars.get(h)
+        if ws and "mag" in ws and ws["mag"] <= MAG_CUT:
+            bright_line[h] = ws
 
-    kn=KNOWN.get(name)
-    if kn:
-        print("  Using verified connections from KNOWN config")
-        known_hips={p[1]:p[0] for p in kn.get("main",[])}
-        main_hips=[h for h in [p[1] for p in kn["main"]] if h in hip_stars]
-        main_names=[known_hips[h] for h in main_hips]
-        tag=kn["tag"]
-        all_hips=main_hips.copy()
-        rem=sorted([h for h in bright_hips if h not in main_hips],key=lambda h:bright_hips[h].get("mag",99))
-        all_hips.extend(rem)
-        rem2=sorted([h for h in hip_stars if h not in all_hips and "mag" in hip_stars[h] and hip_stars[h]["mag"]<=MAG_CUT],
-                    key=lambda h:hip_stars[h]["mag"])
-        all_hips.extend(rem2)
-        conns=[]; mn=main_names
-        for c in kn["conns"]:
-            n1=mn[c[0]]; n2=mn[c[1]]
-            c1={s.get("name",str(s["hip"])):i for i,s in enumerate([hip_stars.get(h) or bright_hips.get(h) for h in all_hips if hip_stars.get(h) or bright_hips.get(h)])}
-            if n1 in c1 and n2 in c1: conns.append([c1[n1],c1[n2]])
-    else:
-        main_hips=sorted(bright_hips.keys(),key=lambda h:(bright_hips[h].get("ra",[99,0,0])[0],bright_hips[h].get("ra",[0,0,0])[1]))
-        main_names=[bright_hips[h].get("name",str(h)) for h in main_hips]
-        if len(main_hips)>12:
-            longest=max(lines,key=lambda l:len([h for h in l if isinstance(h,int) and h in bright_hips]))
-            main_hips=[h for h in longest if isinstance(h,int) and h in bright_hips]
-            main_names=[bright_hips[h].get("name",str(h)) for h in main_hips]
-        all_hips=main_hips.copy()
-        rem=sorted([h for h in bright_hips if h not in main_hips],key=lambda h:bright_hips[h].get("mag",99))
-        all_hips.extend(rem)
-        rem2=sorted([h for h in hip_stars if h not in all_hips and "mag" in hip_stars[h] and hip_stars[h]["mag"]<=MAG_CUT],
-                    key=lambda h:hip_stars[h]["mag"])
-        all_hips.extend(rem2)
-        mean_ra=sum(bright_hips[h].get("ra",[6,0,0])[0] for h in main_hips)/len(main_hips) if main_hips else 6
-        tag=f'date: "{best_month(mean_ra):02d}/01"'
-        hip_to_name={h:ws.get("name",str(h)) for h,ws in bright_hips.items()}
-        conn_pairs=set()
-        for ln in lines:
-            flt=[h for h in ln if isinstance(h,int) and h in bright_hips]
-            for i in range(len(flt)-1): conn_pairs.add((flt[i],flt[i+1]))
-        conns=[]
-        oidx={s.get("name",str(s["hip"])):i for i,s in enumerate([hip_stars.get(h) or bright_hips.get(h) for h in all_hips if hip_stars.get(h) or bright_hips.get(h)])}
-        for a,b in conn_pairs:
-            n1=hip_to_name.get(a); n2=hip_to_name.get(b)
-            if n1 in oidx and n2 in oidx: conns.append([oidx[n1],oidx[n2]])
+    if not bright_line:
+        print("  ERROR: no bright stars matched between Wikipedia and Stellarium")
+        return None, []
 
-    ordered=[hip_stars.get(h) or bright_hips.get(h) for h in all_hips if hip_stars.get(h) or bright_hips.get(h)]
-    # Override main star names with KNOWN config names (Wikipedia may use Bayer letters)
-    if kn:
-        known_map={p[1]:p[0] for p in kn.get("main",[])}
-        for s in ordered:
-            if s["hip"] in known_map: s["name"]=known_map[s["hip"]]
-    oidx={s.get("name",str(s["hip"])):i for i,s in enumerate(ordered)}
-    if kn:
-        conns=[]
-        mn=main_names
-        for c in kn["conns"]:
-            n1=mn[c[0]]; n2=mn[c[1]]
-            if n1 in oidx and n2 in oidx: conns.append([oidx[n1],oidx[n2]])
+    # Determine main asterism: merge ALL Stellarium lines, filter to bright stars.
+    MAIN_MAG_CUT = 4.5
+    # Collect all unique HIPs used in any Stellarium line, with mag filter
+    line_hip_set = set()
+    for ln in lines:
+        for h in ln:
+            if isinstance(h, int) and h in bright_line and bright_line[h].get("mag", 99) <= MAIN_MAG_CUT:
+                line_hip_set.add(h)
 
-    js=[]
-    ck=name.upper().replace(" ","_")
-    js.append(f'  {{ /* {ck} */')
-    js.append(f'    name: "{name}", {tag},')
-    js.append(f'    stars: [')
+    # Build all connections from consecutive filtered stars in each line
+    raw_pair_set = set()
+    for ln in lines:
+        flt = [h for h in ln if isinstance(h, int) and h in line_hip_set]
+        for i in range(len(flt) - 1):
+            raw_pair_set.add((flt[i], flt[i+1]))
+
+    # Build a graph: follow the chain of connections
+    graph = {}
+    for a, b in raw_pair_set:
+        graph.setdefault(a, set()).add(b)
+        graph.setdefault(b, set()).add(a)
+
+    # Find the main chain: start from a star with degree 1, follow the path
+    degree1 = [h for h in line_hip_set if len(graph.get(h, [])) == 1]
+    # Also include stars with degree > 1 (junctions in the chain)
+    main_hips = list(line_hip_set)
+
+    # Post-process: insert missing bright stars that are between consecutive
+    # main stars in RA. This handles cases like Lesath in Scorpius that are
+    # part of the traditional asterism but not in the IAU stick figure.
+    def ra_of(hip):
+        ws = bright_line.get(hip) or hip_stars.get(hip)
+        if ws: r = ws.get("ra", [0, 0, 0])
+        else: r = [0, 0, 0]
+        return r[0] + r[1] / 60.0 if len(r) >= 2 else 0
+
+    sorted_hips = sorted(line_hip_set, key=ra_of)
+    inserted = set()
+    # Rare cases: bright stars that are part of the canonical asterism but not in
+    # the IAU stick figure (e.g. Lesath = HIP 85696 in Scorpius).
+    MISSING_BRIDGES = {
+        85696: {"after": 84143},  # Lesath, insert after η Sco (HIP 84143) in Scorpius
+    }
+    for h, hint in MISSING_BRIDGES.items():
+        ws = hip_stars.get(h)
+        if ws and "mag" in ws and ws["mag"] <= MAIN_MAG_CUT and h not in line_hip_set:
+            after = hint.get("after")
+            if after and after in sorted_hips:
+                idx = sorted_hips.index(after)
+                if idx + 1 < len(sorted_hips) and sorted_hips[idx + 1] != h:
+                    inserted.add(h)
+                    sorted_hips.insert(idx + 1, h)
+
+    main_hips = sorted_hips
+
+    # Build full ordered list
+    all_hips = main_hips.copy()
+    rest_line = sorted([h for h in bright_line if h not in main_hips],
+                       key=lambda h: bright_line[h].get("mag", 99))
+    all_hips.extend(rest_line)
+    rest = sorted([h for h in hip_stars if h not in all_hips and "mag" in hip_stars[h] and hip_stars[h]["mag"] <= MAG_CUT],
+                  key=lambda h: hip_stars[h]["mag"])
+    all_hips.extend(rest)
+
+    ordered = [hip_stars[h] for h in all_hips if h in hip_stars]
+    oidx = {s["best_name"]: i for i, s in enumerate(ordered)}
+
+    # Build connections from the merged pair set
+    conns = []
+    for a, b in raw_pair_set:
+        if a in main_hips and b in main_hips:
+            wa, wb = hip_stars.get(a), hip_stars.get(b)
+            if wa and wb:
+                n1, n2 = wa["best_name"], wb["best_name"]
+                if n1 in oidx and n2 in oidx:
+                    conns.append([oidx[n1], oidx[n2]])
+
+    # Also add connections for inserted stars (bridge between their neighbors)
+    for h in inserted:
+        r = ra_of(h)
+        # Find neighbors in main_hips
+        for i in range(len(main_hips) - 1):
+            if main_hips[i + 1] == h:
+                # h was inserted after position i, so connect previous -> h -> next
+                prev_h = main_hips[i]
+                next_h = main_hips[i + 2] if i + 2 < len(main_hips) else None
+                for partner in [prev_h, next_h]:
+                    if partner:
+                        wa, wb = hip_stars.get(h), hip_stars.get(partner)
+                        if wa and wb:
+                            n1, n2 = wa["best_name"], wb["best_name"]
+                            if n1 in oidx and n2 in oidx:
+                                conns.append([oidx[n1], oidx[n2]])
+
+    main_names = [hip_stars[h]["best_name"] for h in main_hips]
+    mean_ra = sum(hip_stars[h].get("ra", [6, 0, 0])[0] for h in main_hips) / len(main_hips) if main_hips else 6
+    tag = f'date: "{best_month(mean_ra):02d}/01"'
+
+    ck = name.upper().replace(" ", "_")
+    js = [
+        f'  {{ /* {ck} */',
+        f'    name: "{name}", {tag},',
+        f'    stars: [',
+    ]
     for s in ordered:
-        ra=fmt_pos(s.get("ra")); dec=fmt_pos(s.get("dec"))
-        spec="null" if s.get("spec") is None else json.dumps(s["spec"])
-        nm=s.get("name",str(s["hip"]))
+        ra = fmt_pos(s.get("ra")); dec = fmt_pos(s.get("dec"))
+        spec = json.dumps(s["spec"]) if s.get("spec") else "null"
+        nm = s["best_name"]
         js.append(f'      {{ name:{json.dumps(nm)}, ra:{ra}, dec:{dec}, mag:{s["mag"]:.2f}, spec:{spec} }},')
     js.append(f'    ],')
     js.append(f'    connections: {json.dumps(conns)},')
@@ -226,27 +288,33 @@ def build_entry(name):
     return "\n".join(js), ordered
 
 def update_shared(ck, entry):
-    with open(SHARED_JS) as f: c=f.read()
-    p=r'{ /\* '+ck+r' \*/(.*?)\n  },'
-    m=re.search(p,c,re.DOTALL)
-    if m: c=c[:m.start()]+entry+c[m.end():]
-    else: c=c.replace("];",entry+"\n];")
-    with open(SHARED_JS,"w") as f: f.write(c)
+    with open(SHARED_JS) as f: c = f.read()
+    p = r'{ /\* ' + ck + r' \*/(.*?)\n  },'
+    m = re.search(p, c, re.DOTALL)
+    if m: c = c[:m.start()] + entry + c[m.end():]
+    else: c = c.replace("];", entry + "\n];")
+    with open(SHARED_JS, "w") as f: f.write(c)
     print(f"  Updated {SHARED_JS}")
 
-if __name__=="__main__":
-    args=sys.argv[1:]
+if __name__ == "__main__":
+    args = sys.argv[1:]
     if "--list" in args:
-        for cons in fetch_stellarium().get("constellations",[]):
-            cn=cons.get("common_name",{}); eng=cn.get("english","")
-            nat=cn.get("native","")
+        for cons in sorted(fetch_stellarium().get("constellations", []), key=lambda x: x.get("common_name", {}).get("english", "")):
+            cn = cons.get("common_name", {}); eng = cn.get("english", "")
+            nat = cn.get("native", "")
             if eng or nat: print(f"  {eng or nat}")
         sys.exit(0)
-    targets=list(KNOWN.keys()) if "--all" in args else [" ".join(a.capitalize() for a in arg.split()) for arg in args]
-    targets=[t for t in targets if t]
+    if "--all" in args:
+        # Pre-built list: constellations that have been verified
+        targets = ["Orion", "Cassiopeia", "Lyra", "Cygnus", "Gemini", "Scorpius", "Andromeda"]
+    else:
+        targets = [" ".join(a.capitalize() for a in arg.split()) for arg in args]
+        targets = [t for t in targets if t]
     if not targets:
-        print(f"Usage: {sys.argv[0]} Orion\n       {sys.argv[0]} --all\n       {sys.argv[0]} --list"); sys.exit(1)
-    for name in targets:
-        print(f"\n=== {name.upper()} ==="); entry_js,_=build_entry(name)
-        if entry_js: update_shared(name.upper().replace(" ","_"),entry_js)
+        print(f"Usage: {sys.argv[0]} Orion\n       {sys.argv[0]} --all\n       {sys.argv[0]} --list")
+        sys.exit(1)
+    for name in sorted(targets):
+        print(f"\n=== {name.upper()} ===")
+        entry_js, _ = build_entry(name)
+        if entry_js: update_shared(name.upper().replace(" ", "_"), entry_js)
     print("\nDone.")
