@@ -197,15 +197,17 @@ for (var i = 0; i < cassiopeiaStars.length; i++) {
     x: cassBase.x + cassSX * s.ra,
     y: cassBase.y + cassSY * s.dec,
     size: starSize(s.mag),
-    colour: s.colour || spectralToHex(s.spec),
-    name: s.name
+    colour: spectralToHex(s.spec),
+    name: s.name,
+    mag: s.mag,
   });
 }
 
 function drawConstellationStars(t) {
   for (var s of cassWCoords) {
     var twinkle = Math.sin(t * 0.02 + s.x * 0.005) * 0.3 + 0.7;
-    var alpha = 0.7 + twinkle * 0.3;
+    var magFactor = Math.max(0.15, 1.15 - s.mag * 0.2);
+    var alpha = (0.7 + twinkle * 0.3) * magFactor;
     var glowSize = s.size * 3.5;
 
     bgCtx.save();

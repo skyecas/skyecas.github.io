@@ -139,8 +139,9 @@ for (var i = 0; i < cassiopeiaStars.length; i++) {
     x: cassBase.x + cassSX * s.ra,
     y: cassBase.y + cassSY * s.dec,
     size: starSize(s.mag),
-    colour: s.colour || spectralToHex(s.spec),
-    name: s.name
+    colour: spectralToHex(s.spec),
+    name: s.name,
+    mag: s.mag,
   });
 }
 
@@ -196,6 +197,7 @@ function drawConstellationDef(d, t) {
         size: starSize(si.mag),
         colour: spectralToHex(si.spec),
         name: si.name,
+        mag: si.mag,
       });
     }
     return p;
@@ -207,7 +209,8 @@ function drawConstellationDef(d, t) {
 
   for (var pi of pts) {
     var tw = Math.sin(t * 0.02 + pi.x * 0.005) * 0.3 + 0.7;
-    var a = starMul + tw * (1 - starMul);
+    var magFactor = pi.mag !== undefined ? Math.max(0.15, 1.15 - pi.mag * 0.2) : 1;
+    var a = (starMul + tw * (1 - starMul)) * magFactor;
     var gs = pi.size * (2 + prom * 1.5);
 
     bgCtx.save();
@@ -251,7 +254,8 @@ function drawConstellationDef(d, t) {
 function drawConstellationStars(t) {
   for (var s of cassWCoords) {
     var twinkle = Math.sin(t * 0.02 + s.x * 0.005) * 0.3 + 0.7;
-    var alpha = 0.7 + twinkle * 0.3;
+    var magFactor = Math.max(0.15, 1.15 - s.mag * 0.2);
+    var alpha = (0.7 + twinkle * 0.3) * magFactor;
     var glowSize = s.size * 3.5;
 
     bgCtx.save();
