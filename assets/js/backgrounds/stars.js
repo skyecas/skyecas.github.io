@@ -197,13 +197,22 @@ function drawOrionConstellation(t) {
 // determine which star colours are allowed
 const starColour = ["white", "floralWhite", "aliceBlue", "powderBlue", "azure", "moccasin", "sandyBrown", "peachPuff"]
 
-// function to draw background stars
+// function to draw background stars with per-star parallax depth
 function Star() {
   this.size = Math.random() * 2 + .1;
   this.x = Math.random() * width;
   this.y = Math.random() * pageHeight;
-  // select it's colour
   this.colour = starColour[Math.floor(Math.random() * starColour.length)]
+  // Parallax depth: 0.3 (distant, slow) to 1.0 (nearby, scrolls with page)
+  this.depth = 0.3 + Math.random() * 0.7;
+}
+
+// update the star positions — offset by parallax depth
+Star.prototype.update = function() {
+  this.size = Math.max(.1, Math.min(2, this.size + 0.1 * Math.random() - 0.05));
+  var paraY = this.y + scrollY * (1 - this.depth);
+  bgCtx.fillStyle = this.colour;
+  bgCtx.fillRect(this.x, paraY, this.size, this.size);
 }
 
 // function to draw shooting stars
@@ -372,11 +381,8 @@ function animate() {
   drawOrionConstellation(cassTime);
   bgCtx.restore();
 
-  // update fixed stars (counter-offset so they appear fixed)
-  bgCtx.save();
-  bgCtx.translate(0, scrollY);
+  // update fixed stars with per-star parallax depth
   for (let s of stars) { s.update(); };
-  bgCtx.restore();
 
   // update moving objects (shooting stars, satellites) — scroll naturally
   for (let m of movers) { m.update(); };
