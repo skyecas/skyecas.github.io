@@ -951,10 +951,10 @@ function animate(timestamp) {
     ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
   }
 
-  requestAnimFrame(animate);
+  requestAnimFrame(function(t) { animate(t); });
 }
 
-requestAnimFrame(animate);
+requestAnimFrame(function(t) { animate(t); });
 
 window.addEventListener("resize", function() {
   var rw = window.innerWidth, rh = window.innerHeight;
