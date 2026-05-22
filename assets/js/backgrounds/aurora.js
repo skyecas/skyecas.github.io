@@ -14,6 +14,8 @@ var background = document.getElementById("bgCanvas"),
     rawWidth = window.innerWidth,
     rawHeight = window.innerHeight;
 
+if (!isFinite(rawWidth) || rawWidth < 100) rawWidth = 1920;
+if (!isFinite(rawHeight) || rawHeight < 100) rawHeight = 1080;
 background.width = rawWidth;
 background.height = rawHeight;
 
@@ -481,3 +483,14 @@ function animate() {
 }
 
 animate();
+
+window.addEventListener("resize", function() {
+  var rw = window.innerWidth, rh = window.innerHeight;
+  if (!isFinite(rw) || rw < 100) rw = 1920;
+  if (!isFinite(rh) || rh < 100) rh = 1080;
+  rawWidth = rw; rawHeight = rh;
+  background.width = rawWidth; background.height = rawHeight;
+  sx = rawWidth / 1920; sy = rawHeight / 1080;
+  scale = Math.min(sx, sy);
+  ox = (rawWidth - 1920 * scale) / 2; oy = (rawHeight - 1080 * scale) / 2;
+});

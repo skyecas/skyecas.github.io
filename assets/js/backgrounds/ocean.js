@@ -25,6 +25,11 @@ var background = document.getElementById("bgCanvas"),
   width = window.innerWidth,
   height = window.innerHeight;
 
+if (!isFinite(width) || width < 100) width = 1920;
+if (!isFinite(height) || height < 100) height = 1080;
+background.width = width;
+background.height = height;
+
 // Helper functions
 function lerp(a, b, t) {
   return a + (b - a) * t;
@@ -509,3 +514,11 @@ function animate() {
 
 // call the first animation
 animate();
+
+window.addEventListener("resize", function() {
+  var rw = window.innerWidth, rh = window.innerHeight;
+  if (!isFinite(rw) || rw < 100) rw = 1920;
+  if (!isFinite(rh) || rh < 100) rh = 1080;
+  width = rw; height = rh;
+  background.width = width; background.height = height;
+});

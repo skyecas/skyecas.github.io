@@ -794,7 +794,7 @@ var time = 0;
 var launched = false;
 var lastFrameTime = 0;
 
-function animate(timestamp) {
+global.animate = function(timestamp) {
   if (lastFrameTime === 0) lastFrameTime = timestamp;
   var deltaMs = timestamp - lastFrameTime;
   if (lastFrameTime === 0) lastFrameTime = timestamp;
@@ -954,12 +954,11 @@ function animate(timestamp) {
     ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
   }
 
-console.log("orbital: before initial animate call, typeof animate=" + (typeof animate));
-requestAnimFrame(animate);
+  requestAnimFrame(global.animate);
 }
 
-try { requestAnimFrame(animate); }
-catch(e) { console.error("orbital startup:", e); }
+try { requestAnimFrame(global.animate); }
+catch(e) { console.error("orbital startup:", e.message); }
 
 window.addEventListener("resize", function() {
   var rw = window.innerWidth, rh = window.innerHeight;
