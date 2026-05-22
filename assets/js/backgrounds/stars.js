@@ -127,6 +127,73 @@ function drawConstellationStars(t) {
   bgCtx.fillText("Cassiopeia", labelX / 5, minY - 20);
 }
 
+// --- Orion constellation (right side, lower portion) ---
+var orionCenterRA = 82.5, orionCenterDec = 5;
+var orionBase = { x: width * 0.78, y: height * 0.78 };
+var orionSX = -7 * (width / 1920);
+var orionSY = -12 * (height / 1080);
+
+var orionWCoords = [];
+var orionStars = CONSTELLATIONS.ORION.stars;
+var orionConns = CONSTELLATIONS.ORION.connections;
+for (var i = 0; i < orionStars.length; i++) {
+  var s = orionStars[i];
+  orionWCoords.push({
+    x: orionBase.x + orionSX * (s.ra - orionCenterRA) * Math.cos(orionCenterDec * Math.PI / 180),
+    y: orionBase.y + orionSY * (s.dec - orionCenterDec),
+    size: starSize(s.mag),
+    colour: spectralToHex(s.spec),
+    name: s.name,
+    mag: s.mag,
+  });
+}
+
+function drawOrionConstellation(t) {
+  var minMag = Infinity;
+  for (var s of orionWCoords) if (s.mag < minMag) minMag = s.mag;
+
+  for (var s of orionWCoords) {
+    var twinkle = Math.sin(t * 0.02 + s.x * 0.005) * 0.3 + 0.7;
+    var magFactor = Math.max(0.12, 1 - (s.mag - minMag) * 0.35);
+    var alpha = (0.4 + twinkle * 0.6) * magFactor;
+    var glowSize = s.size * 2.5;
+
+    bgCtx.save();
+    var glow = bgCtx.createRadialGradient(s.x, s.y, 0, s.x, s.y, glowSize);
+    glow.addColorStop(0, hexToRgba(s.colour, alpha * 0.25));
+    glow.addColorStop(1, hexToRgba(s.colour, 0));
+    bgCtx.fillStyle = glow;
+    bgCtx.beginPath();
+    bgCtx.arc(s.x, s.y, glowSize, 0, Math.PI * 2);
+    bgCtx.fill();
+    bgCtx.restore();
+
+    bgCtx.fillStyle = s.colour;
+    bgCtx.globalAlpha = alpha;
+    bgCtx.beginPath();
+    bgCtx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+    bgCtx.fill();
+    bgCtx.globalAlpha = 1;
+  }
+
+  bgCtx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+  bgCtx.lineWidth = 0.8;
+  bgCtx.beginPath();
+  for (var c of orionConns) {
+    bgCtx.moveTo(orionWCoords[c[0]].x, orionWCoords[c[0]].y);
+    bgCtx.lineTo(orionWCoords[c[1]].x, orionWCoords[c[1]].y);
+  }
+  bgCtx.stroke();
+
+  bgCtx.font = "10px sans-serif";
+  bgCtx.textAlign = "center";
+  bgCtx.fillStyle = "rgba(255, 255, 255, 0.18)";
+  var lx = 0, maxY = -Infinity;
+  for (var i = 0; i < 4; i++) { var s = orionWCoords[i]; lx += s.x; if (s.y > maxY) maxY = s.y; }
+  bgCtx.fillText("Orion", lx / 4, maxY + 16);
+}
+
+
 // determine which star colours are allowed
 const starColour = ["white", "floralWhite", "aliceBlue", "powderBlue", "azure", "moccasin", "sandyBrown", "peachPuff"]
 
@@ -281,8 +348,9 @@ function animate() {
   bgCtx.fillStyle = "#110E19";
   bgCtx.fillRect(0, 0, width, pageHeight);
 
-  // Parallax: constellations drift very slowly (5% of scroll speed) for subtle depth
-  var cassOffset = scrollY * 0.05;
+  // Parallax: constellations drift upward at a fraction of scroll speed
+  var cassOffset = scrollY * 0.8;  // 20% scroll speed
+  var orionOffset = scrollY * 0.85; // 15% scroll speed
 
   bgCtx.fillStyle = '#ffffff';
   bgCtx.strokeStyle = '#ffffff';
@@ -291,11 +359,17 @@ function animate() {
     bgCtx.strokeStyle = dateColour;
   }
 
-  // draw Cassiopeia constellation (fixed in the sky)
+  // draw Cassiopeia constellation (drifts at 20% of scroll speed)
   cassTime++;
   bgCtx.save();
-  bgCtx.translate(0, scrollY);
+  bgCtx.translate(0, cassOffset);
   drawConstellationStars(cassTime);
+  bgCtx.restore();
+
+  // draw Orion constellation (drifts at 15%)
+  bgCtx.save();
+  bgCtx.translate(0, orionOffset);
+  drawOrionConstellation(cassTime);
   bgCtx.restore();
 
   // update fixed stars (counter-offset so they appear fixed)
