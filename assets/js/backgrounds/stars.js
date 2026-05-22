@@ -27,17 +27,33 @@ var background = document.getElementById("bgCanvas"),
 
 if (!isFinite(width) || width < 100) width = 1920;
 if (!isFinite(height) || height < 100) height = 1080;
+
+// Switch to absolute positioning so canvas scrolls with page
+var pageHeight = Math.max(height * 4, document.body.scrollHeight || height * 4);
+background.style.position = "absolute";
+background.style.top = "0";
+background.style.left = "0";
 background.width = width;
-background.height = height;
+background.height = pageHeight;
 
 // Parallax scroll offset
 var scrollY = 0;
-var pageHeight = height * 4;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
-// Detect page content height for absolute canvas sizing
-function updatePageHeight() { pageHeight = Math.max(height * 4, document.body.scrollHeight || height * 4); }
-updatePageHeight();
-window.addEventListener("resize", updatePageHeight, { passive: true });
+
+// Update page height on resize
+window.addEventListener("resize", function() {
+  var rw = window.innerWidth, rh = window.innerHeight;
+  if (!isFinite(rw) || rw < 100) rw = 1920;
+  if (!isFinite(rh) || rh < 100) rh = 1080;
+  width = rw; height = rh;
+  pageHeight = Math.max(height * 4, document.body.scrollHeight || height * 4);
+  background.style.height = pageHeight + "px";
+  background.width = width; background.height = pageHeight;
+});
+
+// draw the night sky
+bgCtx.fillStyle = "#110E19";
+bgCtx.fillRect(0, 0, width, pageHeight);
 
 // draw the night sky
 bgCtx.fillStyle = "#110E19";
@@ -332,10 +348,11 @@ function animate() {
   var dateColour = dateColours[todayStr] || null;
   // fetch the requiredbackground colour
   bgCtx.fillStyle = "#110E19";
-  bgCtx.fillRect(0, 0, width, height);
+  bgCtx.fillRect(0, 0, width, pageHeight);
 
-  // Parallax: stars drift up at 30% of scroll speed (like distant sky)
-  var parOffset = scrollY * 0.3;
+  // Parallax: absolute canvas scrolls naturally; counter-offset downwards
+  // so entities scroll at a fraction of the page speed
+  var parOffset = scrollY * 0.7;
   var cassOffset = scrollY * 0.5;
 
   bgCtx.fillStyle = '#ffffff';
@@ -348,13 +365,13 @@ function animate() {
   // draw Cassiopeia constellation with its own parallax
   cassTime++;
   bgCtx.save();
-  bgCtx.translate(0, -cassOffset);
+  bgCtx.translate(0, cassOffset);
   drawConstellationStars(cassTime);
   bgCtx.restore();
 
   // update all entities with parallax
   bgCtx.save();
-  bgCtx.translate(0, -parOffset);
+  bgCtx.translate(0, parOffset);
   for (let entity of entities) { entity.update(); };
   bgCtx.restore();
 
@@ -364,11 +381,3 @@ function animate() {
 
 // call the first animation
 animate();
-
-window.addEventListener("resize", function() {
-  var rw = window.innerWidth, rh = window.innerHeight;
-  if (!isFinite(rw) || rw < 100) rw = 1920;
-  if (!isFinite(rh) || rh < 100) rh = 1080;
-  width = rw; height = rh;
-  background.width = width; background.height = height;
-});
