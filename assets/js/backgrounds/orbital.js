@@ -1,10 +1,18 @@
-var c = document.getElementById("bgCanvas"),
-    ctx = c.getContext("2d"),
-    rawW = window.innerWidth, rawH = window.innerHeight;
-if (!isFinite(rawW) || rawW < 100) rawW = 1920;
-if (!isFinite(rawH) || rawH < 100) rawH = 1080;
+var bg = initCanvas(function(w, h) {
+	rawW = w; rawH = h;
+	W = w; H = h;
+	sx = w / 2; sy = h / 2;
+	orScale = Math.min(w / baseW, h / baseH);
+	if (!isFinite(orScale) || orScale < 0.05) orScale = 1;
+	var maxA = 0;
+	try { for (var p of planets) if (p.a > maxA) maxA = p.a; } catch(e) {}
+	if (maxA < 50) maxA = 300;
+	camScale = Math.min(w, h) / (maxA * 2.4);
+	if (!isFinite(camScale) || camScale < 0.01) camScale = 1;
+});
+var c = bg.canvas, ctx = bg.ctx;
+// W,H set by initCanvas callback
 var W = rawW, H = rawH;
-c.width = W; c.height = H;
 
 // --- Scene center ---
 var sx = W / 2, sy = H / 2;
@@ -925,17 +933,4 @@ orb.animate = function(timestamp) {
 try { requestAnimFrame(orb.animate); }
 catch(e) { console.error("orbital startup:", e.message); }
 
-window.addEventListener("resize", function() {
-  var rw = window.innerWidth, rh = window.innerHeight;
-  if (!isFinite(rw) || rw < 100) rw = 1920;
-  if (!isFinite(rh) || rh < 100) rh = 1080;
-  W = rw; H = rh;
-  c.width = W; c.height = H;
-  sx = W / 2; sy = H / 2;
-  orScale = Math.min(W / baseW, H / baseH);
-  if (!isFinite(orScale) || orScale < 0.05) orScale = 1;
-  var maxA = 0;
-  try { for (var p of planets) if (p.a > maxA) maxA = p.a; } catch(e) {}
-  if (maxA < 50) maxA = 300;
-  camScale = Math.min(W, H) / (maxA * 2.4);
-});
+

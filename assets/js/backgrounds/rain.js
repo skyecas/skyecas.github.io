@@ -1,13 +1,26 @@
-// Canvas setup
-var background = document.getElementById("bgCanvas"),
-  bgCtx = background.getContext("2d"),
-  width = window.innerWidth,
-  height = window.innerHeight;
-
-if (!isFinite(width) || width < 100) width = 1920;
-if (!isFinite(height) || height < 100) height = 1080;
-background.width = width;
-background.height = height;
+var bg = initCanvas(function(w, h) {
+	width = w; height = h;
+	mugX = w - 2 * mugWidth;
+	mugY = h - mugHeight - 30;
+	secondMugX = mugX - mugWidth - 40;
+	secondMugY = mugY + 10;
+	var xr = w / prevW, yr = h / prevH;
+	if (isFinite(xr) && isFinite(yr)) {
+		for (var p of pools) { p.x *= xr; p.y *= yr; }
+		for (var d of drops) { d.x *= xr; d.y *= yr; }
+		for (var t of dripTrails) { t.x *= xr; t.y *= yr; }
+	}
+	prevW = w; prevH = h;
+	steamWaves = [];
+	for (let i = 0; i < steamCount; i++) {
+		steamWaves.push(new SteamWave(lerp(mugX + 8, mugX + mugWidth - 8, i / (steamCount - 1)), mugY));
+	}
+	for (let i = 0; i < steamCount; i++) {
+		steamWaves.push(new SteamWave(lerp(secondMugX + 8, secondMugX + mugWidth - 8, i / (steamCount - 1)), secondMugY));
+	}
+});
+var bgCtx = bg.ctx;
+// width,height set by initCanvas callback
 
 function drawWindow() {
   const top = height * 0.95;
@@ -429,29 +442,3 @@ function animate() {
 animate();
 
 var prevW = width, prevH = height;
-
-window.addEventListener("resize", function() {
-  var rw = window.innerWidth, rh = window.innerHeight;
-  if (!isFinite(rw) || rw < 100) rw = 1920;
-  if (!isFinite(rh) || rh < 100) rh = 1080;
-  width = rw; height = rh;
-  background.width = width; background.height = height;
-  mugX = width - 2 * mugWidth;
-  mugY = height - mugHeight - 30;
-  secondMugX = mugX - mugWidth - 40;
-  secondMugY = mugY + 10;
-  var xr = width / prevW, yr = height / prevH;
-  if (isFinite(xr) && isFinite(yr)) {
-    for (var p of pools) { p.x *= xr; p.y *= yr; }
-    for (var d of drops) { d.x *= xr; d.y *= yr; }
-    for (var t of dripTrails) { t.x *= xr; t.y *= yr; }
-  }
-  prevW = width; prevH = height;
-  steamWaves = [];
-  for (let i = 0; i < steamCount; i++) {
-    steamWaves.push(new SteamWave(lerp(mugX + 8, mugX + mugWidth - 8, i / (steamCount - 1)), mugY));
-  }
-  for (let i = 0; i < steamCount; i++) {
-    steamWaves.push(new SteamWave(lerp(secondMugX + 8, secondMugX + mugWidth - 8, i / (steamCount - 1)), secondMugY));
-  }
-});
