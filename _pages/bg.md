@@ -24,8 +24,6 @@ if (bg && bgNames.indexOf(bg) !== -1) {
     document.body.appendChild(script);
   };
   document.body.appendChild(shared);
-  script.src = "/assets/js/backgrounds/" + bg + ".js?v=" + Date.now();
-  document.body.appendChild(script);
 } else {
   document.write('<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;gap:12px;font-family:monospace;color:#aaa;">');
   document.write('<h2 style="color:#fff;margin-bottom:12px;">Background Preview</h2>');

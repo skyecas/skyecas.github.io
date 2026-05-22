@@ -531,8 +531,6 @@ for (var i = 0; i < consData.length; i++) {
   CONSTELLATIONS[consData[i].name.toUpperCase()] = new Constellation(consData[i]);
 }
 
-// Backward-compatible aliases
-var CASSIOPEIA_STARS = CONSTELLATIONS.CASSIOPEIA.stars;
-var CASSIOPEIA_CONNECTIONS = CONSTELLATIONS.CASSIOPEIA.connections;
-var ORION_STARS = CONSTELLATIONS.ORION.stars;
-var ORION_CONNECTIONS = CONSTELLATIONS.ORION.connections;
+// Backward-compatible aliases (lowercase, matching original background code)
+var cassiopeiaStars = CONSTELLATIONS.CASSIOPEIA.stars;
+var cassiopeiaConnections = CONSTELLATIONS.CASSIOPEIA.connections;
