@@ -1,9 +1,9 @@
 var pageHeight;
-var bg = initCanvas(function(w, h) {
+var bg = initCanvas(function(w, h, c) {
 	width = w; height = h;
 	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
-	bg.canvas.height = pageHeight;
-	bg.canvas.style.height = pageHeight + "px";
+	c.height = pageHeight;
+	c.style.height = pageHeight + "px";
 	stars = createBgStars(600, w, pageHeight, { parallax: true });
 });
 var bgCtx = bg.ctx;
