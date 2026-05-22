@@ -30,6 +30,10 @@ if (!isFinite(height) || height < 100) height = 1080;
 background.width = width;
 background.height = height;
 
+// Parallax scroll offset
+var scrollY = 0;
+window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
+
 // set the canvase size
 background.width = width;
 background.height = height;
@@ -183,7 +187,7 @@ const starColour = ["white", "floralWhite", "aliceBlue", "powderBlue", "azure", 
 function Star() {
   this.size = Math.random() * 2 + .1;
   this.x = Math.random() * width;
-  this.y = Math.random() * height;
+  this.y = Math.random() * height * 3;
   // select it's colour
   this.colour = starColour[Math.floor(Math.random() * starColour.length)]
 }
@@ -307,8 +311,8 @@ var isSpecialDate = false;
 // create an array of animated entities
 var entities = [];
 
-// initialise the star field
-for (var i = height; i > 0; i--) { entities.push(new Star()); }
+// initialise the star field - extra height for parallax scrolling
+for (var i = height * 3; i > 0; i--) { entities.push(new Star()); }
 
 // add a few satellites
 for (var i = 10; i > 0; i--) { entities.push(new Satellite()); }
@@ -328,6 +332,11 @@ function animate() {
   // fetch the requiredbackground colour
   bgCtx.fillStyle = "#110E19";
   bgCtx.fillRect(0, 0, width, height);
+
+  // Parallax offset: stars and entities shift up as user scrolls
+  var parOffset = scrollY * 0.05;
+  var cassOffset = scrollY * 0.1;
+
   bgCtx.fillStyle = '#ffffff';
   bgCtx.strokeStyle = '#ffffff';
 
@@ -335,12 +344,18 @@ function animate() {
     bgCtx.strokeStyle = dateColour;
   }
 
-  // draw Cassiopeia constellation
+  // draw Cassiopeia constellation with its own parallax
   cassTime++;
+  bgCtx.save();
+  bgCtx.translate(0, -cassOffset);
   drawConstellationStars(cassTime);
+  bgCtx.restore();
 
-  // update all entities
+  // update all entities with parallax
+  bgCtx.save();
+  bgCtx.translate(0, -parOffset);
   for (let entity of entities) { entity.update(); };
+  bgCtx.restore();
 
   //schedule the next animation frame
   requestAnimFrame(animate);
