@@ -35,6 +35,7 @@ background.style.top = "0";
 background.style.left = "0";
 background.width = width;
 background.height = pageHeight;
+background.style.height = pageHeight + "px";
 
 // Parallax scroll offset
 var scrollY = 0;
