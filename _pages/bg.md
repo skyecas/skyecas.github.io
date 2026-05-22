@@ -14,7 +14,7 @@ if (bg && bgNames.indexOf(bg) !== -1) {
   document.querySelector(".content").style.display = "none";
   document.body.style.paddingBottom = "0";
   var script = document.createElement("script");
-  script.src = "/assets/js/backgrounds/" + bg + ".js";
+  script.src = "/assets/js/backgrounds/" + bg + ".js?v=" + Date.now();
   document.body.appendChild(script);
 } else {
   document.write('<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;gap:12px;font-family:monospace;color:#aaa;">');
