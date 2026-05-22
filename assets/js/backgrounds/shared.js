@@ -176,7 +176,6 @@ var consData = [
     connections: [[9, 7], [6, 0], [0, 1], [10, 9], [2, 3], [15, 14], [6, 8], [13, 10], [10, 11], [8, 13], [11, 5], [3, 4], [7, 6], [14, 13], [5, 7], [0, 2], [16, 14], [16, 15], [15, 12]],
     mainIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
   },
-
 { /* CASSIOPEIA */
     name: "Cassiopeia", always: true,
     stars: [
@@ -232,6 +231,7 @@ var consData = [
     connections: [[1, 0], [3, 2], [4, 3], [2, 1]],
     mainIndices: [0, 1, 2, 3, 4],
   },
+
 { /* LYRA */
     name: "Lyra", date: "27/07",
     stars: [
@@ -526,7 +526,14 @@ var consData = [
 
 
 
+
 ];
+
+var consDataByName = {};
+for (var ci = 0; ci < consData.length; ci++) {
+  var key = consData[ci].name.toUpperCase().replace(/ /g, '_');
+  consDataByName[key] = consData[ci];
+}
 
 function randomSpectralType() {
   var r = Math.random();

@@ -32,14 +32,14 @@ bgCtx.fillRect(0, 0, width, pageHeight);
 bgCtx.fillRect(0, 0, width, height);
 
 // === Constellations ===
-var cassWCoords = projectConstellation(consData[1],
+var cassWCoords = projectConstellation(consDataByName.CASSIOPEIA,
 	width * 0.13, height * 0.93,
 	6.5 * (width / 1920),
 	0, 0
 );
 
 var orionCenterRA = 82.5, orionCenterDec = 5;
-var orionWCoords = projectConstellation(consData[0],
+var orionWCoords = projectConstellation(consDataByName.ORION,
 	width * 0.78, height * 0.78,
 	7 * (width / 1920),
 	orionCenterRA, orionCenterDec
@@ -142,8 +142,8 @@ var cassTime = 0;
 function animate() {
 	var todayStr = getDateKey();
 	isSpecialDate = false;
-	for (var i = 0; i < consData.length; i++) {
-		if (consData[i].date === todayStr) {
+	for (var key in consDataByName) {
+		if (consDataByName[key].date === todayStr) {
 			isSpecialDate = true;
 			break;
 		}
@@ -161,14 +161,14 @@ function animate() {
 	cassTime++;
 	bgCtx.save();
 	bgCtx.translate(0, cassOffset);
-	renderConstellationLines(bgCtx, cassWCoords, consData[1].connections, "rgba(255, 255, 255, 0.15)");
-	renderConstellationStars(bgCtx, cassWCoords, consData[1].mainIndices, cassTime);
+	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)");
+	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime);
 
 	bgCtx.font = "11px sans-serif";
 	bgCtx.textAlign = "center";
 	bgCtx.fillStyle = "rgba(255, 255, 255, 0.24)";
 	var labelX = 0, minY = Infinity;
-	var cassMains = consData[1].mainIndices || [];
+	var cassMains = consDataByName.CASSIOPEIA.mainIndices || [];
 	for (var j = 0; j < Math.min(5, cassMains.length); j++) {
 		var s = cassWCoords[cassMains[j]];
 		labelX += s.x;
@@ -179,14 +179,14 @@ function animate() {
 
 	bgCtx.save();
 	bgCtx.translate(0, orionOffset);
-	renderConstellationLines(bgCtx, orionWCoords, consData[0].connections, "rgba(255, 255, 255, 0.12)");
-	renderConstellationStars(bgCtx, orionWCoords, consData[0].mainIndices, cassTime);
+	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)");
+	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime);
 
 	bgCtx.font = "10px sans-serif";
 	bgCtx.textAlign = "center";
 	bgCtx.fillStyle = "rgba(255, 255, 255, 0.18)";
 	var lx = 0, maxY = -Infinity;
-	var orionMains = consData[0].mainIndices || [];
+	var orionMains = consDataByName.ORION.mainIndices || [];
 	for (var j = 0; j < Math.min(4, orionMains.length); j++) {
 		var s = orionWCoords[orionMains[j]];
 		lx += s.x;

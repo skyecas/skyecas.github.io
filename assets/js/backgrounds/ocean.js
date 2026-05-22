@@ -329,8 +329,8 @@ for (var i = wavecount; i > 0; i--) {
 for (var i = 10; i > 0; i--) { shootingstars.push(new ShootingStar()); }
 
 // Project constellations from shared.js data
-var orionPts = projectConstellation(consData[0], 2400, 200, 8, 0, 0);
-var cassPts = projectConstellation(consData[1], 400, 120, 8, 0, 60);
+var orionPts = projectConstellation(consDataByName.ORION, 2400, 200, 8, 0, 0);
+var cassPts = projectConstellation(consDataByName.CASSIOPEIA, 400, 120, 8, 0, 60);
 
 // animate the background
 function animate() {
@@ -340,10 +340,10 @@ function animate() {
 
 	// Draw constellations and stars
 	renderBgStars(bgCtx, stars, time, 1);
-	renderConstellationLines(bgCtx, orionPts, consData[0].connections);
-	renderConstellationLines(bgCtx, cassPts, consData[1].connections);
-	renderConstellationStars(bgCtx, orionPts, consData[0].mainIndices, time);
-	renderConstellationStars(bgCtx, cassPts, consData[1].mainIndices, time);
+	renderConstellationLines(bgCtx, orionPts, consDataByName.ORION.connections);
+	renderConstellationLines(bgCtx, cassPts, consDataByName.CASSIOPEIA.connections);
+	renderConstellationStars(bgCtx, orionPts, consDataByName.ORION.mainIndices, time);
+	renderConstellationStars(bgCtx, cassPts, consDataByName.CASSIOPEIA.mainIndices, time);
 
 	// Sea and sun — sun first so it's always behind water
 	drawSun();

@@ -6,7 +6,7 @@ Usage:
   python3 scripts/sync-asterisms.py --all         # rebuild all known
   python3 scripts/sync-asterisms.py --list        # list IAU constellations
 """
-import json, re, os, sys, urllib.request
+import json, re, os, sys, urllib.request, math
 from html import unescape
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -295,7 +295,52 @@ def build_entry(name):
     js.append(f'    mainIndices: {json.dumps(list(range(len(main_hips))))},')
     js.append(f'  }},')
     print(f"  Main stars: {main_names}")
+    print_ascii_constellation(main_hips, hip_stars, conns, main_names)
     return "\n".join(js), ordered
+
+def print_ascii_constellation(hips, hip_stars, conns, names):
+    """Print an ASCII art star chart for a constellation."""
+    stars = []
+    for h in hips:
+        ws = hip_stars.get(h)
+        if ws and "ra" in ws and "dec" in ws:
+            stars.append({"name": ws["best_name"], "ra": (ws["ra"][0] + ws["ra"][1]/60.0 if len(ws.get("ra", [])) >= 2 else 0), "dec": (ws["dec"][0] + ws["dec"][1]/60.0 if len(ws.get("dec", [])) >= 2 else 0)})
+    if len(stars) < 2: return
+
+    c_ra = sum(s["ra"] for s in stars) / len(stars)
+    c_dec = sum(s["dec"] for s in stars) / len(stars)
+    c_dec_r = math.radians(c_dec)
+    pts = []
+    for s in stars:
+        x = (s["ra"] - c_ra) * math.cos(c_dec_r) * 8
+        y = (s["dec"] - c_dec) * 8
+        pts.append((x, y, s["name"]))
+
+    xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
+    if not xs: return
+    x_min, x_max = min(xs), max(xs)
+    y_min, y_max = min(ys), max(ys)
+    W, H = 60, max(8, min(20, len(stars) * 2))
+
+    def to_grid(x, y):
+        gx = int((x - x_min) / (x_max - x_min + 0.01) * (W - 1))
+        gy = int((y - y_min) / (y_max - y_min + 0.01) * (H - 1))
+        return max(0, min(W - 1, gx)), max(0, min(H - 1, gy))
+
+    grid = [[" " for _ in range(W)] for _ in range(H)]
+    labels = {}
+    for x, y, name in pts:
+        gx, gy = to_grid(x, y)
+        grid[gy][gx] = "*"
+        labels.setdefault(gy, []).append(name)
+
+    print(f"  ┌{'─' * W}┐")
+    for y in range(H):
+        line = "  │" + "".join(grid[y]) + "│"
+        if y in labels:
+            line += "  " + ", ".join(labels[y])
+        print(line)
+    print(f"  └{'─' * W}┘")
 
 def update_shared(ck, entry):
     with open(SHARED_JS) as f: c = f.read()

@@ -161,7 +161,7 @@ LightningFlash.prototype.trigger = function () {
   this.bolt = this.hasBolt ? generateLightningPath() : null;
 };
 LightningFlash.prototype.update = function () {
-  if (Math.random() < 0.001 && this.timer <= 0) this.trigger();
+  if (Math.random() < 0.005 && this.timer <= 0) this.trigger();
   if (this.timer > 0) {
     this.drawGlow(); // soft flash
     if (this.hasBolt && this.bolt) drawLightningBolt(this.bolt);
