@@ -462,4 +462,11 @@ window.addEventListener("resize", function() {
     for (var t of dripTrails) { t.x *= xr; t.y *= yr; }
   }
   prevW = width; prevH = height;
+  steamWaves = [];
+  for (let i = 0; i < steamCount; i++) {
+    steamWaves.push(new SteamWave(lerp(mugX + 8, mugX + mugWidth - 8, i / (steamCount - 1)), mugY));
+  }
+  for (let i = 0; i < steamCount; i++) {
+    steamWaves.push(new SteamWave(lerp(secondMugX + 8, secondMugX + mugWidth - 8, i / (steamCount - 1)), secondMugY));
+  }
 });
