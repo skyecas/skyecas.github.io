@@ -274,7 +274,7 @@ function launch(t) {
   for (var i = 0; i < planets.length; i++) {
     if (i === 2) continue;
     var trans = findBestTransfer(2, i, t);
-    if (trans.lam && trans.dv < bestDV && trans.dv < 0.55) {
+    if (trans.lam && trans.dv < bestDV && trans.dv < 0.40) {
       bestDV = trans.dv; bestTarget = i; bestTrans = trans;
     }
   }
@@ -290,10 +290,15 @@ function launch(t) {
       }
     }
     var tp = pPos(planets[bestTarget], t);
-    var dvx = tp.rx - ep.rx, dvy = tp.ry - ep.ry;
-    var vInf = Math.sqrt(dvx*dvx + dvy*dvy);
-    if (vInf < 1) { dvx = vInf > 0.01 ? dvx / vInf : 1; dvy = vInf > 0.01 ? dvy / vInf : 0; vInf = 1; }
-    var dvm = Math.sqrt(0.365 * 0.365 + 0.1 * 0.1);
+    // Use prograde/retrograde burn based on target orbit vs Earth orbit
+    var dvx = ev.vx, dvy = ev.vy;
+    var spd = Math.sqrt(dvx*dvx + dvy*dvy);
+    if (spd < 0.01) { dvx = 1; dvy = 0; spd = 1; }
+    // Retrograde for inner planets, prograde for outer
+    var dir = planets[bestTarget].a > planets[2].a ? 1 : -1;
+    dvx = dvx / spd * dir; dvy = dvy / spd * dir;
+    var vInf = 1;
+    var dvm = 0.37;
     sc.rx = ep.rx + 15 * dvx / vInf;
     sc.ry = ep.ry + 15 * dvy / vInf;
     sc.vx = ev.vx; sc.vy = ev.vy;
@@ -453,12 +458,34 @@ function drawPlanet(p, t) {
   if (!isFinite(pos.rx) || !isFinite(pos.ry) || !isFinite(p.r)) return;
   var cs = 1 / camScale;
   var rv = p.r * cs;
-  ctx.fillStyle = p.col + "40";
+
+  // Atmosphere glow
+  ctx.fillStyle = p.col + "25";
   ctx.beginPath(); ctx.arc(pos.rx, pos.ry, rv * 2.5, 0, Math.PI * 2); ctx.fill();
-  var g2 = ctx.createRadialGradient(pos.rx - rv * 0.3, pos.ry - rv * 0.3, 0, pos.rx, pos.ry, rv);
-  g2.addColorStop(0, "#fff"); g2.addColorStop(0.2, p.col); g2.addColorStop(1, "#222");
-  ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(pos.rx, pos.ry, rv, 0, Math.PI * 2); ctx.fill();
-  ctx.font = (11 * cs) + "px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "rgba(255,255,255,0.3)";
+
+  // Planet disk — shaded sphere
+  var grd = ctx.createRadialGradient(pos.rx - rv * 0.15, pos.ry - rv * 0.15, rv * 0.1, pos.rx, pos.ry, rv);
+  grd.addColorStop(0, p.col);
+  grd.addColorStop(0.7, p.col);
+  grd.addColorStop(1, "#000");
+  ctx.fillStyle = grd;
+  ctx.beginPath(); ctx.arc(pos.rx, pos.ry, rv, 0, Math.PI * 2); ctx.fill();
+
+  // Terminator shadow — darken the hemisphere facing away from the sun
+  var sunAng = Math.atan2(-pos.ry, -pos.rx);
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(pos.rx, pos.ry, rv, sunAng - Math.PI / 2, sunAng + Math.PI / 2);
+  ctx.lineTo(pos.rx, pos.ry);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.fill();
+  ctx.restore();
+
+  // Label
+  ctx.font = (11 * cs) + "px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(255,255,255,0.3)";
   ctx.fillText(p.n, pos.rx, pos.ry + rv + 14 * cs);
 }
 
