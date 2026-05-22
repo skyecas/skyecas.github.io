@@ -792,7 +792,7 @@ var time = 0;
 var launched = false;
 var lastFrameTime = 0;
 
-function animate(timestamp) {
+var animate = function(timestamp) {
   // Fixed timestep: normalize to 60fps baseline
   if (lastFrameTime === 0) lastFrameTime = timestamp;
   var deltaMs = timestamp - lastFrameTime;
