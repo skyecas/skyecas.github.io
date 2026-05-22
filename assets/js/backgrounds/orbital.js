@@ -23,7 +23,13 @@ if (!isFinite(orScale) || orScale < 0.05) orScale = 1;
 
 // --- Camera (physics → screen transform) ---
 var AU = 180;
-var camScale = 0.7;
+var camScale = (function() {
+  var maxA = 0;
+  // Assumes planets is populated; compute max semi-major axis
+  try { for (var p of planets) if (p.a > maxA) maxA = p.a; } catch(e) { maxA = 300; }
+  if (maxA < 50) maxA = 300;
+  return Math.min(window.innerWidth, window.innerHeight || 1080) / (maxA * 2.4);
+})();
 
 // --- Constants ---
 var MU = 120;
@@ -464,9 +470,10 @@ function drawFutureArc(t) {
 }
 
 function drawSC() {
+  if (!isFinite(sc.rx) || !isFinite(sc.ry)) return;
   var cx = sc.rx, cy = sc.ry;
   var cs = 1 / camScale;
-  var sr = 6 * cs;
+  var sr = 12 * cs;
   ctx.fillStyle = "rgba(100,200,255,0.15)";
   ctx.beginPath(); ctx.arc(cx,cy,sr,0,Math.PI*2); ctx.fill();
   ctx.save(); ctx.translate(cx,cy);
@@ -1007,4 +1014,8 @@ window.addEventListener("resize", function() {
   sx = W / 2; sy = H / 2;
   orScale = Math.min(W / baseW, H / baseH);
   if (!isFinite(orScale) || orScale < 0.05) orScale = 1;
+  var maxA = 0;
+  try { for (var p of planets) if (p.a > maxA) maxA = p.a; } catch(e) {}
+  if (maxA < 50) maxA = 300;
+  camScale = Math.min(W, H) / (maxA * 2.4);
 });
