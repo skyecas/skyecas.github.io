@@ -183,8 +183,8 @@ function animate() {
 
 	renderBgStars(bgCtx, stars, time, undefined, scrollY);
 
-	renderConstellationLines(bgCtx, cassPts, cassData.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.85);
-	renderConstellationStars(bgCtx, cassPts, cassData.mainIndices, time, scrollY, 0.85);
+	renderConstellationLines(bgCtx, cassPts, cassData.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.65);
+	renderConstellationStars(bgCtx, cassPts, cassData.mainIndices, time, scrollY, 0.65);
   drawConstellationLabel();
 
   var todayKey = getDateKey();
