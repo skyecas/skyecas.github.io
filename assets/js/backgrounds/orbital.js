@@ -90,27 +90,31 @@ function kepVel(a, e, w, M0, t) {
 }
 
 // --- Planets with real orbital elements, initialized from current date ---
-var planets = (function() {
-  var now = new Date();
-  var j2000 = new Date(2000, 0, 1, 12, 0, 0);
-  var days = (now - j2000) / 86400000;
+var planets = [];
+try {
+  (function() {
+    var now = new Date();
+    var j2000 = new Date(2000, 0, 1, 12, 0, 0);
+    var days = (now - j2000) / 86400000;
+    if (!isFinite(days)) days = 0;
 
-  var raw = [
-    { n:"Mercury", aAu:0.3871, e:0.20563, w:1.3520, M0j:174.795, ndpd:4.0923, r:5, col:"#b0a894", mu:0.2 },
-    { n:"Venus",   aAu:0.7233, e:0.00677, w:2.2962, M0j:50.416,  ndpd:1.6021, r:9, col:"#e8c880", mu:0.8 },
-    { n:"Earth",   aAu:1.0000, e:0.01671, w:1.7966, M0j:357.527, ndpd:0.9856, r:11, col:"#4a9bd7", mu:1.0 },
-    { n:"Mars",    aAu:1.5237, e:0.09340, w:5.8655, M0j:19.393,  ndpd:0.5240, r:8, col:"#c05030", mu:0.5 },
-  ];
-  return raw.map(function(p) {
-    var M0real = (p.M0j + p.ndpd * days) % 360;
-    if (M0real < 0) M0real += 360;
-    var aPx = p.aAu * AU;
-    return {
-      n: p.n, a: aPx, e: p.e, w: p.w, M0: M0real * Math.PI / 180,
-      r: p.r * orScale, col: p.col, so: p.r * 3 * orScale, mu: p.mu
-    };
-  });
-})();
+    var raw = [
+      { n:"Mercury", aAu:0.3871, e:0.20563, w:1.3520, M0j:174.795, ndpd:4.0923, r:5, col:"#b0a894", mu:0.2 },
+      { n:"Venus",   aAu:0.7233, e:0.00677, w:2.2962, M0j:50.416,  ndpd:1.6021, r:9, col:"#e8c880", mu:0.8 },
+      { n:"Earth",   aAu:1.0000, e:0.01671, w:1.7966, M0j:357.527, ndpd:0.9856, r:11, col:"#4a9bd7", mu:1.0 },
+      { n:"Mars",    aAu:1.5237, e:0.09340, w:5.8655, M0j:19.393,  ndpd:0.5240, r:8, col:"#c05030", mu:0.5 },
+    ];
+    planets = raw.map(function(p) {
+      var M0real = (p.M0j + p.ndpd * days) % 360;
+      if (M0real < 0) M0real += 360;
+      var aPx = p.aAu * AU;
+      return {
+        n: p.n, a: aPx, e: p.e, w: p.w, M0: M0real * Math.PI / 180,
+        r: p.r * orScale, col: p.col, so: p.r * 3 * orScale, mu: p.mu
+      };
+    });
+  })();
+} catch (e) { planets = []; }
 
 function pPos(p, t) { return kepToCart(p.a, p.e, p.w, p.M0, t); }
 function pVel(p, t) { return kepVel(p.a, p.e, p.w, p.M0, t); }
@@ -393,6 +397,7 @@ function drawSun() {
 }
 
 function drawOrbits() {
+  if (!planets || planets.length === 0) return;
   for (var p of planets) {
     ctx.strokeStyle = "rgba(60,100,180,0.2)"; ctx.lineWidth = 1; ctx.setLineDash([4,8]);
     ctx.beginPath();
@@ -992,3 +997,14 @@ function animate(timestamp) {
 }
 
 animate();
+
+window.addEventListener("resize", function() {
+  var rw = window.innerWidth, rh = window.innerHeight;
+  if (!isFinite(rw) || rw < 100) rw = 1920;
+  if (!isFinite(rh) || rh < 100) rh = 1080;
+  W = rw; H = rh;
+  c.width = W; c.height = H;
+  sx = W / 2; sy = H / 2;
+  orScale = Math.min(W / baseW, H / baseH);
+  if (!isFinite(orScale) || orScale < 0.05) orScale = 1;
+});
