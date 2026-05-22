@@ -1,4 +1,4 @@
-(function(global) {
+(function() {
 
 var requestAnimFrame = (function(){
   return window.requestAnimationFrame       ||
@@ -794,7 +794,8 @@ var time = 0;
 var launched = false;
 var lastFrameTime = 0;
 
-global.animate = function(timestamp) {
+var orb = {};
+orb.animate = function(timestamp) {
   if (lastFrameTime === 0) lastFrameTime = timestamp;
   var deltaMs = timestamp - lastFrameTime;
   if (lastFrameTime === 0) lastFrameTime = timestamp;
@@ -954,10 +955,10 @@ global.animate = function(timestamp) {
     ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
   }
 
-  requestAnimFrame(global.animate);
+  requestAnimFrame(orb.animate);
 }
 
-try { requestAnimFrame(global.animate); }
+try { requestAnimFrame(orb.animate); }
 catch(e) { console.error("orbital startup:", e.message); }
 
 window.addEventListener("resize", function() {
@@ -975,4 +976,4 @@ window.addEventListener("resize", function() {
   camScale = Math.min(W, H) / (maxA * 2.4);
 });
 
-})(typeof window !== 'undefined' ? window : this);
+})();

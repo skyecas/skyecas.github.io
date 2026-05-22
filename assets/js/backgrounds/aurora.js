@@ -429,6 +429,10 @@ function drawLandscape() {
 function animate() {
   time++;
 
+  bgCtx.setTransform(1, 0, 0, 1, 0, 0);
+  bgCtx.fillStyle = "#08081a";
+  bgCtx.fillRect(0, 0, rawWidth, rawHeight);
+
   bgCtx.setTransform(scale, 0, 0, scale, ox, oy);
 
   var skyGrad = bgCtx.createLinearGradient(0, 0, 0, height * 0.85);
