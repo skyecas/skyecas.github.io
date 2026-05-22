@@ -790,14 +790,13 @@ function getDateHex() {
 }
 
 // --- Animation ---
-console.log("orbital: before animate definition");
 var time = 0;
 var launched = false;
 var lastFrameTime = 0;
 
 function animate(timestamp) {
-  console.log("orbital: animate called, time=" + time);
-  // Fixed timestep: normalize to 60fps baseline
+  if (lastFrameTime === 0) lastFrameTime = timestamp;
+  var deltaMs = timestamp - lastFrameTime;
   if (lastFrameTime === 0) lastFrameTime = timestamp;
   var deltaMs = timestamp - lastFrameTime;
   lastFrameTime = timestamp;
@@ -959,7 +958,8 @@ console.log("orbital: before initial animate call, typeof animate=" + (typeof an
 requestAnimFrame(animate);
 }
 
-requestAnimFrame(animate);
+try { requestAnimFrame(animate); }
+catch(e) { console.error("orbital startup:", e); }
 
 window.addEventListener("resize", function() {
   var rw = window.innerWidth, rh = window.innerHeight;
