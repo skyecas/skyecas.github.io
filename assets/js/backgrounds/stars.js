@@ -140,17 +140,12 @@ function animate() {
 	bgCtx.fillStyle = "#110E19";
 	bgCtx.fillRect(0, 0, width, pageHeight);
 
-	var cassOffset = scrollY * 0.8;
-	var orionOffset = scrollY * 0.85;
-
 	bgCtx.fillStyle = '#ffffff';
 	bgCtx.strokeStyle = '#ffffff';
 
 	cassTime++;
-	bgCtx.save();
-	bgCtx.translate(0, cassOffset);
-	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)");
-	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime);
+	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.8);
+	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, scrollY, 0.8);
 
 	bgCtx.font = "11px sans-serif";
 	bgCtx.textAlign = "center";
@@ -162,13 +157,10 @@ function animate() {
 		labelX += s.x;
 		if (s.y < minY) minY = s.y;
 	}
-	bgCtx.fillText("Cassiopeia", labelX / Math.min(5, cassMains.length), minY - 20);
-	bgCtx.restore();
+	bgCtx.fillText("Cassiopeia", labelX / Math.min(5, cassMains.length), minY - 20 + scrollY * 0.2);
 
-	bgCtx.save();
-	bgCtx.translate(0, orionOffset);
-	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)");
-	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime);
+	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", scrollY, 0.85);
+	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, scrollY, 0.85);
 
 	bgCtx.font = "10px sans-serif";
 	bgCtx.textAlign = "center";
@@ -180,8 +172,7 @@ function animate() {
 		lx += s.x;
 		if (s.y > maxY) maxY = s.y;
 	}
-	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16);
-	bgCtx.restore();
+	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16 + scrollY * 0.15);
 
 	bgTime++;
 	for (var s of stars) {

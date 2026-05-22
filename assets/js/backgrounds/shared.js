@@ -609,6 +609,9 @@ function createBgStars(count, width, height, opts) {
   for (var i = 0; i < count; i++) {
     var spec = randomSpectralType();
     var mag = randomStarMagnitude();
+    var speed = opts.speedRange
+      ? opts.speedRange[0] + Math.random() * (opts.speedRange[1] - opts.speedRange[0])
+      : 0.01 + Math.random() * 0.03;
     var star = {
       x: Math.random() * width,
       y: Math.random() * height,
@@ -618,7 +621,7 @@ function createBgStars(count, width, height, opts) {
       mag: mag,
       spec: spec,
       phase: Math.random() * Math.PI * 2,
-      speed: 0.01 + Math.random() * 0.03,
+      speed: speed,
     };
     if (opts.yBias) star.y = Math.pow(Math.random(), opts.yBias) * height;
     if (opts.parallax) star.depth = (opts.depthRange || [0.3, 1.0])[0] +
@@ -628,25 +631,29 @@ function createBgStars(count, width, height, opts) {
   return stars;
 }
 
-// Render a single background star with twinkle
-function renderBgStar(ctx, star, time, alpha) {
+// Render a single background star with twinkle and optional parallax
+function renderBgStar(ctx, star, time, alpha, scrollY) {
+  var tx = star.x;
+  var ty = star.y;
+  if (scrollY !== undefined && star.depth !== undefined) {
+    ty = star.y + scrollY * (1 - star.depth);
+  }
   var twinkle = 0.5 + 0.5 * Math.sin(time * star.speed + star.phase);
   var a = (alpha !== undefined ? alpha : 1) * (0.3 + 0.7 * twinkle);
   ctx.fillStyle = hexToRgba(star.colour, a);
   ctx.beginPath();
-  ctx.arc(star.x, star.y, star.size * (0.5 + 0.5 * twinkle), 0, Math.PI * 2);
+  ctx.arc(tx, ty, star.size * (0.5 + 0.5 * twinkle), 0, Math.PI * 2);
   ctx.fill();
 }
 
 // Render all background stars
-function renderBgStars(ctx, stars, time, alpha) {
+function renderBgStars(ctx, stars, time, alpha, scrollY) {
   for (var i = 0; i < stars.length; i++) {
-    renderBgStar(ctx, stars[i], time, alpha);
+    renderBgStar(ctx, stars[i], time, alpha, scrollY);
   }
 }
 
 // Project a constellation to screen coordinates
-// Returns array of {x, y, size, colour, name}
 function projectConstellation(consData, cx, cy, sc, rC, dC) {
   var cosFac = Math.cos(dC * Math.PI / 180);
   var pts = [];
@@ -666,37 +673,41 @@ function projectConstellation(consData, cx, cy, sc, rC, dC) {
   return pts;
 }
 
-// Draw constellation connection lines
-function renderConstellationLines(ctx, pts, connections, style) {
+// Draw constellation connection lines with optional parallax offset
+function renderConstellationLines(ctx, pts, connections, style, scrollY, parallax) {
   ctx.strokeStyle = style || "rgba(200, 200, 255, 0.15)";
   ctx.lineWidth = 1;
+  var dy = scrollY && parallax ? scrollY * (1 - parallax) : 0;
   for (var i = 0; i < connections.length; i++) {
     var c = connections[i];
     var from = pts[c[0]], to = pts[c[1]];
     if (from && to) {
       ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-      ctx.lineTo(to.x, to.y);
+      ctx.moveTo(from.x, from.y + dy);
+      ctx.lineTo(to.x, to.y + dy);
       ctx.stroke();
     }
   }
 }
 
-// Draw constellation stars (projected) with glow
-function renderConstellationStars(ctx, pts, mainIndices, time) {
+// Draw constellation stars with glow; main stars always visible
+function renderConstellationStars(ctx, pts, mainIndices, time, scrollY, parallax) {
+  var dy = scrollY && parallax ? scrollY * (1 - parallax) : 0;
   for (var i = 0; i < pts.length; i++) {
     var p = pts[i];
     var isMain = mainIndices && mainIndices.indexOf(i) !== -1;
     var glow = isMain ? 1 : 0.4;
+    // Main stars always at least 40% brightness; non-main can drop to 0
     var twinkle = 0.6 + 0.4 * Math.sin(time * 0.02 + i * 1.7);
-    var r = hexToRgba(p.colour, glow * 0.3 * twinkle);
+    var visible = isMain ? 0.4 + 0.6 * twinkle : twinkle;
+    var r = hexToRgba(p.colour, glow * 0.3 * visible);
     ctx.fillStyle = r;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y + dy, p.size * 2, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = hexToRgba(p.colour, glow * twinkle);
+    ctx.fillStyle = hexToRgba(p.colour, glow * visible);
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y + dy, p.size, 0, Math.PI * 2);
     ctx.fill();
   }
 }

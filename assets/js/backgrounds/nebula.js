@@ -16,7 +16,12 @@ var bgCtx = bg.ctx;
 var width = rawWidth, height = rawHeight;
 var sx = bg.sx(), sy = bg.sy(), mScale = bg.mScale();
 
+var scrollY = 0;
+window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
+
 var nebulaMult = 2.5;
+
+var scrollDrift = 0.05;
 
 function noise2D(x, y, t) {
   return Math.sin(x * 0.003 + t * 0.0003) * 0.5 +
@@ -34,8 +39,9 @@ function DustLane(xBase, yBase, width, height, angle, speed) {
   this.phase = Math.random() * Math.PI * 2;
 }
 DustLane.prototype.update = function(t) {
+  var driftY = scrollY * scrollDrift;
   bgCtx.save();
-  bgCtx.translate(this.xBase, this.yBase);
+  bgCtx.translate(this.xBase, this.yBase + driftY);
   bgCtx.rotate(this.angle);
 
   var segments = 40;
@@ -85,6 +91,7 @@ function drawNebulaGas(t) {
     { x: 1300 * sx, y: 350 * sy, rx: 300 * sx, ry: 350 * sy, colours: ["rgba(130, 40, 220, 0.05)", "rgba(90, 20, 180, 0.1)", "rgba(50, 10, 120, 0.05)"], speed: -0.00009, phase: 0.5 },
   ];
 
+  var driftY = scrollY * scrollDrift;
   var blurred = document.createElement("canvas");
   blurred.width = width;
   blurred.height = height;
@@ -92,7 +99,7 @@ function drawNebulaGas(t) {
 
   for (var c of centres) {
     var ox = Math.sin(t * 0.00003 + c.phase) * 30;
-    var oy = Math.cos(t * 0.00004 + c.phase * 0.7) * 20;
+    var oy = Math.cos(t * 0.00004 + c.phase * 0.7) * 20 + driftY;
 
     var grad = bCtx.createRadialGradient(c.x + ox, c.y + oy, 0, c.x + ox, c.y + oy, Math.max(c.rx, c.ry));
     for (var i = 0; i < c.colours.length; i++) {
@@ -112,11 +119,12 @@ function drawNebulaGas(t) {
 }
 
 function drawBrightCore(t) {
+  var driftY = scrollY * scrollDrift;
   var pulse = Math.sin(t * 0.005) * 0.2 + 0.8;
   var cores = [
-    { x: 650 * sx, y: 380 * sy, r: 80 * mScale, colour: "rgba(200, 150, 255, " + pulse * 0.18 + ")" },
-    { x: 850 * sx, y: 520 * sy, r: 60 * mScale, colour: "rgba(100, 200, 255, " + pulse * 0.15 + ")" },
-    { x: 500 * sx, y: 300 * sy, r: 100 * mScale, colour: "rgba(255, 150, 200, " + pulse * 0.12 + ")" },
+    { x: 650 * sx, y: 380 * sy + driftY, r: 80 * mScale, colour: "rgba(200, 150, 255, " + pulse * 0.18 + ")" },
+    { x: 850 * sx, y: 520 * sy + driftY, r: 60 * mScale, colour: "rgba(100, 200, 255, " + pulse * 0.15 + ")" },
+    { x: 500 * sx, y: 300 * sy + driftY, r: 100 * mScale, colour: "rgba(255, 150, 200, " + pulse * 0.12 + ")" },
   ];
   for (var c of cores) {
     var grad = bgCtx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
@@ -173,10 +181,10 @@ function animate() {
 
   drawBrightCore(time);
 
-  renderBgStars(bgCtx, stars, time);
+	renderBgStars(bgCtx, stars, time, undefined, scrollY);
 
-  renderConstellationLines(bgCtx, cassPts, cassData.connections, "rgba(255, 255, 255, 0.15)");
-  renderConstellationStars(bgCtx, cassPts, cassData.mainIndices, time);
+	renderConstellationLines(bgCtx, cassPts, cassData.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.85);
+	renderConstellationStars(bgCtx, cassPts, cassData.mainIndices, time, scrollY, 0.85);
   drawConstellationLabel();
 
   var todayKey = getDateKey();
