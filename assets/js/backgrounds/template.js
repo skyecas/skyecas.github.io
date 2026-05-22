@@ -1,15 +1,3 @@
-// Let the browser handle the animation cycles
-var requestAnimFrame = (function(){
-  return window.requestAnimationFrame       ||
-         window.webkitRequestAnimationFrame ||
-         window.mozRequestAnimationFrame    ||
-         window.oRequestAnimationFrame      ||
-         window.msRequestAnimationFrame     ||
-         function( callback ){
-           window.setTimeout(callback, 1000 / 60);
-         };
-})();
-
 // fetch the background canvas
 var background = document.getElementById("bgCanvas"),
     bgCtx = background.getContext("2d"),

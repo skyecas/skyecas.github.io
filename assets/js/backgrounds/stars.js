@@ -1,24 +1,3 @@
-// Let the browser handle the animation cycles
-var requestAnimFrame = (function(){
-  return window.requestAnimationFrame       ||
-         window.webkitRequestAnimationFrame ||
-         window.mozRequestAnimationFrame    ||
-         window.oRequestAnimationFrame      ||
-         window.msRequestAnimationFrame     ||
-         function( callback ){
-           window.setTimeout(callback, 1000 / 60);
-         };
-})();
-
-// function to get todays date
-function today(d) {
-  var day = d.getDate(),
-      mon = d.getMonth()+1;
-  (day < 10) ? day = "0"+day : day;
-  (mon < 10) ? mon = "0"+mon : mon;
-  return day+"/"+mon;
-}
-
 // fetch the background canvas
 var background = document.getElementById("bgCanvas"),
     bgCtx = background.getContext("2d"),
@@ -62,27 +41,16 @@ bgCtx.fillRect(0, 0, width, height);
 
 // === Cassiopeia Constellation ===
 
-var cassBase = { x: width * 0.13, y: height * 0.93 };
-var cassSX = -6.5 * (width / 1920);
-var cassSY = -12 * (height / 1080);
-
-var cassWCoords = [];
-for (var i = 0; i < cassiopeiaStars.length; i++) {
-  var s = cassiopeiaStars[i];
-  cassWCoords.push({
-    x: cassBase.x + cassSX * s.ra,
-    y: cassBase.y + cassSY * s.dec,
-    size: starSize(s.mag),
-    colour: spectralToHex(s.spec),
-    name: s.name,
-    mag: s.mag,
-  });
-}
+var cassConstellation = new Constellation(consData[1]);
+var cassWCoords = cassConstellation.project(
+  width * 0.13, height * 0.93,
+  6.5 * (width / 1920),
+  0, 0
+);
 
 var cassTime = 0;
 
 function drawConstellationStars(t) {
-  // Normalize brightness per constellation: brightest star = 100%
   var minMag = Infinity;
   for (var s of cassWCoords) if (s.mag < minMag) minMag = s.mag;
 
@@ -113,7 +81,7 @@ function drawConstellationStars(t) {
   bgCtx.strokeStyle = "rgba(255, 255, 255, 0.15)";
   bgCtx.lineWidth = 1;
   bgCtx.beginPath();
-  for (var c of cassiopeiaConnections) {
+  for (var c of consData[1].connections) {
     bgCtx.moveTo(cassWCoords[c[0]].x, cassWCoords[c[0]].y);
     bgCtx.lineTo(cassWCoords[c[1]].x, cassWCoords[c[1]].y);
   }
@@ -129,24 +97,12 @@ function drawConstellationStars(t) {
 
 // --- Orion constellation (right side, lower portion) ---
 var orionCenterRA = 82.5, orionCenterDec = 5;
-var orionBase = { x: width * 0.78, y: height * 0.78 };
-var orionSX = -7 * (width / 1920);
-var orionSY = -12 * (height / 1080);
-
-var orionWCoords = [];
-var orionStars = CONSTELLATIONS.ORION.stars;
-var orionConns = CONSTELLATIONS.ORION.connections;
-for (var i = 0; i < orionStars.length; i++) {
-  var s = orionStars[i];
-  orionWCoords.push({
-    x: orionBase.x + orionSX * (s.ra - orionCenterRA) * Math.cos(orionCenterDec * Math.PI / 180),
-    y: orionBase.y + orionSY * (s.dec - orionCenterDec),
-    size: starSize(s.mag),
-    colour: spectralToHex(s.spec),
-    name: s.name,
-    mag: s.mag,
-  });
-}
+var orionConstellation = new Constellation(consData[0]);
+var orionWCoords = orionConstellation.project(
+  width * 0.78, height * 0.78,
+  7 * (width / 1920),
+  orionCenterRA, orionCenterDec
+);
 
 function drawOrionConstellation(t) {
   var minMag = Infinity;
@@ -179,7 +135,7 @@ function drawOrionConstellation(t) {
   bgCtx.strokeStyle = "rgba(255, 255, 255, 0.12)";
   bgCtx.lineWidth = 0.8;
   bgCtx.beginPath();
-  for (var c of orionConns) {
+  for (var c of consData[0].connections) {
     bgCtx.moveTo(orionWCoords[c[0]].x, orionWCoords[c[0]].y);
     bgCtx.lineTo(orionWCoords[c[1]].x, orionWCoords[c[1]].y);
   }
@@ -193,24 +149,18 @@ function drawOrionConstellation(t) {
   bgCtx.fillText("Orion", lx / 4, maxY + 16);
 }
 
-
-// determine which star colours are allowed
-const starColour = ["white", "floralWhite", "aliceBlue", "powderBlue", "azure", "moccasin", "sandyBrown", "peachPuff"]
-
 // function to draw background stars with per-star parallax depth and spectral colour
-function Star() {
+function BgStar() {
   var data = createBackgroundStar(width, pageHeight);
   this.x = data.x;
   this.y = data.y;
   this.size = data.size;
   this.colour = data.colour;
   this.mag = data.mag;
-  // Parallax depth: 0.3 (distant, slow) to 1.0 (nearby, scrolls with page)
   this.depth = 0.3 + Math.random() * 0.7;
 }
 
-// update the star positions — offset by parallax depth
-Star.prototype.update = function() {
+BgStar.prototype.update = function() {
   this.size = Math.max(.1, Math.min(2, this.size + 0.1 * Math.random() - 0.05));
   var paraY = this.y + scrollY * (1 - this.depth);
   bgCtx.fillStyle = this.colour;
@@ -234,41 +184,25 @@ function Satellite() {
   this.active = true;
 }
 
-// update the star positions
-Star.prototype.update = function() {
-  // change the size of the star due to atmospheric twinkling
-  this.size = Math.max(.1, Math.min(2, this.size + 0.1 * Math.random() - 0.05));
-  // and draw the star
-  bgCtx.fillStyle = this.colour;
-  bgCtx.fillRect(this.x, this.y, this.size, this.size);
-}
-
 // and a function to update the shooting star position
 ShootingStar.prototype.update = function() {
   if (this.active) {
-    // update it's position
     this.x -= this.speed;
     this.y += this.speed;
-    // if it goes out of the page bounds, reset
     if (this.x < -this.len || this.y > pageHeight + this.len || this.y < -this.len) {
       this.speed = 0;
-      // if the shooting star is special, and it's the right time
       if (this.special) {
         if (isSpecialDate) { this.reset(); }
-      // otherwise, just reset it
       } else { this.reset(); }
     } else {
-      // set the shooting star colour
       bgCtx.fillStyle = this.colour;
       bgCtx.strokeStyle = this.colour;
       bgCtx.lineWidth = this.size;
-      // and draw it
       bgCtx.beginPath();
       bgCtx.moveTo(this.x, this.y);
       bgCtx.lineTo(this.x + this.len, this.y - this.len);
       bgCtx.stroke();
     }
-  // wait for it to be active again
   } else {
     if (this.waitTime < new Date().getTime()) {
       this.active = true;
@@ -279,17 +213,13 @@ ShootingStar.prototype.update = function() {
 // a function to update the satellite star position
 Satellite.prototype.update = function() {
   if (this.active) {
-    // update it's position
     this.x -= this.speed;
-    // if it goes out of the page bounds, reset
     if (this.x < 0 || this.y > pageHeight || this.y < 0) {
       this.reset();
     } else {
-      // set the colour
       bgCtx.fillStyle = this.colour;
       bgCtx.fillRect(this.x, this.y, this.size, this.size);
     }
-  // wait for it to be active again
   } else {
     if (this.waitTime < new Date().getTime()) {
       this.active = true;
@@ -299,15 +229,13 @@ Satellite.prototype.update = function() {
 
 // function to reset the shooting stars
 ShootingStar.prototype.reset = function(x="0") {
-  // spawn within the current viewport (scroll-aware)
   var pos = Math.random() * (width + height);
   this.y = scrollY + Math.max(0, pos - width);
   (x=="0") ? this.x = Math.min(width, pos) : this.x=x;
-  // the other bits
   this.len = (Math.random() * 80) + 10;
   this.size = (Math.random() * 1) + 0.1;
   this.speed = (Math.random() * 10) + 5;
-  this.colour = starColour[Math.floor(Math.random() * starColour.length)];
+  this.colour = spectralToHex(randomSpectralType());
   this.waitTime = new Date().getTime() + (Math.random() * 20000);
   this.active = false;
 }
@@ -323,13 +251,6 @@ Satellite.prototype.reset = function() {
   this.active = false;
 }
 
-// list of special dates
-var specialDates = ["27/07", "12/08", "23/08", "04/09", "26/10", "31/03"];
-var dateColours = {
-  "27/07": "gold", "12/08": "silver", "23/08": "coral",
-  "04/09": "pink", "26/10": "cyan", "31/03": "lightpink"
-};
-
 // boolean for if this date is special
 var isSpecialDate = false;
 
@@ -338,7 +259,7 @@ var stars = [];
 var movers = [];
 
 // initialise the star field - cover full page for parallax
-for (var i = 0; i < 600; i++) { stars.push(new Star()); }
+for (var i = 0; i < 600; i++) { stars.push(new BgStar()); }
 
 // add a few satellites
 for (var i = 10; i > 0; i--) { movers.push(new Satellite()); }
@@ -351,45 +272,38 @@ for (var i = 20; i > 0; i--) { movers.push(new ShootingStar(true)); }
 
 // animate the background
 function animate() {
-  // check if today is a special date
-  isSpecialDate = specialDates.indexOf(today(new Date())) != -1;
-  var todayStr = today(new Date());
-  var dateColour = dateColours[todayStr] || null;
-  // fetch the requiredbackground colour
+  var todayStr = getDateKey();
+  isSpecialDate = false;
+  for (var i = 0; i < consData.length; i++) {
+    if (consData[i].date === todayStr) {
+      isSpecialDate = true;
+      break;
+    }
+  }
   bgCtx.fillStyle = "#110E19";
   bgCtx.fillRect(0, 0, width, pageHeight);
 
-  // Parallax: constellations drift upward at a fraction of scroll speed
-  var cassOffset = scrollY * 0.8;  // 20% scroll speed
-  var orionOffset = scrollY * 0.85; // 15% scroll speed
+  var cassOffset = scrollY * 0.8;
+  var orionOffset = scrollY * 0.85;
 
   bgCtx.fillStyle = '#ffffff';
   bgCtx.strokeStyle = '#ffffff';
 
-  if (dateColour) {
-    bgCtx.strokeStyle = dateColour;
-  }
-
-  // draw Cassiopeia constellation (drifts at 20% of scroll speed)
   cassTime++;
   bgCtx.save();
   bgCtx.translate(0, cassOffset);
   drawConstellationStars(cassTime);
   bgCtx.restore();
 
-  // draw Orion constellation (drifts at 15%)
   bgCtx.save();
   bgCtx.translate(0, orionOffset);
   drawOrionConstellation(cassTime);
   bgCtx.restore();
 
-  // update fixed stars with per-star parallax depth
   for (let s of stars) { s.update(); };
 
-  // update moving objects (shooting stars, satellites) — scroll naturally
   for (let m of movers) { m.update(); };
 
-  //schedule the next animation frame
   requestAnimFrame(animate);
 }
 
