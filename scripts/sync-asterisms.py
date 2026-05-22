@@ -299,7 +299,11 @@ def build_entry(name):
     return "\n".join(js), ordered
 
 def print_ascii_constellation(hips, hip_stars, conns, names):
-    """Print an ASCII art star chart for a constellation."""
+    """Print an ASCII art star chart for a constellation.
+    Oriented for a northern-hemisphere observer looking south:
+      - East (higher RA) on the left, West (lower RA) on the right
+      - North (higher Dec) at top, South (lower Dec) at bottom
+    Terminal characters are ~2:1 tall:wide, so Y is compressed 0.45x."""
     stars = []
     for h in hips:
         ws = hip_stars.get(h)
@@ -310,10 +314,12 @@ def print_ascii_constellation(hips, hip_stars, conns, names):
     c_ra = sum(s["ra"] for s in stars) / len(stars)
     c_dec = sum(s["dec"] for s in stars) / len(stars)
     c_dec_r = math.radians(c_dec)
+    ASPECT = 0.45  # terminal char ~2:1 tall:wide
     pts = []
     for s in stars:
-        x = (s["ra"] - c_ra) * math.cos(c_dec_r) * 8
-        y = (s["dec"] - c_dec) * 8
+        # RA decreases rightward (west), Dec increases upward (north)
+        x = (c_ra - s["ra"]) * math.cos(c_dec_r) * 12
+        y = (c_dec - s["dec"]) * 12 * ASPECT
         pts.append((x, y, s["name"]))
 
     xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
