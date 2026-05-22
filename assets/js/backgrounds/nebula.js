@@ -1,16 +1,20 @@
-var background = document.getElementById("bgCanvas"),
-    bgCtx = background.getContext("2d"),
-    rawWidth = window.innerWidth,
-    rawHeight = window.innerHeight;
-
-if (!isFinite(rawWidth) || rawWidth < 100) rawWidth = 1920;
-if (!isFinite(rawHeight) || rawHeight < 100) rawHeight = 1080;
-background.width = rawWidth;
-background.height = rawHeight;
-
+var bg = initCanvas(function(w, h) {
+	rawWidth = w; rawHeight = h;
+	width = w; height = h;
+	sx = w / 1920; sy = h / 1080;
+	mScale = Math.min(sx, sy);
+	stars = createBgStars(1200, w, h);
+	dustLanes = [
+		new DustLane(200 * sy, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
+		new DustLane(900 * sx, 500 * sy, 700 * sx, 100 * sy, 0.3, 0.00015),
+		new DustLane(400 * sx, 700 * sy, 600 * sx, 80 * sy, -0.1, 0.00025),
+	];
+	projectConstellationLocal();
+});
+var bgCtx = bg.ctx;
+// rawWidth,rawHeight set by initCanvas callback
 var width = rawWidth, height = rawHeight;
-var sx = rawWidth / 1920, sy = rawHeight / 1080;
-var mScale = Math.min(sx, sy);
+var sx = bg.sx(), sy = bg.sy(), mScale = bg.mScale();
 
 var nebulaMult = 2.5;
 
@@ -63,9 +67,9 @@ DustLane.prototype.update = function(t) {
   bgCtx.restore();
 };
 
-var stars = createBgStars(1200, width, height);
+stars = createBgStars(1200, width, height);
 
-var dustLanes = [
+dustLanes = [
   new DustLane(200 * sx, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
   new DustLane(900 * sx, 500 * sy, 700 * sx, 100 * sy, 0.3, 0.00015),
   new DustLane(400 * sx, 700 * sy, 600 * sx, 80 * sy, -0.1, 0.00025),
@@ -194,20 +198,3 @@ function animate() {
 
 animate();
 
-window.addEventListener("resize", function() {
-  var rw = window.innerWidth, rh = window.innerHeight;
-  if (!isFinite(rw) || rw < 100) rw = 1920;
-  if (!isFinite(rh) || rh < 100) rh = 1080;
-  rawWidth = rw; rawHeight = rh;
-  background.width = rawWidth; background.height = rawHeight;
-  width = rawWidth; height = rawHeight;
-  sx = rawWidth / 1920; sy = rawHeight / 1080;
-  mScale = Math.min(sx, sy);
-  stars = createBgStars(1200, width, height);
-  dustLanes = [
-    new DustLane(200 * sx, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
-    new DustLane(900 * sx, 500 * sy, 700 * sx, 100 * sy, 0.3, 0.00015),
-    new DustLane(400 * sx, 700 * sy, 600 * sx, 80 * sy, -0.1, 0.00025),
-  ];
-  projectConstellationLocal();
-});

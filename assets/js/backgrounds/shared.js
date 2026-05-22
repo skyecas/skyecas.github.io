@@ -176,6 +176,7 @@ var consData = [
     connections: [[9, 7], [6, 0], [0, 1], [10, 9], [2, 3], [15, 14], [6, 8], [13, 10], [10, 11], [8, 13], [11, 5], [3, 4], [7, 6], [14, 13], [5, 7], [0, 2], [16, 14], [16, 15], [15, 12]],
     mainIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
   },
+
 { /* CASSIOPEIA */
     name: "Cassiopeia", always: true,
     stars: [
@@ -231,7 +232,6 @@ var consData = [
     connections: [[1, 0], [3, 2], [4, 3], [2, 1]],
     mainIndices: [0, 1, 2, 3, 4],
   },
-
 { /* LYRA */
     name: "Lyra", date: "27/07",
     stars: [
@@ -528,6 +528,7 @@ var consData = [
 
 
 
+
 ];
 
 var consDataByName = {};
@@ -698,4 +699,27 @@ function renderConstellationStars(ctx, pts, mainIndices, time) {
     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+// ── Canvas setup ──────────────────────────────────────
+// Returns { canvas, ctx, width, height, sx, sy } with sane defaults and resize listener.
+function initCanvas(callback) {
+  var c = document.getElementById("bgCanvas");
+  var cx = c.getContext("2d");
+  var w, h;
+
+  function resize() {
+    var rw = window.innerWidth, rh = window.innerHeight;
+    if (!isFinite(rw) || rw < 100) rw = 1920;
+    if (!isFinite(rh) || rh < 100) rh = 1080;
+    w = rw; h = rh;
+    c.width = w; c.height = h;
+    if (callback) callback(w, h);
+  }
+
+  resize();
+  window.addEventListener("resize", resize, { passive: true });
+  return { canvas: c, ctx: cx, width: function() { return w; }, height: function() { return h; },
+           sx: function() { return w / 1920; }, sy: function() { return h / 1080; },
+           mScale: function() { return Math.min(w / 1920, h / 1080); } };
 }

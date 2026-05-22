@@ -1,31 +1,19 @@
-var background = document.getElementById("bgCanvas"),
-	bgCtx = background.getContext("2d"),
-	width = window.innerWidth,
-	height = window.innerHeight;
-
-if (!isFinite(width) || width < 100) width = 1920;
-if (!isFinite(height) || height < 100) height = 1080;
-
-var pageHeight = Math.max(height * 4, document.body.scrollHeight || height * 4);
-background.style.position = "absolute";
-background.style.top = "0";
-background.style.left = "0";
-background.width = width;
-background.height = pageHeight;
-background.style.height = pageHeight + "px";
+var pageHeight;
+var bg = initCanvas(function(w, h) {
+	width = w; height = h;
+	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
+	bg.canvas.height = pageHeight;
+	bg.canvas.style.height = pageHeight + "px";
+	stars = createBgStars(600, w, pageHeight, { parallax: true });
+});
+var bgCtx = bg.ctx;
+// width,height set by initCanvas callback
+bg.canvas.style.position = "absolute";
+bg.canvas.style.top = "0";
+bg.canvas.style.left = "0";
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
-
-window.addEventListener("resize", function() {
-	var rw = window.innerWidth, rh = window.innerHeight;
-	if (!isFinite(rw) || rw < 100) rw = 1920;
-	if (!isFinite(rh) || rh < 100) rh = 1080;
-	width = rw; height = rh;
-	pageHeight = Math.max(height * 4, document.body.scrollHeight || height * 4);
-	background.style.height = pageHeight + "px";
-	background.width = width; background.height = pageHeight;
-});
 
 bgCtx.fillStyle = "#110E19";
 bgCtx.fillRect(0, 0, width, pageHeight);

@@ -1,13 +1,8 @@
-// fetch the background canvas
-var background = document.getElementById("bgCanvas"),
-	bgCtx = background.getContext("2d"),
-	width = window.innerWidth,
-	height = window.innerHeight;
-
-if (!isFinite(width) || width < 100) width = 1920;
-if (!isFinite(height) || height < 100) height = 1080;
-background.width = width;
-background.height = height;
+var bg = initCanvas(function(w, h) {
+	width = w; height = h;
+});
+var bgCtx = bg.ctx;
+// width,height set by initCanvas callback
 
 // the sky
 function drawSky() {
@@ -304,10 +299,6 @@ ShootingStar.prototype.reset = function (x = "0") {
 	this.active = false;
 }
 
-// set the canvas size
-background.width = width;
-background.height = height;
-
 // create an array of animated entities
 var stars = createBgStars(600, width, height, {yBias: 1.4});
 var shootingstars = [];
@@ -363,10 +354,3 @@ function animate() {
 // call the first animation
 animate();
 
-window.addEventListener("resize", function() {
-	var rw = window.innerWidth, rh = window.innerHeight;
-	if (!isFinite(rw) || rw < 100) rw = 1920;
-	if (!isFinite(rh) || rh < 100) rh = 1080;
-	width = rw; height = rh;
-	background.width = width; background.height = height;
-});
