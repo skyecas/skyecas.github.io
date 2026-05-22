@@ -16,7 +16,14 @@ if (bg && bgNames.indexOf(bg) !== -1) {
   var spacer = document.createElement("div");
   spacer.style.height = "400vh"; spacer.style.pointerEvents = "none";
   document.body.appendChild(spacer);
-  var script = document.createElement("script");
+  var shared = document.createElement("script");
+  shared.src = "/assets/js/backgrounds/shared.js?v=" + Date.now();
+  shared.onload = function() {
+    var script = document.createElement("script");
+    script.src = "/assets/js/backgrounds/" + bg + ".js?v=" + Date.now();
+    document.body.appendChild(script);
+  };
+  document.body.appendChild(shared);
   script.src = "/assets/js/backgrounds/" + bg + ".js?v=" + Date.now();
   document.body.appendChild(script);
 } else {

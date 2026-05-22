@@ -378,19 +378,6 @@ function drawConstellationLines(stars, connections) {
   bgCtx.lineWidth = 1.5;  // Line width
   bgCtx.stroke();
 };
-function raDeg(raHours, raMinutes = 0, raSeconds = 0) {
-  const ra = (raHours + raMinutes / 60 + raSeconds / 3600) * 15; // 15° per hour
-  return ra;
-}
-function DecDeg(decDegrees, decMinutes = 0, decSeconds = 0) {
-  const sign = decDegrees < 0 ? -1 : 1;
-  const absDec = Math.abs(decDegrees) + decMinutes / 60 + decSeconds / 3600;
-  const dec = sign * absDec;
-  return dec;
-}
-
-
-
 // set the canvase size
 background.width = width;
 background.height = height;
@@ -423,25 +410,25 @@ const orionY = 200;
 const orionH = -8;
 const orionW = orionH;
 const orionStars = [
-  new Star(orionX + orionW * raDeg(5, 55, 10.30536), orionY + orionH * DecDeg(7, 24, 25.4304),    2, 'sandyBrown', true),  // Betelgeuse     0
-  new Star(orionX + orionW * raDeg(5, 25, 7.86325), orionY + orionH * DecDeg(6, 20, 58.9318),   1.8, 'powderBlue', true),  // Bellatrix      1
-  new Star(orionX + orionW * raDeg(5, 36, 12.8), orionY + orionH * DecDeg(-1, 12, 6.9),         1.5, 'aliceBlue', true),   // Alnilam        2
-  new Star(orionX + orionW * raDeg(5, 32, 0.40009), orionY + orionH * DecDeg(-0, 17, 56.7424),  1.3, 'aliceBlue', true),   // Mintaka        3
-  new Star(orionX + orionW * raDeg(5, 47, 45.39994), orionY + orionH * DecDeg(-9, 40, 10.5777), 1.7, 'azure', true),       // Saiph          4
-  new Star(orionX + orionW * raDeg(5, 14, 32.27210), orionY + orionH * DecDeg(-8, 12, 5.8981),  1.6, 'powderBlue', true),  // Rigel          5
-  new Star(orionX + orionW * raDeg(5, 40, 45.52666), orionY + orionH * DecDeg(-1, 56, 34.2649), 1.4, 'azure', true),       // Alnitak (belt) 6
-  new Star(orionX + orionW * raDeg(5, 35, 8.27608), orionY + orionH * DecDeg(9, 56, 2.9913),    1.2, 'white', true),       // Meissa (head)  7
+  new Star(orionX + orionW * raDeg(5, 55, 10.30536), orionY + orionH * decDeg(7, 24, 25.4304),    2, 'sandyBrown', true),  // Betelgeuse     0
+  new Star(orionX + orionW * raDeg(5, 25, 7.86325), orionY + orionH * decDeg(6, 20, 58.9318),   1.8, 'powderBlue', true),  // Bellatrix      1
+  new Star(orionX + orionW * raDeg(5, 36, 12.8), orionY + orionH * decDeg(-1, 12, 6.9),         1.5, 'aliceBlue', true),   // Alnilam        2
+  new Star(orionX + orionW * raDeg(5, 32, 0.40009), orionY + orionH * decDeg(-0, 17, 56.7424),  1.3, 'aliceBlue', true),   // Mintaka        3
+  new Star(orionX + orionW * raDeg(5, 47, 45.39994), orionY + orionH * decDeg(-9, 40, 10.5777), 1.7, 'azure', true),       // Saiph          4
+  new Star(orionX + orionW * raDeg(5, 14, 32.27210), orionY + orionH * decDeg(-8, 12, 5.8981),  1.6, 'powderBlue', true),  // Rigel          5
+  new Star(orionX + orionW * raDeg(5, 40, 45.52666), orionY + orionH * decDeg(-1, 56, 34.2649), 1.4, 'azure', true),       // Alnitak (belt) 6
+  new Star(orionX + orionW * raDeg(5, 35, 8.27608), orionY + orionH * decDeg(9, 56, 2.9913),    1.2, 'white', true),       // Meissa (head)  7
 ];
 const cassX = 400;
 const cassY = 600;
 const cassH = -8;
 const cassW = -4;
 const cassiopeiaStars = [
-  new Star(cassX + cassW * raDeg(0, 40, 30.4411), cassY + cassH * DecDeg(56,32,14.392),     1.8, 'moccasin', true),    // Schedar  0
-  new Star(cassX + cassW * raDeg(0, 9, 10.68518), cassY + cassH * DecDeg(59, 8, 59.2120),   1.7, 'aliceBlue', true),   // Caph     1
-  new Star(cassX + cassW * raDeg(0, 56, 42.50108), cassY + cassH * DecDeg(60, 43, 0.2984),  1.5, 'powderBlue', true),  // Navi     2
-  new Star(cassX + cassW * raDeg(1, 25, 48.95147), cassY + cassH * DecDeg(60, 14, 7.0225),  1.4, 'floraWhite', true),  // Ruchbah  3
-  new Star(cassX + cassW * raDeg(1, 54, 23.73409), cassY + cassH * DecDeg(63, 40, 12.3602), 1.6, 'azure', true)        // Segin    4
+  new Star(cassX + cassW * raDeg(0, 40, 30.4411), cassY + cassH * decDeg(56,32,14.392),     1.8, 'moccasin', true),    // Schedar  0
+  new Star(cassX + cassW * raDeg(0, 9, 10.68518), cassY + cassH * decDeg(59, 8, 59.2120),   1.7, 'aliceBlue', true),   // Caph     1
+  new Star(cassX + cassW * raDeg(0, 56, 42.50108), cassY + cassH * decDeg(60, 43, 0.2984),  1.5, 'powderBlue', true),  // Navi     2
+  new Star(cassX + cassW * raDeg(1, 25, 48.95147), cassY + cassH * decDeg(60, 14, 7.0225),  1.4, 'floraWhite', true),  // Ruchbah  3
+  new Star(cassX + cassW * raDeg(1, 54, 23.73409), cassY + cassH * decDeg(63, 40, 12.3602), 1.6, 'azure', true)        // Segin    4
 ];
 
 // Create stars for constellations
