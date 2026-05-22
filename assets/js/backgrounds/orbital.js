@@ -340,7 +340,7 @@ function doCorrection(t) {
   if (lam) {
     var dvx = lam.vx - sc.vx, dvy = lam.vy - sc.vy;
     var dvm = Math.sqrt(dvx*dvx + dvy*dvy);
-    if (dvm > 0.3) { dvx = dvx/dvm*0.3; dvy = dvy/dvm*0.3; dvm = 0.3; }
+    if (dvm > 0.05) { dvx = dvx/dvm*0.05; dvy = dvy/dvm*0.05; dvm = 0.05; }
     mission.phase = "burning";
     burn.active = true; burn.dvx = dvx; burn.dvy = dvy;
     burn.rate = burnRate; burn.remaining = dvm;
