@@ -7,7 +7,7 @@ var bg = initCanvas(function(w, h) {
 	bg.canvas.style.height = pageHeight + "px";
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
-	stars = createBgStars(500, w, pageHeight);
+	stars = createBgStars(500, w, pageHeight, {yBias: 1.2});
 	bands = [
 		new AuroraBand(120 * sy, 250, [
 			"rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"
@@ -26,7 +26,7 @@ var bgCtx = bg.ctx;
 var width = rawWidth, height = rawHeight;
 var sx = bg.sx(), sy = bg.sy(), mScale = bg.mScale();
 
-stars = createBgStars(500, width, pageHeight);
+stars = createBgStars(500, width, pageHeight, {yBias: 1.2});
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
