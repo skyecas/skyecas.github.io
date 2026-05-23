@@ -25,10 +25,6 @@ bg.canvas.style.position = "absolute";
 bg.canvas.style.top = "0";
 bg.canvas.style.left = "0";
 
-function getScrollY() {
-	return document.documentElement.scrollTop || window.pageYOffset || 0;
-}
-
 var nebulaMult = 2.5;
 var scrollDrift = 0.05;
 
@@ -171,7 +167,7 @@ function animate() {
   bgCtx.fillStyle = "#030308";
   bgCtx.fillRect(0, 0, width, pageHeight);
 
-  var sy = getScrollY();
+  var sy = window.lenisScroll !== undefined ? window.lenisScroll : 0;
 
   renderBgStars(bgCtx, stars, time, undefined, sy);
 
