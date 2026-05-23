@@ -624,8 +624,8 @@ function createBgStars(count, width, height, opts) {
       speed: speed,
     };
     if (opts.yBias) star.y = Math.pow(Math.random(), opts.yBias) * height;
-    if (opts.parallax) star.depth = (opts.depthRange || [0.1, 0.5])[0] +
-      Math.random() * ((opts.depthRange || [0.1, 0.5])[1] - (opts.depthRange || [0.1, 0.5])[0]);
+    if (opts.parallax) star.depth = (opts.depthRange || [0.0, 0.7])[0] +
+      Math.random() * ((opts.depthRange || [0.0, 0.7])[1] - (opts.depthRange || [0.0, 0.7])[0]);
     stars.push(star);
   }
   return stars;
@@ -677,7 +677,7 @@ function projectConstellation(consData, cx, cy, sc, rC, dC) {
 function renderConstellationLines(ctx, pts, connections, style, scrollY, parallax) {
   ctx.strokeStyle = style || "rgba(200, 200, 255, 0.15)";
   ctx.lineWidth = 1;
-  var dy = scrollY && parallax ? scrollY * (1 - parallax) : 0;
+  var dy = scrollY && parallax ? -scrollY * parallax : 0;
   for (var i = 0; i < connections.length; i++) {
     var c = connections[i];
     var from = pts[c[0]], to = pts[c[1]];
@@ -692,7 +692,7 @@ function renderConstellationLines(ctx, pts, connections, style, scrollY, paralla
 
 // Draw constellation stars with glow; main stars always visible
 function renderConstellationStars(ctx, pts, mainIndices, time, scrollY, parallax) {
-  var dy = scrollY && parallax ? scrollY * (1 - parallax) : 0;
+  var dy = scrollY && parallax ? -scrollY * parallax : 0;
   for (var i = 0; i < pts.length; i++) {
     var p = pts[i];
     var isMain = mainIndices && mainIndices.indexOf(i) !== -1;
