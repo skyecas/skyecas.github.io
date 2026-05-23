@@ -1,3 +1,10 @@
+const mugWidth = 69;
+const mugHeight = 100;
+var mugX, mugY, secondMugX, secondMugY;
+var steamCount = 6;
+var prevW, prevH;
+var pools = [], drops = [], dripTrails = [], steamWaves = [];
+
 var bg = initCanvas(function(w, h) {
 	width = w; height = h;
 	mugX = w - 2 * mugWidth;
@@ -5,7 +12,7 @@ var bg = initCanvas(function(w, h) {
 	secondMugX = mugX - mugWidth - 40;
 	secondMugY = mugY + 10;
 	var xr = w / prevW, yr = h / prevH;
-	if (isFinite(xr) && isFinite(yr)) {
+	if (isFinite(xr) && isFinite(yr) && prevW && prevH) {
 		for (var p of pools) { p.x *= xr; p.y *= yr; }
 		for (var d of drops) { d.x *= xr; d.y *= yr; }
 		for (var t of dripTrails) { t.x *= xr; t.y *= yr; }
@@ -270,13 +277,6 @@ for (let i = 0; i < 200; i++) {
   fogCtx.fill();
 }
 
-const mugWidth = 69;
-const mugHeight = 100;
-var mugX = width - 2 * mugWidth;
-var mugY = height - mugHeight - 30;
-var secondMugX = mugX - mugWidth - 40;
-var secondMugY = mugY + 10;
-
 // Cozy mug
 function drawMug(ctx, x = mugX, y = mugY) {
   // Mug body with rounded top
@@ -356,23 +356,8 @@ SteamWave.prototype.update = function (ctx, t) {
 // === INIT ENTITIES ===
 let lightning = new LightningFlash();
 
-let pools = [];
-let rains = [];
-let drops = [];
-let dripTrails = [];
-let steamWaves = [];
-
-let fogOffset = 0;
-let windTime = 0;
-let baseWind = 0;
-let gust = 0;
-let gustTarget = 0;
-let gustSpeed = 0.03;
-let steamCount = 6
-
-for (var i = 0; i < 400; i++) { rains.push(new RainDrop()); }
 for (var i = 0; i < 100; i++) { drops.push(new DripDrop()); }
-for (let i = 0; i < steamCount; i++) {
+for (var i = 0; i < steamCount; i++) {
   const steamX = lerp(mugX + 8, mugX + mugWidth - 8, i / (steamCount - 1));
   steamWaves.push(new SteamWave(steamX, mugY));
 }
@@ -440,5 +425,3 @@ function animate() {
 }
 
 animate();
-
-var prevW = width, prevH = height;

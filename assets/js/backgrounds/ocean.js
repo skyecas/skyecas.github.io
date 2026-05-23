@@ -300,7 +300,7 @@ ShootingStar.prototype.reset = function (x = "0") {
 }
 
 // create an array of animated entities
-var stars = createBgStars(300, width, height, {yBias: 1.4, speedRange: [0.003, 0.01]});
+var stars = createBgStars(300, width, height, {yBias: 1.4, speedRange: [0.5, 1.5]});
 var shootingstars = [];
 var clouds = [];
 var bubbles = [];
@@ -325,7 +325,7 @@ var cassPts = projectConstellation(consDataByName.CASSIOPEIA, 400, 120, 8, 0, 60
 
 // animate the background
 function animate() {
-	const time = performance.now(); // Use high-resolution timer
+	const time = performance.now() / 1000; // Use seconds for slower twinkle
 	// The sky is the background
 	drawSky();
 
