@@ -16,10 +16,18 @@ bg.canvas.style.position = "absolute";
 bg.canvas.style.top = "0";
 bg.canvas.style.left = "0";
 
-var targetScroll = 0;
-var smoothScroll = 0;
-window.addEventListener("scroll", function() {
-	targetScroll = document.documentElement.scrollTop || window.pageYOffset || 0;
+var scrollY = 0;
+var maxScroll = 0;
+
+function onScroll() {
+	scrollY = document.documentElement.scrollTop || window.pageYOffset || 0;
+}
+window.addEventListener("scroll", onScroll, { passive: true });
+
+// Track wheel deltas for smooth sub-event-rate movement
+var pendingDelta = 0;
+window.addEventListener("wheel", function(e) {
+	pendingDelta += e.deltaY;
 }, { passive: true });
 
 var para = 0.5;
@@ -33,14 +41,18 @@ var time = 0;
 
 function animate() {
 	time++;
-	smoothScroll += (targetScroll - smoothScroll) * 0.15;
-	if (Math.abs(smoothScroll - targetScroll) < 0.5) smoothScroll = targetScroll;
-	var sy = smoothScroll;
+	if (pendingDelta !== 0) {
+		var newY = scrollY + pendingDelta;
+		newY = Math.max(0, Math.min(newY, maxScroll));
+		scrollY = newY;
+		pendingDelta = 0;
+	}
+	maxScroll = document.body.scrollHeight - window.innerHeight;
 	bgCtx.fillStyle = "#08081a";
 	bgCtx.fillRect(0, 0, width, pageHeight);
-	renderBgStars(bgCtx, stars, time, undefined, sy);
-	renderConstellationLines(bgCtx, cassPts, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", sy, para);
-	renderConstellationStars(bgCtx, cassPts, consDataByName.CASSIOPEIA.mainIndices, time, sy, para);
+	renderBgStars(bgCtx, stars, time, undefined, scrollY);
+	renderConstellationLines(bgCtx, cassPts, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, para);
+	renderConstellationStars(bgCtx, cassPts, consDataByName.CASSIOPEIA.mainIndices, time, scrollY, para);
 	requestAnimFrame(animate);
 }
 
