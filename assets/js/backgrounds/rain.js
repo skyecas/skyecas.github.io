@@ -5,13 +5,10 @@ var steamCount = 6;
 var prevW, prevH;
 var pools = [], drops = [], dripTrails = [], steamWaves = [];
 var windTime = 0;
+var fogOffset = 0;
 
-var pageHeight;
 var bg = initCanvas(function(w, h, c) {
 	width = w; height = h;
-	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
-	c.height = pageHeight;
-	c.style.height = pageHeight + "px";
 	mugX = w - 2 * mugWidth;
 	mugY = h - mugHeight - 30;
 	secondMugX = mugX - mugWidth - 40;
@@ -25,29 +22,24 @@ var bg = initCanvas(function(w, h, c) {
 	prevW = w; prevH = h;
 	steamWaves = [];
 	for (let i = 0; i < steamCount; i++) {
-		steamWaves.push(new SteamWave(lerp(mugX + 8, mugX + mugWidth - 8, i / (steamCount - 1)), mugY));
+		steamWaves.push(new SteamWave(mugX + 8 + (mugWidth - 16) * i / (steamCount - 1), mugY));
 	}
 	for (let i = 0; i < steamCount; i++) {
-		steamWaves.push(new SteamWave(lerp(secondMugX + 8, secondMugX + mugWidth - 8, i / (steamCount - 1)), secondMugY));
+		steamWaves.push(new SteamWave(secondMugX + 8 + (mugWidth - 16) * i / (steamCount - 1), secondMugY));
 	}
 });
 var bgCtx = bg.ctx;
-bg.canvas.style.position = "absolute";
-bg.canvas.style.top = "0";
-bg.canvas.style.left = "0";
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
 
-var stars = createBgStars(800, width, pageHeight, { parallax: true });
+var stars = createBgStars(800, width, height, { parallax: true });
 
 function drawWindow() {
   const top = height * 0.95;
-
   const gradient = bgCtx.createLinearGradient(0, top, 0, height);
   gradient.addColorStop(0, 'rgba(34, 34, 34, 1)');
   gradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
-
   bgCtx.fillStyle = gradient;
   bgCtx.fillRect(0, top, width, height - top);
 }
@@ -59,7 +51,6 @@ function smoothNoise(x, y, t) {
 }
 
 // === ENTITIES ===
-
 
 // Raindrop object
 function RainDrop() {
@@ -114,7 +105,7 @@ DripDrop.prototype.update = function () {
       this.reset();
     } else {
       pools.push(new RainPool(this.x, sillY + 2));
-      dripTrails.push(new DripTrail(this.x, sillY + 2, this.length, this.speed, this.opacity)); // moved trail start to match pool
+      dripTrails.push(new DripTrail(this.x, sillY + 2, this.length, this.speed, this.opacity));
       this.reset();
     }
   }
@@ -146,7 +137,7 @@ DripTrail.prototype.update = function () {
   gradient.addColorStop(1, `rgba(255, 255, 255, ${this.opacity})`);
 
   bgCtx.strokeStyle = gradient;
-  bgCtx.lineWidth = 2; // <-- More visible
+  bgCtx.lineWidth = 2;
   bgCtx.beginPath();
   bgCtx.moveTo(this.x, this.y - this.length);
   bgCtx.lineTo(this.x, this.y);
@@ -170,7 +161,7 @@ RainPool.prototype.draw = function () {
   for (let i = 0; i < maxRings; i++) {
     let ringRadius = this.radius * (0.6 + 0.2 * i);
     let ringOpacity = this.opacity * (1 - i / maxRings);
-    let offset = Math.sin(i * 0.5 + this.radius * 0.1) * 3; // Slight distortion on each ring
+    let offset = Math.sin(i * 0.5 + this.radius * 0.1) * 3;
 
     bgCtx.beginPath();
     bgCtx.ellipse(this.x + offset, this.y, ringRadius * 1.3, ringRadius * 0.7, 0, 0, Math.PI * 2);
@@ -186,16 +177,15 @@ function LightningFlash() {
   this.opacity = 0;
 }
 LightningFlash.prototype.trigger = function () {
-  this.timer = 3 + Math.floor(Math.random() * 3); // flicker duration
+  this.timer = 3 + Math.floor(Math.random() * 3);
   this.opacity = 0.4;
-
   this.hasBolt = Math.random() < 0.5;
   this.bolt = this.hasBolt ? generateLightningPath() : null;
 };
 LightningFlash.prototype.update = function () {
   if (Math.random() < 0.005 && this.timer <= 0) this.trigger();
   if (this.timer > 0) {
-    this.drawGlow(); // soft flash
+    this.drawGlow();
     if (this.hasBolt && this.bolt) drawLightningBolt(this.bolt);
     this.timer--;
   }
@@ -276,7 +266,6 @@ fogCanvas.width = width;
 fogCanvas.height = height;
 var fogCtx = fogCanvas.getContext('2d');
 
-// Generate fog texture
 for (let i = 0; i < 200; i++) {
   let x = Math.random() * width;
   let y = Math.random() * height;
@@ -291,7 +280,6 @@ for (let i = 0; i < 200; i++) {
 
 // Cozy mug
 function drawMug(ctx, x = mugX, y = mugY) {
-  // Mug body with rounded top
   ctx.fillStyle = "#222";
   ctx.beginPath();
   ctx.moveTo(x, y);
@@ -301,26 +289,22 @@ function drawMug(ctx, x = mugX, y = mugY) {
   ctx.closePath();
   ctx.fill();
 
-  // mug top elipse
   ctx.beginPath();
   ctx.strokeStyle = "#111";
   ctx.ellipse(x + mugWidth / 2, y, mugWidth / 2, 6, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Mug bottom ellipse
   ctx.beginPath();
   ctx.strokeStyle = "#111";
   ctx.ellipse(x + mugWidth / 2, y + mugHeight, mugWidth / 2, 6, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Drink surface inside the mug
   ctx.beginPath();
-  ctx.fillStyle = "#1a0e08"; // deep, silhouetted coffee
+  ctx.fillStyle = "#1a0e08";
   ctx.ellipse(x + mugWidth / 2, y + 2, (mugWidth / 2) * 0.9, 4.5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-
-  const handleCX = x; // X position offset from mug
+  const handleCX = x;
   const handleCY = y + mugHeight / 2;
   ctx.beginPath();
   ctx.strokeStyle = "#222";
@@ -328,7 +312,6 @@ function drawMug(ctx, x = mugX, y = mugY) {
   ctx.arc(handleCX, handleCY, 15, Math.PI / 2.2, -Math.PI / 2.2, false);
   ctx.stroke();
 }
-// mug steam
 function SteamWave(xBase, yBase) {
   this.xBase = xBase;
   this.yBase = yBase;
@@ -345,7 +328,7 @@ SteamWave.prototype.update = function (ctx, t) {
   ctx.beginPath();
   for (let y = topY; y <= bottomY; y += step) {
     const heightFactor = 1 - (y - topY) / waveHeight;
-    const localAmp = this.amplitude * heightFactor;  // More motion near the top
+    const localAmp = this.amplitude * heightFactor;
     const noiseX = smoothNoise(this.xBase, y, t / 2);
     const drift = Math.sin(t * 0.0003 + this.xBase * 0.05 + y * 0.01) * heightFactor * 5;
 
@@ -364,23 +347,23 @@ SteamWave.prototype.update = function (ctx, t) {
   ctx.shadowBlur = 0;
 };
 
-
 // === INIT ENTITIES ===
 let lightning = new LightningFlash();
+var rains = [];
 
+for (var i = 0; i < 200; i++) { rains.push(new RainDrop()); }
 for (var i = 0; i < 100; i++) { drops.push(new DripDrop()); }
 for (var i = 0; i < steamCount; i++) {
-  const steamX = lerp(mugX + 8, mugX + mugWidth - 8, i / (steamCount - 1));
+  const steamX = mugX + 8 + (mugWidth - 16) * i / (steamCount - 1);
   steamWaves.push(new SteamWave(steamX, mugY));
 }
 for (let i = 0; i < steamCount; i++) {
-  const steamX = lerp(secondMugX + 8, secondMugX + mugWidth - 8, i / (steamCount - 1));
+  const steamX = secondMugX + 8 + (mugWidth - 16) * i / (steamCount - 1);
   steamWaves.push(new SteamWave(steamX, secondMugY));
 }
 
 // === ANIMATION LOOP ===
 function animate() {
-  // Wind simulation
   windTime += 0.01;
   baseWind = Math.sin(windTime * 0.3) * 2;
   if (Math.random() < 0.005) {
@@ -391,13 +374,9 @@ function animate() {
 
   // background
   bgCtx.fillStyle = "#110E19";
-  bgCtx.fillRect(0, 0, width, pageHeight);
+  bgCtx.fillRect(0, 0, width, height);
 
-  renderBgStars(bgCtx, stars, performance.now() / 1000, 0.3, scrollY);
-
-  // Scene elements - viewport-fixed via translate
-  bgCtx.save();
-  bgCtx.translate(0, scrollY);
+  renderBgStars(bgCtx, stars, performance.now() / 1000, 0.3, scrollY, height);
 
   // Lightning glow
   lightning.update();
@@ -436,8 +415,6 @@ function animate() {
   drawMug(bgCtx, mugX, mugY);
   drawMug(bgCtx, secondMugX, secondMugY);
   for (let wave of steamWaves) { wave.update(bgCtx, performance.now()); }
-  bgCtx.restore();
-
 
   requestAnimFrame(animate);
 }

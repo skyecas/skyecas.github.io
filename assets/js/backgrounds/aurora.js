@@ -1,13 +1,9 @@
-var pageHeight, stars, bands, extraCons;
-var bg = initCanvas(function(w, h, c) {
+var bg = initCanvas(function(w, h) {
 	rawWidth = w; rawHeight = h;
 	width = w; height = h;
-	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
-	c.height = pageHeight;
-	c.style.height = pageHeight + "px";
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
-	stars = createBgStars(500, w, pageHeight, {yBias: 1.2, parallax: true});
+	stars = createBgStars(500, w, h, {yBias: 1.2, parallax: true});
 	bands = [
 		new AuroraBand(80 * sy, 180, [
 			"rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"
@@ -24,9 +20,6 @@ var bg = initCanvas(function(w, h, c) {
 var bgCtx = bg.ctx;
 var width = rawWidth, height = rawHeight;
 var sx = bg.sx(), sy = bg.sy(), mScale = bg.mScale();
-bg.canvas.style.position = "absolute";
-bg.canvas.style.top = "0";
-bg.canvas.style.left = "0";
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
@@ -40,7 +33,7 @@ function AuroraBand(yBase, height, colours, speed, phase, bandParallax) {
 	this.bandParallax = bandParallax !== undefined ? bandParallax : 0.04;
 }
 AuroraBand.prototype.render = function(t) {
-	var adjY = scrollY + this.yBase;
+	var adjY = this.yBase - scrollY * this.bandParallax;
 	var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + this.height + 30);
 	for (var i = 0; i < this.colours.length; i++) {
 		grad.addColorStop(i / (this.colours.length - 1), this.colours[i]);
@@ -137,7 +130,7 @@ function buildExtraCons() {
 }
 
 function drawMountains() {
-	var baseY = scrollY + height * 0.85;
+	var baseY = height * 0.85;
 	bgCtx.fillStyle = "#060612";
 	bgCtx.beginPath();
 	bgCtx.moveTo(0, baseY);
@@ -155,7 +148,7 @@ function animate() {
 	time++;
 
 	bgCtx.fillStyle = "#08081a";
-	bgCtx.fillRect(0, 0, width, pageHeight);
+	bgCtx.fillRect(0, 0, width, height);
 
 	var skyGrad = bgCtx.createLinearGradient(0, 0, 0, height * 0.85);
 	skyGrad.addColorStop(0, "#08081a");
@@ -163,13 +156,13 @@ function animate() {
 	skyGrad.addColorStop(0.7, "#0d0d1e");
 	skyGrad.addColorStop(1, "#0a0a14");
 	bgCtx.fillStyle = skyGrad;
-	bgCtx.fillRect(0, 0, width, pageHeight);
+	bgCtx.fillRect(0, 0, width, height);
 
 	var dc = getDateColour();
 	if (dc) {
 		var pulse = Math.sin(time * 0.02) * 0.5 + 0.5;
 		for (var b of bands) {
-			var adjY = scrollY + b.yBase;
+			var adjY = b.yBase - scrollY * b.bandParallax;
 			var extra = "rgba(" + dc[0] + ", " + dc[1] + ", " + dc[2] + ", " + pulse * 0.08 + ")";
 			var colours = b.colours.slice();
 			colours.push(extra);
@@ -199,7 +192,7 @@ function animate() {
 		for (var b of bands) { b.render(time); }
 	}
 
-	renderBgStars(bgCtx, stars, time, undefined, scrollY);
+	renderBgStars(bgCtx, stars, time, undefined, scrollY, height);
 
 	for (var ec of extraCons) {
 		renderConstellationStars(bgCtx, ec.pts, ec.mainIndices, time, scrollY, ec.parallax);
