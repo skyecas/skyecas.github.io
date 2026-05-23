@@ -1,54 +1,39 @@
-var pageHeight;
-var bg = initCanvas(function(w, h, c) {
+var bg = initCanvas(function(w, h) {
 	width = w; height = h;
-	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
-	c.height = pageHeight;
-	c.style.height = pageHeight + "px";
 });
 var bgCtx = bg.ctx;
-bg.canvas.style.position = "absolute";
-bg.canvas.style.top = "0";
-bg.canvas.style.left = "0";
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
 
 // the sky
 function drawSky() {
-	const bottom = height * 0.7;
-	var skyY = scrollY;
-
-	const gradient = bgCtx.createLinearGradient(0, skyY, 0, skyY + bottom);
+	const gradient = bgCtx.createLinearGradient(0, 0, 0, height * 0.7);
 	gradient.addColorStop(0, '#0b0033');
 	gradient.addColorStop(0.1, '#2e1a47');
 	gradient.addColorStop(0.4, '#ff758c');
 	gradient.addColorStop(0.7, '#ffd580');
 	gradient.addColorStop(0.9, '#fff1a8');
 	gradient.addColorStop(1, '#ffe4b5');
-
 	bgCtx.fillStyle = gradient;
-	bgCtx.fillRect(0, skyY, width, bottom);
+	bgCtx.fillRect(0, 0, width, height * 0.7);
 }
 
 // the sea
 function drawSea() {
-	const top = height * 0.7;
-	var seaY = scrollY + top;
-
-	const gradient = bgCtx.createLinearGradient(0, seaY, 0, seaY + (height - top));
+	const gradient = bgCtx.createLinearGradient(0, height * 0.7, 0, height);
 	gradient.addColorStop(0, '#98f5e1');
 	gradient.addColorStop(0.3, '#56cfe1');
 	gradient.addColorStop(0.6, '#2d6cdf');
 	gradient.addColorStop(1, '#0b1a40');
-
 	bgCtx.fillStyle = gradient;
-	bgCtx.fillRect(0, seaY, width, height - top);
+	bgCtx.fillRect(0, height * 0.7, width, height * 0.3);
 }
 
 function drawShimmer() {
 	const sunX = width / 2;
-	const startY = scrollY + height * 0.7;
-	const endY = scrollY + height * 0.95;
+	const startY = height * 0.7;
+	const endY = height * 0.95;
 	const shimmerLines = 40;
 
 	bgCtx.save();
@@ -57,7 +42,7 @@ function drawShimmer() {
 
 	for (let i = 0; i < shimmerLines; i++) {
 		const t = i / shimmerLines;
-		const y = lerp(startY, endY, t);
+		const y = startY + (endY - startY) * t;
 		const maxWidth = 300;
 		const widthFactor = Math.sin(t * Math.PI);
 		const halfWidth = maxWidth * widthFactor / 2;
@@ -74,13 +59,12 @@ function drawShimmer() {
 		bgCtx.lineTo(x2, y);
 		bgCtx.stroke();
 	}
-
 	bgCtx.restore();
 }
 
 function drawSun() {
 	const sunX = width / 2;
-	const sunY = scrollY + height * 0.6;
+	const sunY = height * 0.6;
 	const sunRadius = 40;
 
 	const sunGradient = bgCtx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunRadius * 2.5);
@@ -131,7 +115,7 @@ Cloud.prototype.update = function () {
 		this.y = 0.35 * height + (Math.random() ** 1.6 - 0.5) * height * 0.35;
 	}
 	bgCtx.globalAlpha = 0.7;
-	bgCtx.drawImage(this.buffer, this.x, scrollY + this.y - this.buffer.height / 2);
+	bgCtx.drawImage(this.buffer, this.x, this.y - this.buffer.height / 2);
 };
 
 function Bubble() {
@@ -150,8 +134,7 @@ Bubble.prototype.update = function (t) {
 			this.x = width + this.radius;
 			this.y = Math.random() * height;
 		}
-		var by = scrollY + this.y;
-		const i = bgCtx.createRadialGradient(this.x, by, 0, this.x, by, this.radius);
+		const i = bgCtx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
 		i.addColorStop(0, "rgba(255, 255, 255, 0.05)");
 		i.addColorStop(0.4, `hsla(${this.hueShift}, 80%, 85%, 0.12)`);
 		i.addColorStop(0.7, `hsla(${(this.hueShift + 120) % 360}, 90%, 75%, 0.18)`);
@@ -160,12 +143,12 @@ Bubble.prototype.update = function (t) {
 		bgCtx.globalCompositeOperation = "lighter";
 		bgCtx.fillStyle = i;
 		bgCtx.beginPath();
-		bgCtx.arc(this.x, by, this.radius, 0, 2 * Math.PI);
+		bgCtx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
 		bgCtx.fill();
 		bgCtx.restore();
 		bgCtx.fillStyle = "rgba(255, 255, 255, 0.25)";
 		bgCtx.beginPath();
-		bgCtx.arc(this.x + this.radius / 3, by - this.radius / 3, this.radius / 6, 0, 2 * Math.PI);
+		bgCtx.arc(this.x + this.radius / 3, this.y - this.radius / 3, this.radius / 6, 0, 2 * Math.PI);
 		bgCtx.fill();
 	}
 };
@@ -183,12 +166,11 @@ function Wave(yBase) {
 }
 Wave.prototype.update = function (t) {
 	const step = 10;
-	var wy = scrollY + this.yBase;
 	bgCtx.beginPath();
-	bgCtx.moveTo(0, wy);
+	bgCtx.moveTo(0, this.yBase);
 	for (let x = 0; x <= width; x += step) {
 		const noiseY = smoothNoise(x, this.yBase, t);
-		const y = wy + noiseY * this.amplitude;
+		const y = this.yBase + noiseY * this.amplitude;
 		bgCtx.lineTo(x, y);
 	}
 	bgCtx.strokeStyle = this.colour;
@@ -210,12 +192,11 @@ ShootingStar.prototype.update = function () {
 			this.speed = 0;
 			this.reset();
 		} else {
-			var sy = scrollY + this.y;
 			bgCtx.strokeStyle = this.colour;
 			bgCtx.lineWidth = this.size;
 			bgCtx.beginPath();
-			bgCtx.moveTo(this.x, sy);
-			bgCtx.lineTo(this.x + this.len, sy - this.len);
+			bgCtx.moveTo(this.x, this.y);
+			bgCtx.lineTo(this.x + this.len, this.y - this.len);
 			bgCtx.stroke();
 		}
 	} else {
@@ -237,7 +218,7 @@ ShootingStar.prototype.reset = function (x) {
 	this.active = false;
 }
 
-var stars = createBgStars(300, width, pageHeight, {yBias: 1.4, speedRange: [0.5, 1.5], parallax: true});
+var stars = createBgStars(300, width, height, {});
 var shootingstars = [];
 var clouds = [];
 var bubbles = [];
@@ -247,7 +228,7 @@ for (var i = 15; i > 0; i--) { clouds.push(new Cloud()); }
 for (var i = 30; i > 0; i--) { bubbles.push(new Bubble()); }
 const wavecount = 20
 for (var i = wavecount; i > 0; i--) {
-	const yBase = lerp(height*0.7, height, i / wavecount) + (Math.random() - 0.5) * height * 0.01;
+	const yBase = height * 0.7 + (height * 0.3) * (i / wavecount) + (Math.random() - 0.5) * height * 0.01;
 	waves.push(new Wave(yBase));
 }
 for (var i = 10; i > 0; i--) { shootingstars.push(new ShootingStar()); }
@@ -258,11 +239,11 @@ var cassPts = projectConstellation(consDataByName.CASSIOPEIA, 400, 120, 8, 0, 60
 function animate() {
 	const time = performance.now() / 1000;
 	drawSky();
-	renderBgStars(bgCtx, stars, time, 1, scrollY);
-	renderConstellationLines(bgCtx, orionPts, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.3);
-	renderConstellationLines(bgCtx, cassPts, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.35);
-	renderConstellationStars(bgCtx, orionPts, consDataByName.ORION.mainIndices, time, scrollY, 0.3);
-	renderConstellationStars(bgCtx, cassPts, consDataByName.CASSIOPEIA.mainIndices, time, scrollY, 0.35);
+	renderBgStars(bgCtx, stars, time, 1, undefined);
+	renderConstellationLines(bgCtx, orionPts, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.15)", 0, 0.3);
+	renderConstellationLines(bgCtx, cassPts, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", 0, 0.35);
+	renderConstellationStars(bgCtx, orionPts, consDataByName.ORION.mainIndices, time, 0, 0.3);
+	renderConstellationStars(bgCtx, cassPts, consDataByName.CASSIOPEIA.mainIndices, time, 0, 0.35);
 	drawSun();
 	drawSea();
 	for (let wave of waves) { wave.update(time); };

@@ -7,12 +7,8 @@ var pools = [], drops = [], dripTrails = [], steamWaves = [];
 var windTime = 0;
 var fogOffset = 0;
 
-var pageHeight;
 var bg = initCanvas(function(w, h, c) {
 	width = w; height = h;
-	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
-	c.height = pageHeight;
-	c.style.height = pageHeight + "px";
 	mugX = w - 2 * mugWidth;
 	mugY = h - mugHeight - 30;
 	secondMugX = mugX - mugWidth - 40;
@@ -33,14 +29,11 @@ var bg = initCanvas(function(w, h, c) {
 	}
 });
 var bgCtx = bg.ctx;
-bg.canvas.style.position = "absolute";
-bg.canvas.style.top = "0";
-bg.canvas.style.left = "0";
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
 
-var stars = createBgStars(800, width, pageHeight, { parallax: true });
+var stars = createBgStars(800, width, height, {});
 
 function drawWindow() {
   const top = height * 0.95;
@@ -262,7 +255,6 @@ function drawLightningFork(start, opacity) {
   bgCtx.stroke();
 }
 
-// fog
 var fogCanvas = document.createElement('canvas');
 fogCanvas.width = width;
 fogCanvas.height = height;
@@ -351,6 +343,7 @@ SteamWave.prototype.update = function (ctx, t) {
 // === INIT ENTITIES ===
 let lightning = new LightningFlash();
 var rains = [];
+var baseWind = 0, gust = 0, gustTarget = 0, gustSpeed = 0.01;
 
 for (var i = 0; i < 200; i++) { rains.push(new RainDrop()); }
 for (var i = 0; i < 100; i++) { drops.push(new DripDrop()); }
@@ -364,8 +357,6 @@ for (let i = 0; i < steamCount; i++) {
 }
 
 // === ANIMATION LOOP ===
-var baseWind = 0, gust = 0, gustTarget = 0, gustSpeed = 0.01;
-
 function animate() {
   windTime += 0.01;
   baseWind = Math.sin(windTime * 0.3) * 2;
@@ -375,15 +366,10 @@ function animate() {
   }
   gust += (gustTarget - gust) * gustSpeed;
 
-  // background
   bgCtx.fillStyle = "#110E19";
-  bgCtx.fillRect(0, 0, width, pageHeight);
+  bgCtx.fillRect(0, 0, width, height);
 
-  renderBgStars(bgCtx, stars, performance.now() / 1000, 0.3, scrollY);
-
-  // Scene elements - viewport-fixed via translate
-  bgCtx.save();
-  bgCtx.translate(0, scrollY);
+  renderBgStars(bgCtx, stars, performance.now() / 1000, 0.3, undefined);
 
   lightning.update();
 
@@ -392,7 +378,6 @@ function animate() {
   tintGrad.addColorStop(1, "rgba(30, 20, 60, 0.3)");
   bgCtx.fillRect(0, 0, width, height);
 
-  // Fog
   fogOffset += 0.05;
   bgCtx.globalAlpha = 0.05;
   bgCtx.drawImage(fogCanvas, fogOffset % width - width, 0);
@@ -415,7 +400,6 @@ function animate() {
   drawMug(bgCtx, mugX, mugY);
   drawMug(bgCtx, secondMugX, secondMugY);
   for (let wave of steamWaves) { wave.update(bgCtx, performance.now()); }
-  bgCtx.restore();
 
   requestAnimFrame(animate);
 }
