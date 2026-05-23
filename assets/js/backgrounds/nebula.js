@@ -159,7 +159,7 @@ function drawConstellationLabel() {
     labelX += s.x;
     if (s.y < minY) minY = s.y;
   }
-  bgCtx.fillText("Cassiopeia", labelX / 5, minY - 20 + scrollY * 0.9);
+  bgCtx.fillText("Cassiopeia", labelX / 5, minY - 20 + scrollY * (1 - 0.9));
 }
 
 var time = 0;

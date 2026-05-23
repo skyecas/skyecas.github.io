@@ -680,7 +680,7 @@ function projectConstellation(consData, cx, cy, sc, rC, dC, onlyMain) {
 function renderConstellationLines(ctx, pts, connections, style, scrollY, parallax) {
   ctx.strokeStyle = style || "rgba(200, 200, 255, 0.15)";
   ctx.lineWidth = 1;
-  var dy = scrollY && parallax ? scrollY * parallax : 0;
+  var dy = scrollY && parallax ? -scrollY * parallax : 0;
   for (var i = 0; i < connections.length; i++) {
     var c = connections[i];
     var from = pts[c[0]], to = pts[c[1]];
@@ -695,7 +695,7 @@ function renderConstellationLines(ctx, pts, connections, style, scrollY, paralla
 
 // Draw constellation stars with glow; main stars always visible
 function renderConstellationStars(ctx, pts, mainIndices, time, scrollY, parallax) {
-  var dy = scrollY && parallax ? scrollY * parallax : 0;
+  var dy = scrollY && parallax ? -scrollY * parallax : 0;
   for (var i = 0; i < pts.length; i++) {
     var p = pts[i];
     var isMain = mainIndices && mainIndices.indexOf(i) !== -1;
@@ -706,7 +706,7 @@ function renderConstellationStars(ctx, pts, mainIndices, time, scrollY, parallax
     var r = hexToRgba(p.colour, glow * 0.3 * visible);
     ctx.fillStyle = r;
     ctx.beginPath();
-    ctx.arc(p.x, p.y + dy, p.size * 2, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y + scrollY + dy, p.size * 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = hexToRgba(p.colour, glow * visible);
     ctx.beginPath();

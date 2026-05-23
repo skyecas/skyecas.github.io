@@ -154,7 +154,7 @@ function animate() {
 		lx += s.x;
 		if (s.y > maxY) maxY = s.y;
 	}
-	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16 + scrollY * 0.8);
+	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16 + scrollY * (1 - 0.8));
 
 	bgTime++;
 	for (let m of movers) { m.update(); }
