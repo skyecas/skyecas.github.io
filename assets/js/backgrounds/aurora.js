@@ -126,9 +126,9 @@ function buildExtraCons() {
 		var c = configs[i];
 		var data = consDataByName[c.name];
 		if (!data) continue;
-		for (var s = 0; s < 3; s++) {
+		for (var s = 0; s < 4; s++) {
 			cons.push({
-				pts: projectConstellation(data, c.cx, c.cy - s * height, c.sc, c.rC, c.dC),
+				pts: projectConstellation(data, c.cx, c.cy + (s + 0.5) * height, c.sc, c.rC, c.dC),
 				connections: data.connections,
 				mainIndices: data.mainIndices,
 				parallax: c.plx,
