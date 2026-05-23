@@ -16,10 +16,11 @@ bg.canvas.style.position = "absolute";
 bg.canvas.style.top = "0";
 bg.canvas.style.left = "0";
 
+console.log("COMPUTED position:", window.getComputedStyle(bg.canvas).position);
+
 var scrollY = 0;
 window.addEventListener("scroll", function() {
 	scrollY = window.scrollY;
-	console.log("scrollY:", scrollY);
 }, { passive: true });
 
 var para = 0.5;
@@ -29,9 +30,15 @@ var cassPts = projectConstellation(consDataByName.CASSIOPEIA,
 	1, 60
 );
 
+// Draw a static bar at absolute page y=2000 (should only be visible when scrolled there)
+bgCtx.fillStyle = "#00ff0088";
+bgCtx.fillRect(100, 2000, 300, 20);
+
 var time = 0;
+var frame = 0;
 
 function animate() {
+	frame++;
 	time++;
 	bgCtx.fillStyle = "#08081a";
 	bgCtx.fillRect(0, 0, width, pageHeight);
@@ -39,18 +46,9 @@ function animate() {
 	renderConstellationLines(bgCtx, cassPts, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, para);
 	renderConstellationStars(bgCtx, cassPts, consDataByName.CASSIOPEIA.mainIndices, time, scrollY, para);
 
-	// Fixed crosshair at viewport center (should NOT move with scroll)
-	var vpCX = width * 0.5, vpCY = height * 0.5;
-	var cx = vpCX, cy = scrollY + vpCY;
-	bgCtx.strokeStyle = "rgba(255, 0, 0, 0.6)";
-	bgCtx.lineWidth = 2;
-	bgCtx.beginPath();
-	bgCtx.moveTo(cx - 15, cy); bgCtx.lineTo(cx + 15, cy);
-	bgCtx.moveTo(cx, cy - 15); bgCtx.lineTo(cx, cy + 15);
-	bgCtx.stroke();
-	bgCtx.fillStyle = "rgba(255, 0, 0, 0.4)";
-	bgCtx.font = "12px monospace";
-	bgCtx.fillText("scrollY: " + scrollY, cx + 20, cy + 4);
+	if (frame % 30 === 0) {
+		console.log("scrollY:", scrollY, "| frame:", frame);
+	}
 
 	requestAnimFrame(animate);
 }
