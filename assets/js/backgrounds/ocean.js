@@ -1,10 +1,6 @@
 var bg = initCanvas(function(w, h) {
 	width = w; height = h;
 });
-var bgCtx = bg.ctx;
-
-var scrollY = 0;
-window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
 
 // the sky
 function drawSky() {

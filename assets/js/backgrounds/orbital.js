@@ -36,8 +36,9 @@ var MU = 120;
 
 var stars = createBgStars(800, W, H, { parallax: true });
 
-var scrollY = 0;
-window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
+function getScrollY() {
+	return document.documentElement.scrollTop || window.pageYOffset || 0;
+}
 
 // --- Kepler utilities ---
 function solveKepler(M, e) {
@@ -782,7 +783,7 @@ orb.animate = function(timestamp) {
 	for (var si = 0; si < stars.length; si++) {
 		var s = stars[si];
 		if (s.depth === undefined) { s.depth = 0.3 + Math.random() * 0.4; }
-		var paraY = s.y - scrollY * s.depth;
+		var paraY = s.y - getScrollY() * s.depth;
 		if (paraY < -10 || paraY > H + 10) continue;
 		var twinkle = 0.5 + 0.5 * Math.sin(time * s.speed + s.phase);
 		var a = 0.3 + 0.7 * twinkle;
