@@ -7,8 +7,12 @@ var pools = [], drops = [], dripTrails = [], steamWaves = [];
 var windTime = 0;
 var fogOffset = 0;
 
+var pageHeight;
 var bg = initCanvas(function(w, h, c) {
 	width = w; height = h;
+	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
+	c.height = pageHeight;
+	c.style.height = pageHeight + "px";
 	mugX = w - 2 * mugWidth;
 	mugY = h - mugHeight - 30;
 	secondMugX = mugX - mugWidth - 40;
@@ -29,12 +33,14 @@ var bg = initCanvas(function(w, h, c) {
 	}
 });
 var bgCtx = bg.ctx;
+bg.canvas.style.position = "absolute";
+bg.canvas.style.top = "0";
+bg.canvas.style.left = "0";
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
 
-var distH = 4 * height;
-var stars = createBgStars(800, width, distH, { parallax: true });
+var stars = createBgStars(800, width, pageHeight, { parallax: true });
 
 function drawWindow() {
   const top = height * 0.95;
@@ -53,7 +59,6 @@ function smoothNoise(x, y, t) {
 
 // === ENTITIES ===
 
-// Raindrop object
 function RainDrop() {
   this.reset();
 }
@@ -84,7 +89,6 @@ RainDrop.prototype.draw = function () {
   bgCtx.stroke();
 };
 
-// Slow drops
 function DripDrop() {
   this.reset();
 }
@@ -145,7 +149,6 @@ DripTrail.prototype.update = function () {
   bgCtx.stroke();
 };
 
-// Rain Pooling
 function RainPool(x, y) {
   this.x = x;
   this.y = y;
@@ -172,7 +175,6 @@ RainPool.prototype.draw = function () {
   }
 };
 
-// Lightning Flash
 function LightningFlash() {
   this.timer = 0;
   this.opacity = 0;
@@ -236,7 +238,6 @@ function drawLightningBolt(path) {
   bgCtx.lineWidth = 2;
   bgCtx.stroke();
 
-  // forks
   for (let i = 0; i < path.length; i++) {
     let opacity = (1 - (path.length / i)) * 0.2 + 0.2
     if (Math.random() < 0.5) drawLightningFork(path[i], opacity);
@@ -261,7 +262,7 @@ function drawLightningFork(start, opacity) {
   bgCtx.stroke();
 }
 
-// Add some fog
+// fog
 var fogCanvas = document.createElement('canvas');
 fogCanvas.width = width;
 fogCanvas.height = height;
@@ -279,7 +280,6 @@ for (let i = 0; i < 200; i++) {
   fogCtx.fill();
 }
 
-// Cozy mug
 function drawMug(ctx, x = mugX, y = mugY) {
   ctx.fillStyle = "#222";
   ctx.beginPath();
@@ -364,6 +364,8 @@ for (let i = 0; i < steamCount; i++) {
 }
 
 // === ANIMATION LOOP ===
+var baseWind = 0, gust = 0, gustTarget = 0, gustSpeed = 0.01;
+
 function animate() {
   windTime += 0.01;
   baseWind = Math.sin(windTime * 0.3) * 2;
@@ -375,14 +377,16 @@ function animate() {
 
   // background
   bgCtx.fillStyle = "#110E19";
-  bgCtx.fillRect(0, 0, width, height);
+  bgCtx.fillRect(0, 0, width, pageHeight);
 
-  renderBgStars(bgCtx, stars, performance.now() / 1000, 0.3, scrollY, height);
+  renderBgStars(bgCtx, stars, performance.now() / 1000, 0.3, scrollY);
 
-  // Lightning glow
+  // Scene elements - viewport-fixed via translate
+  bgCtx.save();
+  bgCtx.translate(0, scrollY);
+
   lightning.update();
 
-  // Color grading
   let tintGrad = bgCtx.createLinearGradient(0, 0, 0, height);
   tintGrad.addColorStop(0, "rgba(100, 80, 150, 0.1)");
   tintGrad.addColorStop(1, "rgba(30, 20, 60, 0.3)");
@@ -396,26 +400,22 @@ function animate() {
   bgCtx.globalAlpha = 1.0;
   bgCtx.filter = 'none';
 
-  // Rain
   for (let rain of rains) rain.update();
 
-  // windowsil
   drawWindow();
 
-  // and window drips
   for (let drop of drops) drop.update();
 
-  // Rain pooling
   pools.forEach(p => p.update());
   pools = pools.filter(p => p.opacity > 0);
 
   dripTrails.forEach(t => t.update());
   dripTrails = dripTrails.filter(t => t.opacity > 0);
 
-  // Mug and steam
   drawMug(bgCtx, mugX, mugY);
   drawMug(bgCtx, secondMugX, secondMugY);
   for (let wave of steamWaves) { wave.update(bgCtx, performance.now()); }
+  bgCtx.restore();
 
   requestAnimFrame(animate);
 }

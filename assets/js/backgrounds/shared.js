@@ -636,10 +636,7 @@ function renderBgStar(ctx, star, time, alpha, scrollY, height) {
   var tx = star.x;
   var ty = star.y;
   if (scrollY !== undefined && star.depth !== undefined) {
-    ty = star.y - scrollY * star.depth;
-  }
-  if (height !== undefined && (ty < -50 || ty > height + 50)) {
-    return;
+    ty = star.y + scrollY * (1 - star.depth);
   }
   var twinkle = 0.5 + 0.5 * Math.sin(time * star.speed + star.phase);
   var a = (alpha !== undefined ? alpha : 1) * (0.3 + 0.7 * twinkle);
@@ -689,8 +686,8 @@ function renderConstellationLines(ctx, pts, connections, style, scrollY, paralla
     var from = pts[c[0]], to = pts[c[1]];
     if (from && to) {
       ctx.beginPath();
-      ctx.moveTo(from.x, from.y + dy);
-      ctx.lineTo(to.x, to.y + dy);
+      ctx.moveTo(from.x, from.y + scrollY + dy);
+      ctx.lineTo(to.x, to.y + scrollY + dy);
       ctx.stroke();
     }
   }
@@ -713,7 +710,7 @@ function renderConstellationStars(ctx, pts, mainIndices, time, scrollY, parallax
     ctx.fill();
     ctx.fillStyle = hexToRgba(p.colour, glow * visible);
     ctx.beginPath();
-    ctx.arc(p.x, p.y + dy, p.size, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y + scrollY + dy, p.size, 0, Math.PI * 2);
     ctx.fill();
   }
 }
