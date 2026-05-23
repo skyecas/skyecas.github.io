@@ -74,9 +74,9 @@ AuroraBand.prototype.render = function(t, sy) {
 function buildCons() {
 	var cons = [];
 	var configs = [
-		{ name: "CASSIOPEIA", cx: width * 0.1, cy: height * 0.12, sc: 18, rC: 0, dC: 60, plx: 0.75 },
-		{ name: "ORION", cx: width * 0.85, cy: height * 0.78, sc: 18, rC: 5.5, dC: 0, plx: 0.85 },
-		{ name: "LYRA", cx: width * 0.92, cy: height * 0.1, sc: 18, rC: 18.6, dC: 38, plx: 0.8 },
+		{ name: "CASSIOPEIA", cx: width * 0.1, cy: height * 0.12, sc: 18, rC: 0, dC: 60, plx: 0.25 },
+		{ name: "ORION", cx: width * 0.85, cy: height * 0.78, sc: 18, rC: 5.5, dC: 0, plx: 0.3 },
+		{ name: "LYRA", cx: width * 0.92, cy: height * 0.1, sc: 18, rC: 18.6, dC: 38, plx: 0.2 },
 	];
 	for (var i = 0; i < configs.length; i++) {
 		var c = configs[i];
@@ -112,8 +112,8 @@ function getDateColour() {
 
 var mountainLayers = [
 	{ colour: "#04040e", parallax: 0.98, amp: 15, freq: 0.012 },
-	{ colour: "#050510", parallax: 0.95, amp: 25, freq: 0.025 },
-	{ colour: "#060612", parallax: 0.90, amp: 35, freq: 0.04 },
+	{ colour: "#050510", parallax: 0.99, amp: 25, freq: 0.025 },
+	{ colour: "#060612", parallax: 1.0, amp: 35, freq: 0.04 },
 ];
 
 function drawMountains(sy) {
