@@ -16,10 +16,9 @@ bg.canvas.style.position = "absolute";
 bg.canvas.style.top = "0";
 bg.canvas.style.left = "0";
 
-var scrollY = 0;
-window.addEventListener("scroll", function() {
-	scrollY = document.documentElement.scrollTop || window.scrollY || 0;
-}, { passive: true });
+function getScrollY() {
+	return document.documentElement.scrollTop || window.pageYOffset || 0;
+}
 
 var para = 0.5;
 var cassPts = projectConstellation(consDataByName.CASSIOPEIA,
@@ -32,11 +31,12 @@ var time = 0;
 
 function animate() {
 	time++;
+	var sy = getScrollY();
 	bgCtx.fillStyle = "#08081a";
 	bgCtx.fillRect(0, 0, width, pageHeight);
-	renderBgStars(bgCtx, stars, time, undefined, scrollY);
-	renderConstellationLines(bgCtx, cassPts, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, para);
-	renderConstellationStars(bgCtx, cassPts, consDataByName.CASSIOPEIA.mainIndices, time, scrollY, para);
+	renderBgStars(bgCtx, stars, time, undefined, sy);
+	renderConstellationLines(bgCtx, cassPts, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", sy, para);
+	renderConstellationStars(bgCtx, cassPts, consDataByName.CASSIOPEIA.mainIndices, time, sy, para);
 	requestAnimFrame(animate);
 }
 
