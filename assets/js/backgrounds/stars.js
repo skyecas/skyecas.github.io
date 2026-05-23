@@ -4,7 +4,6 @@ var bg = initCanvas(function(w, h, c) {
 	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
 	c.height = pageHeight;
 	c.style.height = pageHeight + "px";
-    stars = createBgStars(Math.floor(pageHeight / 2), w, pageHeight, { parallax: true });
 });
 var bgCtx = bg.ctx;
 // width,height set by initCanvas callback
@@ -17,7 +16,6 @@ window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { pa
 
 bgCtx.fillStyle = "#110E19";
 bgCtx.fillRect(0, 0, width, pageHeight);
-bgCtx.fillRect(0, 0, width, height);
 
 // === Constellations ===
 var cassWCoords = projectConstellation(consDataByName.CASSIOPEIA,

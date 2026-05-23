@@ -34,7 +34,7 @@ var camScale = (function() {
 // --- Constants ---
 var MU = 120;
 
-var stars = createBgStars(800, W, H);
+var stars = createBgStars(800, W, H, { parallax: true });
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
@@ -777,7 +777,20 @@ orb.animate = function(timestamp) {
 
   ctx.fillStyle = "#03040c";
   ctx.fillRect(0,0,W,H);
-	renderBgStars(ctx, stars, time, undefined, scrollY);
+
+  // Parallax stars (fixed-position canvas formula: ty = y - scrollY * depth)
+  for (var si = 0; si < stars.length; si++) {
+    var s = stars[si];
+    if (s.depth === undefined) { s.depth = 0.3 + Math.random() * 0.4; }
+    var paraY = s.y - scrollY * s.depth;
+    if (paraY < -10 || paraY > H + 10) continue;
+    var twinkle = 0.5 + 0.5 * Math.sin(time * s.speed + s.phase);
+    var a = 0.3 + 0.7 * twinkle;
+    ctx.fillStyle = hexToRgba(s.colour, a);
+    ctx.beginPath();
+    ctx.arc(s.x, paraY, s.size * (0.5 + 0.5 * twinkle), 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   // Launch
   if (!launched) { launch(time); launched = true; }
