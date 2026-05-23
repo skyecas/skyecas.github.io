@@ -637,9 +637,9 @@ function renderBgStar(ctx, star, time, alpha, scrollY, height) {
   var ty = star.y;
   if (scrollY !== undefined && star.depth !== undefined) {
     ty = star.y - scrollY * star.depth;
-    if (height !== undefined) {
-      ty = ((ty % height) + height) % height;
-    }
+  }
+  if (height !== undefined && (ty < -50 || ty > height + 50)) {
+    return;
   }
   var twinkle = 0.5 + 0.5 * Math.sin(time * star.speed + star.phase);
   var a = (alpha !== undefined ? alpha : 1) * (0.3 + 0.7 * twinkle);

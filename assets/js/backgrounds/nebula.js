@@ -6,7 +6,7 @@ var bg = initCanvas(function(w, h, c) {
 	width = w; height = h;
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
-	stars = createBgStars(1200, w, height, { parallax: true });
+	stars = createBgStars(1200, w, 4 * height, { parallax: true });
 	dustLanes = [
 		new DustLane(200 * sy, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
 		new DustLane(900 * sx, 500 * sy, 700 * sx, 100 * sy, 0.3, 0.00015),
