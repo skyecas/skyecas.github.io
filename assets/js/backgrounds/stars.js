@@ -1,21 +1,13 @@
-var pageHeight;
-var bg = initCanvas(function(w, h, c) {
+var bg = initCanvas(function(w, h) {
 	width = w; height = h;
-	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
-	c.height = pageHeight;
-	c.style.height = pageHeight + "px";
 });
 var bgCtx = bg.ctx;
-// width,height set by initCanvas callback
-bg.canvas.style.position = "absolute";
-bg.canvas.style.top = "0";
-bg.canvas.style.left = "0";
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
 
 bgCtx.fillStyle = "#110E19";
-bgCtx.fillRect(0, 0, width, pageHeight);
+bgCtx.fillRect(0, 0, width, height);
 
 // === Constellations ===
 var cassWCoords = projectConstellation(consDataByName.CASSIOPEIA,
@@ -52,7 +44,7 @@ ShootingStar.prototype.update = function() {
 	if (this.active) {
 		this.x -= this.speed;
 		this.y += this.speed;
-		if (this.x < -this.len || this.y > pageHeight + this.len || this.y < -this.len) {
+		if (this.x < -this.len || this.y > height + this.len || this.y < -this.len) {
 			this.speed = 0;
 			if (this.special) {
 				if (isSpecialDate) { this.reset(); }
@@ -76,7 +68,7 @@ ShootingStar.prototype.update = function() {
 Satellite.prototype.update = function() {
 	if (this.active) {
 		this.x -= this.speed;
-		if (this.x < 0 || this.y > pageHeight || this.y < 0) {
+		if (this.x < 0 || this.y > height || this.y < 0) {
 			this.reset();
 		} else {
 			bgCtx.fillStyle = this.colour;
@@ -92,7 +84,7 @@ Satellite.prototype.update = function() {
 ShootingStar.prototype.reset = function(x) {
 	if (x === undefined) x = "0";
 	var pos = Math.random() * (width + height);
-	this.y = scrollY + Math.max(0, pos - width);
+	this.y = Math.max(0, pos - width);
 	(x=="0") ? this.x = Math.min(width, pos) : this.x=x;
 	this.len = (Math.random() * 80) + 10;
 	this.size = (Math.random() * 1) + 0.1;
@@ -103,7 +95,7 @@ ShootingStar.prototype.reset = function(x) {
 }
 
 Satellite.prototype.reset = function() {
-	this.y = scrollY + Math.random() * height;
+	this.y = Math.random() * height;
 	this.x = width;
 	this.speed = (Math.random() * .19) + .01;
 	this.size = (Math.random() * 2) + 0.1;
@@ -116,7 +108,7 @@ var isSpecialDate = false;
 var stars = [];
 var movers = [];
 
-stars = createBgStars(600, width, pageHeight, { parallax: true });
+stars = createBgStars(600, width, height, { parallax: true });
 
 for (var i = 10; i > 0; i--) { movers.push(new Satellite()); }
 for (var i = 1; i > 0; i--) { movers.push(new ShootingStar()); }
@@ -136,13 +128,14 @@ function animate() {
 	}
 
 	bgCtx.fillStyle = "#110E19";
-	bgCtx.fillRect(0, 0, width, pageHeight);
+	bgCtx.fillRect(0, 0, width, height);
 
 	bgCtx.fillStyle = '#ffffff';
 	bgCtx.strokeStyle = '#ffffff';
 
 	cassTime++;
-renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.1);
+	renderBgStars(bgCtx, stars, bgTime, undefined, scrollY, height);
+	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.1);
 	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, scrollY, 0.1);
 	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", scrollY, 0.2);
 	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, scrollY, 0.2);
@@ -157,19 +150,9 @@ renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connectio
 		lx += s.x;
 		if (s.y > maxY) maxY = s.y;
 	}
-	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16 + scrollY * 0.15);
+	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16 - scrollY * 0.2);
 
 	bgTime++;
-	for (var s of stars) {
-		var paraY = s.y + scrollY * (1 - s.depth);
-		var twinkle = 0.5 + 0.5 * Math.sin(bgTime * s.speed + s.phase);
-		var a = 0.3 + 0.7 * twinkle;
-		bgCtx.fillStyle = hexToRgba(s.colour, a);
-		bgCtx.beginPath();
-		bgCtx.arc(s.x, paraY, s.size * (0.5 + 0.5 * twinkle), 0, Math.PI * 2);
-		bgCtx.fill();
-	}
-
 	for (let m of movers) { m.update(); }
 
 	requestAnimFrame(animate);

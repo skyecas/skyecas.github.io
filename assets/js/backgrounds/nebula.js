@@ -1,16 +1,12 @@
-var pageHeight;
 var cassData = consDataByName.CASSIOPEIA;
 var cassPts = [];
 
 var bg = initCanvas(function(w, h, c) {
 	rawWidth = w; rawHeight = h;
 	width = w; height = h;
-	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
-	c.height = pageHeight;
-	c.style.height = pageHeight + "px";
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
-	stars = createBgStars(1200, w, pageHeight, { parallax: true });
+	stars = createBgStars(1200, w, height, { parallax: true });
 	dustLanes = [
 		new DustLane(200 * sy, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
 		new DustLane(900 * sx, 500 * sy, 700 * sx, 100 * sy, 0.3, 0.00015),
@@ -21,15 +17,11 @@ var bg = initCanvas(function(w, h, c) {
 var bgCtx = bg.ctx;
 var width = rawWidth, height = rawHeight;
 var sx = bg.sx(), sy = bg.sy(), mScale = bg.mScale();
-bg.canvas.style.position = "absolute";
-bg.canvas.style.top = "0";
-bg.canvas.style.left = "0";
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
 
 var nebulaMult = 2.5;
-var scrollDrift = 0.05;
 
 function noise2D(x, y, t) {
   return Math.sin(x * 0.003 + t * 0.0003) * 0.5 +
@@ -47,13 +39,13 @@ function DustLane(xBase, yBase, width, height, angle, speed) {
   this.phase = Math.random() * Math.PI * 2;
 }
 DustLane.prototype.update = function(t) {
-  var driftY = this.yBase + scrollY * (1 - scrollDrift);
   bgCtx.save();
-  bgCtx.translate(this.xBase, driftY);
+  bgCtx.translate(this.xBase, this.yBase);
   bgCtx.rotate(this.angle);
 
   var segments = 40;
   var segW = this.width / segments;
+
   bgCtx.fillStyle = "rgba(2, 2, 8, 0.3)";
   bgCtx.beginPath();
   bgCtx.moveTo(0, 0);
@@ -98,7 +90,7 @@ function drawNebulaGas(t) {
 
   for (var c of centres) {
     var ox = Math.sin(t * 0.00003 + c.phase) * 30;
-    var oy = Math.cos(t * 0.00004 + c.phase * 0.7) * 20 + scrollY * (1 - scrollDrift);
+    var oy = Math.cos(t * 0.00004 + c.phase * 0.7) * 20;
 
     var grad = bCtx.createRadialGradient(c.x + ox, c.y + oy, 0, c.x + ox, c.y + oy, Math.max(c.rx, c.ry));
     for (var i = 0; i < c.colours.length; i++) {
@@ -125,13 +117,12 @@ function drawBrightCore(t) {
     { x: 500 * sx, y: 300 * sy, r: 100 * mScale, colour: "rgba(255, 150, 200, " + pulse * 0.12 + ")" },
   ];
   for (var c of cores) {
-    var cy = c.y + scrollY * (1 - scrollDrift);
-    var grad = bgCtx.createRadialGradient(c.x, cy, 0, c.x, cy, c.r);
+    var grad = bgCtx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
     grad.addColorStop(0, c.colour);
     grad.addColorStop(1, "rgba(0, 0, 0, 0)");
     bgCtx.fillStyle = grad;
     bgCtx.beginPath();
-    bgCtx.arc(c.x, cy, c.r, 0, Math.PI * 2);
+    bgCtx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
     bgCtx.fill();
   }
 }
@@ -158,8 +149,7 @@ function drawConstellationLabel() {
     labelX += s.x;
     if (s.y < minY) minY = s.y;
   }
-  var labelY = minY - 20 + scrollY * (1 - 0.65);
-  bgCtx.fillText("Cassiopeia", labelX / 5, labelY);
+  bgCtx.fillText("Cassiopeia", labelX / 5, minY - 20);
 }
 
 var time = 0;
@@ -168,7 +158,7 @@ function animate() {
   time++;
 
   bgCtx.fillStyle = "#030308";
-  bgCtx.fillRect(0, 0, width, pageHeight);
+  bgCtx.fillRect(0, 0, width, height);
 
   drawNebulaGas(time);
 
@@ -176,7 +166,7 @@ function animate() {
 
   drawBrightCore(time);
 
-	renderBgStars(bgCtx, stars, time, undefined, scrollY);
+	renderBgStars(bgCtx, stars, time, undefined, scrollY, height);
 
 	renderConstellationLines(bgCtx, cassPts, cassData.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.65);
 	renderConstellationStars(bgCtx, cassPts, cassData.mainIndices, time, scrollY, 0.65);

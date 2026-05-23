@@ -632,11 +632,14 @@ function createBgStars(count, width, height, opts) {
 }
 
 // Render a single background star with twinkle and optional parallax
-function renderBgStar(ctx, star, time, alpha, scrollY) {
+function renderBgStar(ctx, star, time, alpha, scrollY, height) {
   var tx = star.x;
   var ty = star.y;
   if (scrollY !== undefined && star.depth !== undefined) {
-    ty = star.y + scrollY * (1 - star.depth);
+    ty = star.y - scrollY * star.depth;
+    if (height !== undefined) {
+      ty = ((ty % height) + height) % height;
+    }
   }
   var twinkle = 0.5 + 0.5 * Math.sin(time * star.speed + star.phase);
   var a = (alpha !== undefined ? alpha : 1) * (0.3 + 0.7 * twinkle);
@@ -647,9 +650,9 @@ function renderBgStar(ctx, star, time, alpha, scrollY) {
 }
 
 // Render all background stars
-function renderBgStars(ctx, stars, time, alpha, scrollY) {
+function renderBgStars(ctx, stars, time, alpha, scrollY, height) {
   for (var i = 0; i < stars.length; i++) {
-    renderBgStar(ctx, stars[i], time, alpha, scrollY);
+    renderBgStar(ctx, stars[i], time, alpha, scrollY, height);
   }
 }
 
