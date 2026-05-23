@@ -7,12 +7,6 @@ var bg = initCanvas(function(w, h, c) {
 });
 var bgCtx = bg.ctx;
 bg.canvas.style.position = "absolute";
-bg.canvas.style.top = "0";
-bg.canvas.style.left = "0";
-
-function getScrollY() {
-	return document.documentElement.scrollTop || window.pageYOffset || 0;
-}
 
 bgCtx.fillStyle = "#110E19";
 bgCtx.fillRect(0, 0, width, pageHeight);
@@ -135,7 +129,7 @@ function animate() {
 		}
 	}
 
-	var sy = getScrollY();
+	var sy = window.lenisScroll !== undefined ? window.lenisScroll : 0;
 
 	bgCtx.fillStyle = "#110E19";
 	bgCtx.fillRect(0, 0, width, pageHeight);
