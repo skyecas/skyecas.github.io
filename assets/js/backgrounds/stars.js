@@ -139,10 +139,10 @@ function animate() {
 
 	cassTime++;
 	renderBgStars(bgCtx, stars, bgTime, undefined, scrollY);
-	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.1);
-	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, scrollY, 0.1);
-	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", scrollY, 0.2);
-	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, scrollY, 0.2);
+	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.7);
+	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, scrollY, 0.7);
+	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", scrollY, 0.8);
+	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, scrollY, 0.8);
 
 	bgCtx.font = "10px sans-serif";
 	bgCtx.textAlign = "center";
@@ -154,7 +154,7 @@ function animate() {
 		lx += s.x;
 		if (s.y > maxY) maxY = s.y;
 	}
-	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16 + scrollY - scrollY * 0.2);
+	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16 + scrollY * (1 - 0.8));
 
 	bgTime++;
 	for (let m of movers) { m.update(); }

@@ -159,7 +159,7 @@ function drawConstellationLabel() {
     labelX += s.x;
     if (s.y < minY) minY = s.y;
   }
-  bgCtx.fillText("Cassiopeia", labelX / 5, minY - 20 + scrollY * (1 - 0.65));
+  bgCtx.fillText("Cassiopeia", labelX / 5, minY - 20 + scrollY * (1 - 0.9));
 }
 
 var time = 0;
@@ -178,8 +178,8 @@ function animate() {
 
 	renderBgStars(bgCtx, stars, time, undefined, scrollY);
 
-	renderConstellationLines(bgCtx, cassPts, cassData.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.65);
-	renderConstellationStars(bgCtx, cassPts, cassData.mainIndices, time, scrollY, 0.65);
+	renderConstellationLines(bgCtx, cassPts, cassData.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.9);
+	renderConstellationStars(bgCtx, cassPts, cassData.mainIndices, time, scrollY, 0.9);
   drawConstellationLabel();
 
   var todayKey = getDateKey();
