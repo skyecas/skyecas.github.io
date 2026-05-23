@@ -115,12 +115,12 @@ function getDateColour() {
 function buildExtraCons() {
 	var cons = [];
 	var configs = [
-		{ name: "CASSIOPEIA", cx: width * 0.1, cy: height * 0.12, sc: 2, rC: 0, dC: 60, plx: 0.3 },
-		{ name: "ORION", cx: width * 0.85, cy: height * 0.78, sc: 8, rC: 5.5, dC: 0, plx: 0.35 },
-		{ name: "LYRA", cx: width * 0.92, cy: height * 0.1, sc: 8, rC: 18.6, dC: 38, plx: 0.32 },
-		{ name: "CYGNUS", cx: width * 0.88, cy: height * 0.32, sc: 10, rC: 20.5, dC: 40, plx: 0.28 },
-		{ name: "SCORPIUS", cx: width * 0.12, cy: height * 0.85, sc: 6, rC: 16.8, dC: -35, plx: 0.3 },
-		{ name: "ANDROMEDA", cx: width * 0.06, cy: height * 0.45, sc: 3, rC: 1.5, dC: 40, plx: 0.35 },
+		{ name: "CASSIOPEIA", cx: width * 0.1, cy: height * 0.12, sc: 2, rC: 0, dC: 60, plx: 0.75 },
+		{ name: "ORION", cx: width * 0.85, cy: height * 0.78, sc: 8, rC: 5.5, dC: 0, plx: 0.85 },
+		{ name: "LYRA", cx: width * 0.92, cy: height * 0.1, sc: 8, rC: 18.6, dC: 38, plx: 0.8 },
+		{ name: "CYGNUS", cx: width * 0.88, cy: height * 0.32, sc: 10, rC: 20.5, dC: 40, plx: 0.75 },
+		{ name: "SCORPIUS", cx: width * 0.12, cy: height * 0.85, sc: 6, rC: 16.8, dC: -35, plx: 0.8 },
+		{ name: "ANDROMEDA", cx: width * 0.06, cy: height * 0.45, sc: 3, rC: 1.5, dC: 40, plx: 0.85 },
 	];
 	for (var i = 0; i < configs.length; i++) {
 		var c = configs[i];
