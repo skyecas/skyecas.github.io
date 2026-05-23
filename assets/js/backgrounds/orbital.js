@@ -10,35 +10,6 @@ var bg = initCanvas(function(w, h) {
 	camScale = Math.min(w, h) / (maxA * 2.4);
 	if (!isFinite(camScale) || camScale < 0.01) camScale = 1;
 });
-var c = bg.canvas, ctx = bg.ctx;
-// W,H set by initCanvas callback
-var W = rawW, H = rawH;
-
-// --- Scene center ---
-var sx = W / 2, sy = H / 2;
-var baseW = 1920, baseH = 1080;
-var orScale = Math.min(W / baseW, H / baseH);
-if (!isFinite(orScale) || orScale < 0.05) orScale = 1;
-
-// --- Camera (physics → screen transform) ---
-var AU = 180;
-var camScale = (function() {
-  var maxA = 0;
-  try { for (var p of planets) if (p.a > maxA) maxA = p.a; } catch(e) { maxA = 300; }
-  if (maxA < 50) maxA = 300;
-  var cs = Math.min(W, H) / (maxA * 2.4);
-  if (!isFinite(cs) || cs < 0.01) cs = 1;
-  return cs;
-})();
-
-// --- Constants ---
-var MU = 120;
-
-var stars = createBgStars(800, W, H, { parallax: true });
-
-function getScrollY() {
-	return document.documentElement.scrollTop || window.pageYOffset || 0;
-}
 
 // --- Kepler utilities ---
 function solveKepler(M, e) {
@@ -779,17 +750,14 @@ orb.animate = function(timestamp) {
   ctx.fillStyle = "#03040c";
   ctx.fillRect(0,0,W,H);
 
-	// Parallax stars (fixed-position canvas)
+	// Static background stars
 	for (var si = 0; si < stars.length; si++) {
 		var s = stars[si];
-		if (s.depth === undefined) { s.depth = 0.3 + Math.random() * 0.4; }
-		var paraY = s.y - getScrollY() * s.depth;
-		if (paraY < -10 || paraY > H + 10) continue;
 		var twinkle = 0.5 + 0.5 * Math.sin(time * s.speed + s.phase);
 		var a = 0.3 + 0.7 * twinkle;
 		ctx.fillStyle = hexToRgba(s.colour, a);
 		ctx.beginPath();
-		ctx.arc(s.x, paraY, s.size * (0.5 + 0.5 * twinkle), 0, Math.PI * 2);
+		ctx.arc(s.x, s.y, s.size * (0.5 + 0.5 * twinkle), 0, Math.PI * 2);
 		ctx.fill();
 	}
 
