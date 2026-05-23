@@ -320,8 +320,8 @@ for (var i = wavecount; i > 0; i--) {
 for (var i = 10; i > 0; i--) { shootingstars.push(new ShootingStar()); }
 
 // Project constellations from shared.js data
-var orionPts = projectConstellation(consDataByName.ORION, 2400, 200, 8, 0, 0);
-var cassPts = projectConstellation(consDataByName.CASSIOPEIA, 400, 120, 8, 0, 60);
+var orionPts = projectConstellation(consDataByName.ORION, 2400, 200, 8, 0, 0, true);
+var cassPts = projectConstellation(consDataByName.CASSIOPEIA, 400, 120, 8, 0, 60, true);
 
 // animate the background
 function animate() {

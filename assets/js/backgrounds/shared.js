@@ -654,11 +654,14 @@ function renderBgStars(ctx, stars, time, alpha, scrollY) {
 }
 
 // Project a constellation to screen coordinates
-function projectConstellation(consData, cx, cy, sc, rC, dC) {
+function projectConstellation(consData, cx, cy, sc, rC, dC, onlyMain) {
   var cosFac = Math.cos(dC * Math.PI / 180);
   var pts = [];
-  for (var i = 0; i < consData.stars.length; i++) {
-    var s = consData.stars[i];
+  var stars = onlyMain && consData.mainIndices
+    ? consData.mainIndices.map(function(i) { return consData.stars[i]; })
+    : consData.stars;
+  for (var i = 0; i < stars.length; i++) {
+    var s = stars[i];
     var ra = typeof s.ra === "number" ? s.ra : raDeg(s.ra[0], s.ra[1], s.ra[2] || 0);
     var dec = typeof s.dec === "number" ? s.dec : decDeg(s.dec[0], s.dec[1], s.dec[2] || 0);
     pts.push({

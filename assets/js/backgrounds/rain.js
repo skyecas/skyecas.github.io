@@ -4,6 +4,7 @@ var mugX, mugY, secondMugX, secondMugY;
 var steamCount = 6;
 var prevW, prevH;
 var pools = [], drops = [], dripTrails = [], steamWaves = [];
+var windTime = 0;
 
 var bg = initCanvas(function(w, h) {
 	width = w; height = h;
