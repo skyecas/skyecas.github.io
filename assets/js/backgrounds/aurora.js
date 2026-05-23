@@ -17,7 +17,10 @@ bg.canvas.style.top = "0";
 bg.canvas.style.left = "0";
 
 var scrollY = 0;
-window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
+window.addEventListener("scroll", function() {
+	scrollY = window.scrollY;
+	console.log("scrollY:", scrollY);
+}, { passive: true });
 
 var para = 0.5;
 var cassPts = projectConstellation(consDataByName.CASSIOPEIA,
@@ -35,6 +38,20 @@ function animate() {
 	renderBgStars(bgCtx, stars, time, undefined, scrollY);
 	renderConstellationLines(bgCtx, cassPts, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, para);
 	renderConstellationStars(bgCtx, cassPts, consDataByName.CASSIOPEIA.mainIndices, time, scrollY, para);
+
+	// Fixed crosshair at viewport center (should NOT move with scroll)
+	var vpCX = width * 0.5, vpCY = height * 0.5;
+	var cx = vpCX, cy = scrollY + vpCY;
+	bgCtx.strokeStyle = "rgba(255, 0, 0, 0.6)";
+	bgCtx.lineWidth = 2;
+	bgCtx.beginPath();
+	bgCtx.moveTo(cx - 15, cy); bgCtx.lineTo(cx + 15, cy);
+	bgCtx.moveTo(cx, cy - 15); bgCtx.lineTo(cx, cy + 15);
+	bgCtx.stroke();
+	bgCtx.fillStyle = "rgba(255, 0, 0, 0.4)";
+	bgCtx.font = "12px monospace";
+	bgCtx.fillText("scrollY: " + scrollY, cx + 20, cy + 4);
+
 	requestAnimFrame(animate);
 }
 
