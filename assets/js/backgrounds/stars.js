@@ -108,7 +108,8 @@ var isSpecialDate = false;
 var stars = [];
 var movers = [];
 
-stars = createBgStars(600, width, height, { parallax: true });
+var distH = 4 * height;
+stars = createBgStars(600, width, distH, { parallax: true });
 
 for (var i = 10; i > 0; i--) { movers.push(new Satellite()); }
 for (var i = 1; i > 0; i--) { movers.push(new ShootingStar()); }

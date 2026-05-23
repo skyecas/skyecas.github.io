@@ -221,7 +221,8 @@ ShootingStar.prototype.reset = function (x) {
 	this.active = false;
 }
 
-var stars = createBgStars(300, width, height, {yBias: 1.4, speedRange: [0.5, 1.5], parallax: true});
+var distH = 4 * height;
+var stars = createBgStars(300, width, distH, {yBias: 1.4, speedRange: [0.5, 1.5], parallax: true});
 var shootingstars = [];
 var clouds = [];
 var bubbles = [];

@@ -33,7 +33,8 @@ var bgCtx = bg.ctx;
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
 
-var stars = createBgStars(800, width, height, { parallax: true });
+var distH = 4 * height;
+var stars = createBgStars(800, width, distH, { parallax: true });
 
 function drawWindow() {
   const top = height * 0.95;

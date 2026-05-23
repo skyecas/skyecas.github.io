@@ -34,7 +34,8 @@ var camScale = (function() {
 // --- Constants ---
 var MU = 120;
 
-var stars = createBgStars(800, W, H, { parallax: true });
+var distH = 4 * H;
+var stars = createBgStars(800, W, distH, { parallax: true });
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
