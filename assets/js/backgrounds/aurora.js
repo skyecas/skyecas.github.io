@@ -126,12 +126,14 @@ function buildExtraCons() {
 		var c = configs[i];
 		var data = consDataByName[c.name];
 		if (!data) continue;
-		cons.push({
-			pts: projectConstellation(data, c.cx, c.cy, c.sc, c.rC, c.dC),
-			connections: data.connections,
-			mainIndices: data.mainIndices,
-			parallax: c.plx,
-		});
+		for (var s = 0; s < 3; s++) {
+			cons.push({
+				pts: projectConstellation(data, c.cx, c.cy - s * height, c.sc, c.rC, c.dC),
+				connections: data.connections,
+				mainIndices: data.mainIndices,
+				parallax: c.plx,
+			});
+		}
 	}
 	return cons;
 }
