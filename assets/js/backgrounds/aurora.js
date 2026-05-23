@@ -74,22 +74,20 @@ AuroraBand.prototype.render = function(t, sy) {
 function buildCons() {
 	var cons = [];
 	var configs = [
-		{ name: "CASSIOPEIA", cx: width * 0.1, cy: height * 0.12, sc: 2, rC: 0, dC: 60, plx: 0.75 },
-		{ name: "ORION", cx: width * 0.85, cy: height * 0.78, sc: 8, rC: 5.5, dC: 0, plx: 0.85 },
-		{ name: "LYRA", cx: width * 0.92, cy: height * 0.1, sc: 8, rC: 18.6, dC: 38, plx: 0.8 },
+		{ name: "CASSIOPEIA", cx: width * 0.1, cy: height * 0.12, sc: 18, rC: 0, dC: 60, plx: 0.75 },
+		{ name: "ORION", cx: width * 0.85, cy: height * 0.78, sc: 18, rC: 5.5, dC: 0, plx: 0.85 },
+		{ name: "LYRA", cx: width * 0.92, cy: height * 0.1, sc: 18, rC: 18.6, dC: 38, plx: 0.8 },
 	];
 	for (var i = 0; i < configs.length; i++) {
 		var c = configs[i];
 		var data = consDataByName[c.name];
 		if (!data) continue;
-		for (var s = 0; s < 4; s++) {
-			cons.push({
-				pts: projectConstellation(data, c.cx, c.cy + (s + 0.5) * height, c.sc, c.rC, c.dC),
-				connections: data.connections,
-				mainIndices: data.mainIndices,
-				parallax: c.plx,
-			});
-		}
+		cons.push({
+			pts: projectConstellation(data, c.cx, c.cy, c.sc, c.rC, c.dC),
+			connections: data.connections,
+			mainIndices: data.mainIndices,
+			parallax: c.plx,
+		});
 	}
 	return cons;
 }
@@ -112,19 +110,30 @@ function getDateColour() {
 	return null;
 }
 
+var mountainLayers = [
+	{ colour: "#04040e", parallax: 0.98, amp: 15, freq: 0.012 },
+	{ colour: "#050510", parallax: 0.95, amp: 25, freq: 0.025 },
+	{ colour: "#060612", parallax: 0.90, amp: 35, freq: 0.04 },
+];
+
 function drawMountains(sy) {
-	var baseY = height * 0.85 + sy;
-	bgCtx.fillStyle = "#060612";
-	bgCtx.beginPath();
-	bgCtx.moveTo(0, baseY);
-	for (var x = 0; x <= width; x += 15) {
-		var h = Math.sin(x * 0.015) * 20 + Math.sin(x * 0.04) * 10 + Math.sin(x * 0.008) * 30 + 25;
-		bgCtx.lineTo(x, baseY - h);
+	for (var m = 0; m < mountainLayers.length; m++) {
+		var layer = mountainLayers[m];
+		var baseY = height + sy * (1 - layer.parallax);
+		bgCtx.fillStyle = layer.colour;
+		bgCtx.beginPath();
+		bgCtx.moveTo(0, baseY);
+		for (var x = 0; x <= width; x += 15) {
+			var h = Math.sin(x * layer.freq) * layer.amp
+				+ Math.sin(x * layer.freq * 2.5) * layer.amp * 0.4
+				+ Math.sin(x * layer.freq * 0.5) * layer.amp * 0.6;
+			bgCtx.lineTo(x, baseY - h);
+		}
+		bgCtx.lineTo(width, baseY + 50);
+		bgCtx.lineTo(0, baseY + 50);
+		bgCtx.closePath();
+		bgCtx.fill();
 	}
-	bgCtx.lineTo(width, baseY + 100);
-	bgCtx.lineTo(0, baseY + 100);
-	bgCtx.closePath();
-	bgCtx.fill();
 }
 
 var time = 0;
