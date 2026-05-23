@@ -26,7 +26,7 @@ var bgCtx = bg.ctx;
 var width = rawWidth, height = rawHeight;
 var sx = bg.sx(), sy = bg.sy(), mScale = bg.mScale();
 
-stars = createBgStars(500, width, pageHeight, {yBias: 1.2});
+stars = createBgStars(Math.floor(pageHeight / 2), width, pageHeight, {yBias: 1.2});
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
@@ -225,4 +225,3 @@ function animate() {
 }
 
 animate();
-

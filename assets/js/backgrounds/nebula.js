@@ -73,7 +73,7 @@ DustLane.prototype.update = function(t) {
   bgCtx.restore();
 };
 
-stars = createBgStars(1200, width, height);
+stars = createBgStars(Math.floor(pageHeight / 2), width, height);
 
 dustLanes = [
   new DustLane(200 * sx, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
@@ -205,4 +205,3 @@ function animate() {
 }
 
 animate();
-

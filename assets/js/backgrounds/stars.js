@@ -4,7 +4,7 @@ var bg = initCanvas(function(w, h, c) {
 	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
 	c.height = pageHeight;
 	c.style.height = pageHeight + "px";
-	stars = createBgStars(600, w, pageHeight, { parallax: true });
+    stars = createBgStars(Math.floor(pageHeight / 2), w, pageHeight, { parallax: true });
 });
 var bgCtx = bg.ctx;
 // width,height set by initCanvas callback
@@ -21,14 +21,14 @@ bgCtx.fillRect(0, 0, width, height);
 
 // === Constellations ===
 var cassWCoords = projectConstellation(consDataByName.CASSIOPEIA,
-	width * 0.13, height * 0.93,
+	width * 0.13, height * 0.3,
 	13 * (width / 1920),
 	1, 60
 );
 
 var orionCenterRA = 82.5, orionCenterDec = 5;
 var orionWCoords = projectConstellation(consDataByName.ORION,
-	width * 0.78, height * 0.78,
+	width * 0.78, height * 0.7,
 	7 * (width / 1920),
 	orionCenterRA, orionCenterDec
 );
@@ -144,8 +144,8 @@ function animate() {
 	bgCtx.strokeStyle = '#ffffff';
 
 	cassTime++;
-	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.6);
-	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, scrollY, 0.6);
+	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.4);
+	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, scrollY, 0.4);
 
 	bgCtx.font = "11px sans-serif";
 	bgCtx.textAlign = "center";
@@ -159,8 +159,8 @@ function animate() {
 	}
 	bgCtx.fillText("Cassiopeia", labelX / Math.min(5, cassMains.length), minY - 20 + scrollY * 0.2);
 
-	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", scrollY, 0.65);
-	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, scrollY, 0.65);
+	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", scrollY, 0.45);
+	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, scrollY, 0.45);
 
 	bgCtx.font = "10px sans-serif";
 	bgCtx.textAlign = "center";
