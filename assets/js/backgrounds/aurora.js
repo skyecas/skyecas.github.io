@@ -16,9 +16,11 @@ bg.canvas.style.position = "absolute";
 bg.canvas.style.top = "0";
 bg.canvas.style.left = "0";
 
-function getScrollY() {
-	return document.documentElement.scrollTop || window.pageYOffset || 0;
-}
+var targetScroll = 0;
+var smoothScroll = 0;
+window.addEventListener("scroll", function() {
+	targetScroll = document.documentElement.scrollTop || window.pageYOffset || 0;
+}, { passive: true });
 
 var para = 0.5;
 var cassPts = projectConstellation(consDataByName.CASSIOPEIA,
@@ -31,7 +33,9 @@ var time = 0;
 
 function animate() {
 	time++;
-	var sy = getScrollY();
+	smoothScroll += (targetScroll - smoothScroll) * 0.15;
+	if (Math.abs(smoothScroll - targetScroll) < 0.5) smoothScroll = targetScroll;
+	var sy = smoothScroll;
 	bgCtx.fillStyle = "#08081a";
 	bgCtx.fillRect(0, 0, width, pageHeight);
 	renderBgStars(bgCtx, stars, time, undefined, sy);
