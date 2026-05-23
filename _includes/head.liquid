@@ -153,3 +153,18 @@
 {% if page.tikzjax %}
   <link defer rel="stylesheet" type="text/css" href="https://tikzjax.com/v1/fonts.css">
 {% endif %}
+
+{% if page.background %}
+  {% assign bg_color = "" %}
+  {% case page.background %}
+    {% when "stars" %}{% assign bg_color = "#110E19" %}
+    {% when "aurora" %}{% assign bg_color = "#060612" %}
+    {% when "rain" %}{% assign bg_color = "#110E19" %}
+    {% when "nebula" %}{% assign bg_color = "#030308" %}
+    {% when "ocean" %}{% assign bg_color = "#0b0033" %}
+    {% when "orbital" %}{% assign bg_color = "#03040c" %}
+  {% endcase %}
+  {% if bg_color != "" %}
+    <style>body { background-color: {{ bg_color }} !important; }</style>
+  {% endif %}
+{% endif %}
