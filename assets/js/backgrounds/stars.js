@@ -144,23 +144,10 @@ function animate() {
 	bgCtx.strokeStyle = '#ffffff';
 
 	cassTime++;
-	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.4);
-	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, scrollY, 0.4);
-
-	bgCtx.font = "11px sans-serif";
-	bgCtx.textAlign = "center";
-	bgCtx.fillStyle = "rgba(255, 255, 255, 0.24)";
-	var labelX = 0, minY = Infinity;
-	var cassMains = consDataByName.CASSIOPEIA.mainIndices || [];
-	for (var j = 0; j < Math.min(5, cassMains.length); j++) {
-		var s = cassWCoords[cassMains[j]];
-		labelX += s.x;
-		if (s.y < minY) minY = s.y;
-	}
-	bgCtx.fillText("Cassiopeia", labelX / Math.min(5, cassMains.length), minY - 20 + scrollY * 0.2);
-
-	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", scrollY, 0.45);
-	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, scrollY, 0.45);
+renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.1);
+	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, scrollY, 0.1);
+	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", scrollY, 0.2);
+	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, scrollY, 0.2);
 
 	bgCtx.font = "10px sans-serif";
 	bgCtx.textAlign = "center";

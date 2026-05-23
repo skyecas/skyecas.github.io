@@ -1,3 +1,6 @@
+var cassData = consDataByName.CASSIOPEIA;
+var cassPts = [];
+
 var bg = initCanvas(function(w, h) {
 	rawWidth = w; rawHeight = h;
 	width = w; height = h;
@@ -138,9 +141,6 @@ function drawBrightCore(t) {
 }
 
 // === Cassiopeia Constellation ===
-
-var cassData = consDataByName.CASSIOPEIA;
-var cassPts = [];
 
 function projectConstellationLocal() {
   var sc = 12 * sy;
