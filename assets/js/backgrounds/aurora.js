@@ -1,26 +1,32 @@
-var bg = initCanvas(function(w, h) {
+var pageHeight;
+var bg = initCanvas(function(w, h, c) {
 	rawWidth = w; rawHeight = h;
 	width = w; height = h;
+	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
+	c.height = pageHeight;
+	c.style.height = pageHeight + "px";
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
-	distH = 4 * h;
-	stars = createBgStars(500, w, distH, {yBias: 1.2, parallax: true});
+	stars = createBgStars(500, w, pageHeight, {yBias: 1.2, parallax: true});
 	bands = [
 		new AuroraBand(80 * sy, 180, [
 			"rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"
-		], 0.0008, 0, 0.04),
+		], 0.0008, 0, 0.97),
 		new AuroraBand(120 * sy, 200, [
 			"rgba(0, 220, 120, 0.25)", "rgba(50, 255, 150, 0.2)", "rgba(150, 50, 255, 0.15)"
-		], 0.001, 2.1, 0.06),
+		], 0.001, 2.1, 0.95),
 		new AuroraBand(160 * sy, 250, [
 			"rgba(100, 255, 200, 0.2)", "rgba(200, 100, 255, 0.2)", "rgba(0, 255, 80, 0.15)"
-		], 0.0006, 4.3, 0.08),
+		], 0.0006, 4.3, 0.93),
 	];
 	extraCons = buildExtraCons();
 });
 var bgCtx = bg.ctx;
 var width = rawWidth, height = rawHeight;
 var sx = bg.sx(), sy = bg.sy(), mScale = bg.mScale();
+bg.canvas.style.position = "absolute";
+bg.canvas.style.top = "0";
+bg.canvas.style.left = "0";
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
@@ -34,7 +40,7 @@ function AuroraBand(yBase, height, colours, speed, phase, bandParallax) {
 	this.bandParallax = bandParallax !== undefined ? bandParallax : 0.04;
 }
 AuroraBand.prototype.render = function(t) {
-	var adjY = this.yBase - scrollY * this.bandParallax;
+	var adjY = this.yBase + scrollY * (1 - this.bandParallax);
 	var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + this.height + 30);
 	for (var i = 0; i < this.colours.length; i++) {
 		grad.addColorStop(i / (this.colours.length - 1), this.colours[i]);
@@ -109,19 +115,19 @@ function getDateColour() {
 function buildExtraCons() {
 	var cons = [];
 	var configs = [
-		{ name: "CASSIOPEIA", cx: width * 0.1, cy: height * 0.12, sc: 2, rC: 0, dC: 60, plx: 0.3, oM: false},
-		{ name: "ORION", cx: width * 0.85, cy: height * 0.78, sc: 8, rC: 5.5, dC: 0, plx: 0.35, oM: true},
-		{ name: "LYRA", cx: width * 0.92, cy: height * 0.1, sc: 8, rC: 18.6, dC: 38, plx: 0.32, oM: false},
-		{ name: "CYGNUS", cx: width * 0.88, cy: height * 0.32, sc: 10, rC: 20.5, dC: 40, plx: 0.28, oM: false},
-		{ name: "SCORPIUS", cx: width * 0.12, cy: height * 0.85, sc: 6, rC: 16.8, dC: -35, plx: 0.3, oM: false},
-		{ name: "ANDROMEDA", cx: width * 0.06, cy: height * 0.45, sc: 3, rC: 1.5, dC: 40, plx: 0.35, oM: false},
+		{ name: "CASSIOPEIA", cx: width * 0.1, cy: height * 0.12, sc: 2, rC: 0, dC: 60, plx: 0.3 },
+		{ name: "ORION", cx: width * 0.85, cy: height * 0.78, sc: 8, rC: 5.5, dC: 0, plx: 0.35 },
+		{ name: "LYRA", cx: width * 0.92, cy: height * 0.1, sc: 8, rC: 18.6, dC: 38, plx: 0.32 },
+		{ name: "CYGNUS", cx: width * 0.88, cy: height * 0.32, sc: 10, rC: 20.5, dC: 40, plx: 0.28 },
+		{ name: "SCORPIUS", cx: width * 0.12, cy: height * 0.85, sc: 6, rC: 16.8, dC: -35, plx: 0.3 },
+		{ name: "ANDROMEDA", cx: width * 0.06, cy: height * 0.45, sc: 3, rC: 1.5, dC: 40, plx: 0.35 },
 	];
 	for (var i = 0; i < configs.length; i++) {
 		var c = configs[i];
 		var data = consDataByName[c.name];
 		if (!data) continue;
 		cons.push({
-			pts: projectConstellation(data, c.cx, c.cy, c.sc, c.rC, c.dC, c.oM),
+			pts: projectConstellation(data, c.cx, c.cy, c.sc, c.rC, c.dC),
 			connections: data.connections,
 			mainIndices: data.mainIndices,
 			parallax: c.plx,
@@ -131,7 +137,7 @@ function buildExtraCons() {
 }
 
 function drawMountains() {
-	var baseY = height * 0.85;
+	var baseY = height * 0.85 + scrollY;
 	bgCtx.fillStyle = "#060612";
 	bgCtx.beginPath();
 	bgCtx.moveTo(0, baseY);
@@ -149,21 +155,21 @@ function animate() {
 	time++;
 
 	bgCtx.fillStyle = "#08081a";
-	bgCtx.fillRect(0, 0, width, height);
+	bgCtx.fillRect(0, 0, width, pageHeight);
 
-	var skyGrad = bgCtx.createLinearGradient(0, 0, 0, height * 0.85);
+	var skyGrad = bgCtx.createLinearGradient(0, 0, 0, pageHeight);
 	skyGrad.addColorStop(0, "#08081a");
 	skyGrad.addColorStop(0.4, "#0a0a24");
 	skyGrad.addColorStop(0.7, "#0d0d1e");
 	skyGrad.addColorStop(1, "#0a0a14");
 	bgCtx.fillStyle = skyGrad;
-	bgCtx.fillRect(0, 0, width, height);
+	bgCtx.fillRect(0, 0, width, pageHeight);
 
 	var dc = getDateColour();
 	if (dc) {
 		var pulse = Math.sin(time * 0.02) * 0.5 + 0.5;
 		for (var b of bands) {
-			var adjY = b.yBase - scrollY * b.bandParallax;
+			var adjY = b.yBase + scrollY * (1 - b.bandParallax);
 			var extra = "rgba(" + dc[0] + ", " + dc[1] + ", " + dc[2] + ", " + pulse * 0.08 + ")";
 			var colours = b.colours.slice();
 			colours.push(extra);
@@ -193,7 +199,7 @@ function animate() {
 		for (var b of bands) { b.render(time); }
 	}
 
-	renderBgStars(bgCtx, stars, time, undefined, scrollY, height);
+	renderBgStars(bgCtx, stars, time, undefined, scrollY);
 
 	for (var ec of extraCons) {
 		renderConstellationStars(bgCtx, ec.pts, ec.mainIndices, time, scrollY, ec.parallax);

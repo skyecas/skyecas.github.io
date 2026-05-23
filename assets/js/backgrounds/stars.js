@@ -1,13 +1,20 @@
-var bg = initCanvas(function(w, h) {
+var pageHeight;
+var bg = initCanvas(function(w, h, c) {
 	width = w; height = h;
+	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
+	c.height = pageHeight;
+	c.style.height = pageHeight + "px";
 });
 var bgCtx = bg.ctx;
+bg.canvas.style.position = "absolute";
+bg.canvas.style.top = "0";
+bg.canvas.style.left = "0";
 
 var scrollY = 0;
 window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
 
 bgCtx.fillStyle = "#110E19";
-bgCtx.fillRect(0, 0, width, height);
+bgCtx.fillRect(0, 0, width, pageHeight);
 
 // === Constellations ===
 var cassWCoords = projectConstellation(consDataByName.CASSIOPEIA,
@@ -108,8 +115,7 @@ var isSpecialDate = false;
 var stars = [];
 var movers = [];
 
-var distH = 4 * height;
-stars = createBgStars(600, width, distH, { parallax: true });
+stars = createBgStars(600, width, pageHeight, { parallax: true });
 
 for (var i = 10; i > 0; i--) { movers.push(new Satellite()); }
 for (var i = 1; i > 0; i--) { movers.push(new ShootingStar()); }
@@ -129,13 +135,10 @@ function animate() {
 	}
 
 	bgCtx.fillStyle = "#110E19";
-	bgCtx.fillRect(0, 0, width, height);
-
-	bgCtx.fillStyle = '#ffffff';
-	bgCtx.strokeStyle = '#ffffff';
+	bgCtx.fillRect(0, 0, width, pageHeight);
 
 	cassTime++;
-	renderBgStars(bgCtx, stars, bgTime, undefined, scrollY, height);
+	renderBgStars(bgCtx, stars, bgTime, undefined, scrollY);
 	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.1);
 	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, scrollY, 0.1);
 	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", scrollY, 0.2);
@@ -151,7 +154,7 @@ function animate() {
 		lx += s.x;
 		if (s.y > maxY) maxY = s.y;
 	}
-	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16 - scrollY * 0.2);
+	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16 + scrollY - scrollY * 0.2);
 
 	bgTime++;
 	for (let m of movers) { m.update(); }
