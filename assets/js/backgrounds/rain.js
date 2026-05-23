@@ -30,9 +30,6 @@ var bg = initCanvas(function(w, h, c) {
 });
 var bgCtx = bg.ctx;
 
-var scrollY = 0;
-window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
-
 var stars = createBgStars(800, width, height, {});
 
 function drawWindow() {

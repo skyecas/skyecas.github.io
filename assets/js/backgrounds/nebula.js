@@ -25,8 +25,9 @@ bg.canvas.style.position = "absolute";
 bg.canvas.style.top = "0";
 bg.canvas.style.left = "0";
 
-var scrollY = 0;
-window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
+function getScrollY() {
+	return document.documentElement.scrollTop || window.pageYOffset || 0;
+}
 
 var nebulaMult = 2.5;
 var scrollDrift = 0.05;
@@ -46,8 +47,8 @@ function DustLane(xBase, yBase, width, height, angle, speed) {
   this.speed = speed;
   this.phase = Math.random() * Math.PI * 2;
 }
-DustLane.prototype.update = function(t) {
-  var driftY = this.yBase + scrollY * (1 - scrollDrift);
+DustLane.prototype.update = function(t, sy) {
+  var driftY = this.yBase + sy * (1 - scrollDrift);
   bgCtx.save();
   bgCtx.translate(this.xBase, driftY);
   bgCtx.rotate(this.angle);
@@ -82,7 +83,7 @@ DustLane.prototype.update = function(t) {
   bgCtx.restore();
 };
 
-function drawNebulaGas(t) {
+function drawNebulaGas(t, sy) {
   var centres = [
     { x: 500 * sx, y: 350 * sy, rx: 450 * sx, ry: 300 * sy, colours: ["rgba(180, 40, 200, 0.1)", "rgba(120, 20, 160, 0.18)", "rgba(60, 10, 100, 0.08)"], speed: 0.00008, phase: 0 },
     { x: 900 * sx, y: 500 * sy, rx: 500 * sx, ry: 350 * sy, colours: ["rgba(30, 80, 200, 0.08)", "rgba(20, 50, 160, 0.15)", "rgba(10, 20, 100, 0.05)"], speed: -0.00006, phase: 1.5 },
@@ -99,7 +100,7 @@ function drawNebulaGas(t) {
 
   for (var c of centres) {
     var ox = Math.sin(t * 0.00003 + c.phase) * 30;
-    var oy = Math.cos(t * 0.00004 + c.phase * 0.7) * 20 + scrollY * (1 - scrollDrift);
+    var oy = Math.cos(t * 0.00004 + c.phase * 0.7) * 20 + sy * (1 - scrollDrift);
 
     var grad = bCtx.createRadialGradient(c.x + ox, c.y + oy, 0, c.x + ox, c.y + oy, Math.max(c.rx, c.ry));
     for (var i = 0; i < c.colours.length; i++) {
@@ -118,7 +119,7 @@ function drawNebulaGas(t) {
   bgCtx.filter = "none";
 }
 
-function drawBrightCore(t) {
+function drawBrightCore(t, sy) {
   var pulse = Math.sin(t * 0.005) * 0.2 + 0.8;
   var cores = [
     { x: 650 * sx, y: 380 * sy, r: 80 * mScale, colour: "rgba(200, 150, 255, " + pulse * 0.18 + ")" },
@@ -126,7 +127,7 @@ function drawBrightCore(t) {
     { x: 500 * sx, y: 300 * sy, r: 100 * mScale, colour: "rgba(255, 150, 200, " + pulse * 0.12 + ")" },
   ];
   for (var c of cores) {
-    var cy = c.y + scrollY * (1 - scrollDrift);
+    var cy = c.y + sy * (1 - scrollDrift);
     var grad = bgCtx.createRadialGradient(c.x, cy, 0, c.x, cy, c.r);
     grad.addColorStop(0, c.colour);
     grad.addColorStop(1, "rgba(0, 0, 0, 0)");
@@ -149,7 +150,7 @@ function projectConstellationLocal() {
   cassPts = projectConstellation(cassData, cx, cy, sc, 0, dC);
 }
 
-function drawConstellationLabel() {
+function drawConstellationLabel(sy) {
   bgCtx.font = "11px sans-serif";
   bgCtx.textAlign = "center";
   bgCtx.fillStyle = "rgba(255, 255, 255, 0.24)";
@@ -159,7 +160,7 @@ function drawConstellationLabel() {
     labelX += s.x;
     if (s.y < minY) minY = s.y;
   }
-  bgCtx.fillText("Cassiopeia", labelX / 5, minY - 20 + scrollY * (1 - 0.9));
+  bgCtx.fillText("Cassiopeia", labelX / 5, minY - 20 + sy * (1 - 0.9));
 }
 
 var time = 0;
@@ -170,17 +171,19 @@ function animate() {
   bgCtx.fillStyle = "#030308";
   bgCtx.fillRect(0, 0, width, pageHeight);
 
-  drawNebulaGas(time);
+  var sy = getScrollY();
 
-  for (var d of dustLanes) { d.update(time); }
+  renderBgStars(bgCtx, stars, time, undefined, sy);
 
-  drawBrightCore(time);
+	renderConstellationLines(bgCtx, cassPts, cassData.connections, "rgba(255, 255, 255, 0.15)", sy, 0.9);
+	renderConstellationStars(bgCtx, cassPts, cassData.mainIndices, time, sy, 0.9);
 
-	renderBgStars(bgCtx, stars, time, undefined, scrollY);
+  for (var d of dustLanes) { d.update(time, sy); }
 
-	renderConstellationLines(bgCtx, cassPts, cassData.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.9);
-	renderConstellationStars(bgCtx, cassPts, cassData.mainIndices, time, scrollY, 0.9);
-  drawConstellationLabel();
+  drawNebulaGas(time, sy);
+
+  drawBrightCore(time, sy);
+  drawConstellationLabel(sy);
 
   var todayKey = getDateKey();
   for (var key in consDataByName) {

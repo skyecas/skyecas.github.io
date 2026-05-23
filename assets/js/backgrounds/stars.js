@@ -10,8 +10,9 @@ bg.canvas.style.position = "absolute";
 bg.canvas.style.top = "0";
 bg.canvas.style.left = "0";
 
-var scrollY = 0;
-window.addEventListener("scroll", function() { scrollY = window.scrollY; }, { passive: true });
+function getScrollY() {
+	return document.documentElement.scrollTop || window.pageYOffset || 0;
+}
 
 bgCtx.fillStyle = "#110E19";
 bgCtx.fillRect(0, 0, width, pageHeight);
@@ -134,15 +135,17 @@ function animate() {
 		}
 	}
 
+	var sy = getScrollY();
+
 	bgCtx.fillStyle = "#110E19";
 	bgCtx.fillRect(0, 0, width, pageHeight);
 
 	cassTime++;
-	renderBgStars(bgCtx, stars, bgTime, undefined, scrollY);
-	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", scrollY, 0.7);
-	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, scrollY, 0.7);
-	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", scrollY, 0.8);
-	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, scrollY, 0.8);
+	renderBgStars(bgCtx, stars, bgTime, undefined, sy);
+	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", sy, 0.7);
+	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, sy, 0.7);
+	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", sy, 0.8);
+	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, sy, 0.8);
 
 	bgCtx.font = "10px sans-serif";
 	bgCtx.textAlign = "center";
@@ -154,7 +157,7 @@ function animate() {
 		lx += s.x;
 		if (s.y > maxY) maxY = s.y;
 	}
-	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16 + scrollY * (1 - 0.8));
+	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16 + sy * (1 - 0.8));
 
 	bgTime++;
 	for (let m of movers) { m.update(); }
