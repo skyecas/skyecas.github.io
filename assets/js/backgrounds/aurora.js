@@ -110,27 +110,33 @@ function getDateColour() {
 	return null;
 }
 
+function getY() {
+	return window.lenisScroll !== undefined ? window.lenisScroll
+		: document.documentElement.scrollTop || window.pageYOffset || 0;
+}
+
 var mountainLayers = [
-	{ colour: "#04040e", parallax: 0.98, amp: 15, freq: 0.012 },
-	{ colour: "#050510", parallax: 0.99, amp: 25, freq: 0.025 },
-	{ colour: "#060612", parallax: 1.0, amp: 35, freq: 0.04 },
+	{ colour: "#04040e", parallax: 1.0, amp: 30, freq: 0.012, heightMul: 0.35 },
+	{ colour: "#050510", parallax: 1.0, amp: 50, freq: 0.025, heightMul: 0.45 },
+	{ colour: "#060612", parallax: 1.0, amp: 70, freq: 0.04, heightMul: 0.55 },
 ];
 
 function drawMountains(sy) {
 	for (var m = 0; m < mountainLayers.length; m++) {
 		var layer = mountainLayers[m];
-		var baseY = height + sy * (1 - layer.parallax);
+		var bottomY = height + sy;
+		var topY = bottomY - height * layer.heightMul;
 		bgCtx.fillStyle = layer.colour;
 		bgCtx.beginPath();
-		bgCtx.moveTo(0, baseY);
+		bgCtx.moveTo(0, bottomY);
 		for (var x = 0; x <= width; x += 15) {
 			var h = Math.sin(x * layer.freq) * layer.amp
 				+ Math.sin(x * layer.freq * 2.5) * layer.amp * 0.4
 				+ Math.sin(x * layer.freq * 0.5) * layer.amp * 0.6;
-			bgCtx.lineTo(x, baseY - h);
+			bgCtx.lineTo(x, topY - h);
 		}
-		bgCtx.lineTo(width, baseY + 50);
-		bgCtx.lineTo(0, baseY + 50);
+		bgCtx.lineTo(width, bottomY + 200);
+		bgCtx.lineTo(0, bottomY + 200);
 		bgCtx.closePath();
 		bgCtx.fill();
 	}
@@ -140,7 +146,7 @@ var time = 0;
 
 function animate() {
 	time++;
-	var sy = window.lenisScroll !== undefined ? window.lenisScroll : 0;
+	var sy = getY();
 
 	bgCtx.fillStyle = "#08081a";
 	bgCtx.fillRect(0, 0, width, pageHeight);
