@@ -122,15 +122,20 @@ function getY() {
 }
 
 var mountainLayers = [
-	{ colour: "#030308", drift: 1, amp: 20, freq: 0.012, heightMul: 0.25 },
-	{ colour: "#050510", drift: 3, amp: 40, freq: 0.025, heightMul: 0.35 },
-	{ colour: "#08081a", drift: 6, amp: 60, freq: 0.04, heightMul: 0.45 },
+	{ colour: "#030308", drift: 0.0, amp: 20, freq: 0.012, heightMul: 0.35 },
+	{ colour: "#050510", drift: 0.15, amp: 40, freq: 0.025, heightMul: 0.45 },
+	{ colour: "#08081a", drift: 0.25, amp: 60, freq: 0.04, heightMul: 0.55 },
 ];
 
+var maxMountainScroll = 0;
+
 function drawMountains(sy) {
+	if (!maxMountainScroll) maxMountainScroll = Math.max(0, pageHeight - height);
+	var fromBottom = Math.max(0, maxMountainScroll - sy);
 	for (var m = 0; m < mountainLayers.length; m++) {
 		var layer = mountainLayers[m];
-		var bottomY = pageHeight;
+		var bottomY = pageHeight - fromBottom * layer.drift;
+		var topY = bottomY - height * layer.heightMul;
 		var topY = bottomY - height * layer.heightMul;
 		var topY = bottomY - height * layer.heightMul;
 		bgCtx.fillStyle = layer.colour;
