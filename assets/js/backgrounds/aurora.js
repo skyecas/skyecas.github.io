@@ -9,11 +9,11 @@ var bg = initCanvas(function(w, h, c) {
 	}
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
-	stars = createBgStars(500, w, pageHeight, {yBias: 1.2, parallax: true});
+	stars = createBgStars(300, w, pageHeight, {yBias: 1.2, parallax: true});
 	bands = [
-		new AuroraBand(0, height * 0.45, ["rgba(0, 255, 100, 0.25)", "rgba(0, 200, 150, 0.15)", "rgba(100, 0, 200, 0.1)"], 0.0008, 0, 0.80),
-		new AuroraBand(height * 0.3, height * 0.4, ["rgba(0, 220, 120, 0.2)", "rgba(50, 255, 150, 0.15)", "rgba(150, 50, 255, 0.1)"], 0.001, 2.1, 0.90),
-		new AuroraBand(height * 0.55, height * 0.35, ["rgba(100, 255, 200, 0.15)", "rgba(200, 100, 255, 0.15)", "rgba(0, 255, 80, 0.1)"], 0.0006, 4.3, 0.97),
+		new AuroraBand(0, height * 0.45, ["rgba(0, 255, 100, 0.4)", "rgba(0, 200, 150, 0.3)", "rgba(100, 0, 200, 0.2)"], 0.0008, 0, 0.80),
+		new AuroraBand(height * 0.3, height * 0.4, ["rgba(0, 220, 120, 0.35)", "rgba(50, 255, 150, 0.3)", "rgba(150, 50, 255, 0.2)"], 0.001, 2.1, 0.90),
+		new AuroraBand(height * 0.55, height * 0.35, ["rgba(100, 255, 200, 0.3)", "rgba(200, 100, 255, 0.25)", "rgba(0, 255, 80, 0.2)"], 0.0006, 4.3, 0.97),
 	];
 	cons = buildCons();
 });
@@ -130,7 +130,7 @@ var mountainLayers = [
 function drawMountains(sy) {
 	for (var m = 0; m < mountainLayers.length; m++) {
 		var layer = mountainLayers[m];
-		var bottomY = pageHeight - sy * layer.parallax;
+		var bottomY = sy + height - sy * layer.parallax;
 		var topY = bottomY - height * layer.heightMul;
 		bgCtx.fillStyle = layer.colour;
 		bgCtx.beginPath();
@@ -155,15 +155,15 @@ function animate() {
 	var sy = getY();
 
 	bgCtx.fillStyle = "#08081a";
-	bgCtx.fillRect(0, 0, width, pageHeight);
+	bgCtx.fillRect(0, sy, width, height);
 
-	var skyGrad = bgCtx.createLinearGradient(0, 0, 0, pageHeight);
+	var skyGrad = bgCtx.createLinearGradient(0, sy, 0, sy + height);
 	skyGrad.addColorStop(0, "#08081a");
 	skyGrad.addColorStop(0.4, "#0a0a24");
 	skyGrad.addColorStop(0.7, "#0d0d1e");
 	skyGrad.addColorStop(1, "#0a0a14");
 	bgCtx.fillStyle = skyGrad;
-	bgCtx.fillRect(0, 0, width, pageHeight);
+	bgCtx.fillRect(0, sy, width, height);
 
 	var dc = getDateColour();
 	if (dc) {
