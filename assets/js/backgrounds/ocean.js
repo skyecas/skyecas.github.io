@@ -229,8 +229,8 @@ for (var i = wavecount; i > 0; i--) {
 }
 for (var i = 10; i > 0; i--) { shootingstars.push(new ShootingStar()); }
 
-var orionPts = projectConstellation(consDataByName.ORION, 2400, 200, 8, 0, 0, true);
-var cassPts = projectConstellation(consDataByName.CASSIOPEIA, 400, 120, 8, 0, 60, true);
+var orionPts = projectConstellation(consDataByName.ORION, 2400, 200, 8, undefined, undefined, true);
+var cassPts = projectConstellation(consDataByName.CASSIOPEIA, 400, 120, 8, undefined, undefined, true);
 
 function animate() {
 	const time = performance.now() / 1000;
