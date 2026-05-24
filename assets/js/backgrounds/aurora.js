@@ -11,9 +11,9 @@ var bg = initCanvas(function(w, h, c) {
 	mScale = Math.min(sx, sy);
 	stars = createBgStars(500, w, pageHeight, {yBias: 1.2, parallax: true});
 	bands = [
-		new AuroraBand(100 * sy, 200, ["rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"], 0.0008, 0, 0.80),
-		new AuroraBand(160 * sy, 260, ["rgba(0, 220, 120, 0.25)", "rgba(50, 255, 150, 0.2)", "rgba(150, 50, 255, 0.15)"], 0.001, 2.1, 0.90),
-		new AuroraBand(240 * sy, 340, ["rgba(100, 255, 200, 0.2)", "rgba(200, 100, 255, 0.2)", "rgba(0, 255, 80, 0.15)"], 0.0006, 4.3, 0.97),
+		new AuroraBand(0, height * 0.45, ["rgba(0, 255, 100, 0.25)", "rgba(0, 200, 150, 0.15)", "rgba(100, 0, 200, 0.1)"], 0.0008, 0, 0.80),
+		new AuroraBand(height * 0.3, height * 0.4, ["rgba(0, 220, 120, 0.2)", "rgba(50, 255, 150, 0.15)", "rgba(150, 50, 255, 0.1)"], 0.001, 2.1, 0.90),
+		new AuroraBand(height * 0.55, height * 0.35, ["rgba(100, 255, 200, 0.15)", "rgba(200, 100, 255, 0.15)", "rgba(0, 255, 80, 0.1)"], 0.0006, 4.3, 0.97),
 	];
 	cons = buildCons();
 });
@@ -76,9 +76,12 @@ AuroraBand.prototype.render = function(t, sy) {
 function buildCons() {
 	var cons = [];
 	var configs = [
-		{ name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.15, cy: height * 0.12, sc: 13 * sx, rC: 1, dC: 60, plx: 0.05 },
-		{ name: "ORION", label: "Orion", cx: width * 0.85, cy: height * 0.2, sc: 8 * sx, rC: 82.5, dC: 5, plx: 0.1 },
-		{ name: "LYRA", label: "Lyra", cx: width * 0.08, cy: height * 0.35, sc: 8 * sx, rC: 282, dC: 38, plx: 0.08 },
+		{ name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.15, cy: height * 0.15, sc: 13 * sx, rC: 1, dC: 60, plx: 0.05 },
+		{ name: "ORION", label: "Orion", cx: width * 0.85, cy: height * 0.25, sc: 8 * sx, rC: 82.5, dC: 5, plx: 0.1 },
+		{ name: "LYRA", label: "Lyra", cx: width * 0.08, cy: height * 0.55, sc: 8 * sx, rC: 282, dC: 38, plx: 0.08 },
+		{ name: "CYGNUS", label: "Cygnus", cx: width * 0.75, cy: height * 0.65, sc: 8 * sx, rC: 310, dC: 40, plx: 0.06 },
+		{ name: "SCORPIUS", label: "Scorpius", cx: width * 0.2, cy: height * 0.8, sc: 6 * sx, rC: 245, dC: -35, plx: 0.07 },
+		{ name: "ANDROMEDA", label: "Andromeda", cx: width * 0.92, cy: height * 0.45, sc: 5 * sx, rC: 15, dC: 40, plx: 0.05 },
 	];
 	for (var i = 0; i < configs.length; i++) {
 		var c = configs[i];
@@ -119,16 +122,15 @@ function getY() {
 }
 
 var mountainLayers = [
-	{ colour: "#030308", parallax: 0.0, amp: 15, freq: 0.012, heightMul: 0.12 },
-	{ colour: "#050510", parallax: 0.12, amp: 30, freq: 0.025, heightMul: 0.18 },
-	{ colour: "#08081a", parallax: 0.24, amp: 50, freq: 0.04, heightMul: 0.25 },
+	{ colour: "#030308", parallax: 0, amp: 20, freq: 0.012, heightMul: 0.25 },
+	{ colour: "#050510", parallax: 0.15, amp: 40, freq: 0.025, heightMul: 0.35 },
+	{ colour: "#08081a", parallax: 0.3, amp: 60, freq: 0.04, heightMul: 0.45 },
 ];
 
 function drawMountains(sy) {
 	for (var m = 0; m < mountainLayers.length; m++) {
 		var layer = mountainLayers[m];
 		var bottomY = pageHeight - sy * layer.parallax;
-		var topY = bottomY - height * layer.heightMul;
 		var topY = bottomY - height * layer.heightMul;
 		bgCtx.fillStyle = layer.colour;
 		bgCtx.beginPath();
@@ -168,9 +170,8 @@ function animate() {
 		var pulse = Math.sin(time * 0.02) * 0.5 + 0.5;
 		for (var b of bands) {
 			var adjY = b.yBase + sy * (1 - b.bandParallax);
-			var extra = "rgba(" + dc[0] + ", " + dc[1] + ", " + dc[2] + ", " + pulse * 0.08 + ")";
 			var colours = b.colours.slice();
-			colours.push(extra);
+			colours.push("rgba(" + dc[0] + ", " + dc[1] + ", " + dc[2] + ", " + pulse * 0.08 + ")");
 			var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + b.height + 30);
 			for (var i = 0; i < colours.length; i++)
 				grad.addColorStop(i / (colours.length - 1), colours[i]);
@@ -202,23 +203,21 @@ function animate() {
 		renderConstellationLines(bgCtx, ec.pts, ec.connections, "rgba(255, 255, 255, 0.15)", sy, ec.parallax);
 	}
 
-	// Constellation labels
+	// Labels below lowest main star of each constellation
 	bgCtx.font = "11px sans-serif";
 	bgCtx.textAlign = "center";
 	bgCtx.fillStyle = "rgba(255, 255, 255, 0.2)";
 	for (var ec of cons) {
 		if (!ec.pts || ec.pts.length === 0 || !ec.label) continue;
-		var lx = 0, ly = 0, n = 0;
-		var mains = ec.mainIndices || [];
-		if (mains.length === 0) { lx = ec.pts[0].x; ly = ec.pts[0].y; n = 1; }
-		else {
-			for (var j = 0; j < Math.min(4, mains.length); j++) {
-				var p = ec.pts[mains[j]];
-				if (p) { lx += p.x; ly += p.y; n++; }
-			}
+		var lx = 0, lowestY = -Infinity, n = 0;
+		var idxs = ec.mainIndices || [];
+		if (idxs.length === 0) idxs = [0];
+		for (var j = 0; j < Math.min(4, idxs.length); j++) {
+			var p = ec.pts[idxs[j]];
+			if (p) { lx += p.x; n++; if (p.y > lowestY) lowestY = p.y; }
 		}
 		if (n > 0) {
-			bgCtx.fillText(ec.label, lx / n, ly / n + 16 + sy * (1 - ec.parallax));
+			bgCtx.fillText(ec.label, lx / n, lowestY + 16 + sy * (1 - ec.parallax));
 		}
 	}
 
