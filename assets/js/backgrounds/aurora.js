@@ -4,9 +4,9 @@ var bg = initCanvas(function(w, h, c) {
 	width = w; height = h;
 	if (!pageHeight) {
 		pageHeight = Math.max(document.body.scrollHeight, h) || h;
-		c.height = pageHeight;
-		c.style.height = pageHeight + "px";
 	}
+	c.height = pageHeight;
+	c.style.height = pageHeight + "px";
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
 	stars = createBgStars(300, w, pageHeight, {yBias: 1.2, parallax: true, twinkle: false});
@@ -76,12 +76,12 @@ AuroraBand.prototype.render = function(t, sy) {
 function buildCons() {
 	var cons = [];
 	var configs = [
-		{ name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.15, cy: height * 0.15, sc: 13 * sx, plx: 0.05 },
-		{ name: "ORION", label: "Orion", cx: width * 0.85, cy: height * 0.25, sc: 8 * sx, plx: 0.1 },
-		{ name: "LYRA", label: "Lyra", cx: width * 0.08, cy: height * 0.55, sc: 8 * sx, plx: 0.08 },
-		{ name: "CYGNUS", label: "Cygnus", cx: width * 0.75, cy: height * 0.65, sc: 8 * sx, plx: 0.06 },
-		{ name: "SCORPIUS", label: "Scorpius", cx: width * 0.2, cy: height * 0.8, sc: 6 * sx, plx: 0.07 },
-		{ name: "ANDROMEDA", label: "Andromeda", cx: width * 0.92, cy: height * 0.45, sc: 5 * sx, plx: 0.05 },
+		{ name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.08, cy: height * 0.12, sc: 13 * sx, plx: 0.05 },
+		{ name: "ORION", label: "Orion", cx: width * 0.92, cy: height * 0.2, sc: 8 * sx, plx: 0.1 },
+		{ name: "LYRA", label: "Lyra", cx: width * 0.06, cy: height * 0.5, sc: 8 * sx, plx: 0.08 },
+		{ name: "CYGNUS", label: "Cygnus", cx: width * 0.88, cy: height * 0.55, sc: 8 * sx, plx: 0.06 },
+		{ name: "SCORPIUS", label: "Scorpius", cx: width * 0.12, cy: height * 0.82, sc: 6 * sx, plx: 0.07 },
+		{ name: "ANDROMEDA", label: "Andromeda", cx: width * 0.94, cy: height * 0.4, sc: 5 * sx, plx: 0.05 },
 	];
 	for (var i = 0; i < configs.length; i++) {
 		var c = configs[i];
@@ -122,23 +122,24 @@ function getY() {
 }
 
 var mountainLayers = [
-	{ colour: "#030308", parallax: 0, amp: 20, freq: 0.012, heightMul: 0.25 },
-	{ colour: "#050510", parallax: 0.15, amp: 40, freq: 0.025, heightMul: 0.35 },
-	{ colour: "#08081a", parallax: 0.3, amp: 60, freq: 0.04, heightMul: 0.45 },
+	{ colour: "#030308", drift: 1, amp: 20, freq: 0.012, heightMul: 0.25 },
+	{ colour: "#050510", drift: 3, amp: 40, freq: 0.025, heightMul: 0.35 },
+	{ colour: "#08081a", drift: 6, amp: 60, freq: 0.04, heightMul: 0.45 },
 ];
 
 function drawMountains(sy) {
 	for (var m = 0; m < mountainLayers.length; m++) {
 		var layer = mountainLayers[m];
-		var bottomY = pageHeight - sy * layer.parallax;
+		var bottomY = pageHeight;
+		var topY = bottomY - height * layer.heightMul;
 		var topY = bottomY - height * layer.heightMul;
 		bgCtx.fillStyle = layer.colour;
 		bgCtx.beginPath();
 		bgCtx.moveTo(0, bottomY);
 		for (var x = 0; x <= width; x += 15) {
-			var h = Math.sin(x * layer.freq) * layer.amp
-				+ Math.sin(x * layer.freq * 2.5) * layer.amp * 0.4
-				+ Math.sin(x * layer.freq * 0.5) * layer.amp * 0.6;
+			var h = Math.sin(x * layer.freq + sy * layer.drift * 0.001) * layer.amp
+				+ Math.sin(x * layer.freq * 2.5 + sy * layer.drift * 0.002) * layer.amp * 0.4
+				+ Math.sin(x * layer.freq * 0.5 + sy * layer.drift * 0.0005) * layer.amp * 0.6;
 			bgCtx.lineTo(x, topY - h);
 		}
 		bgCtx.lineTo(width, bottomY + 200);

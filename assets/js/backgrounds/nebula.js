@@ -5,7 +5,7 @@ var pageHeight;
 var bg = initCanvas(function(w, h, c) {
 	rawWidth = w; rawHeight = h;
 	width = w; height = h;
-	pageHeight = Math.max(document.body.scrollHeight, h) || h;
+	if (!pageHeight) pageHeight = Math.max(document.body.scrollHeight, h) || h;
 	c.height = pageHeight;
 	c.style.height = pageHeight + "px";
 	sx = w / 1920; sy = h / 1080;
