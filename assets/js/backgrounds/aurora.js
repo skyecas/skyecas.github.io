@@ -130,7 +130,7 @@ var mountainLayers = [
 function drawMountains(sy) {
 	for (var m = 0; m < mountainLayers.length; m++) {
 		var layer = mountainLayers[m];
-		var bottomY = sy + height - sy * layer.parallax;
+		var bottomY = pageHeight - sy * layer.parallax;
 		var topY = bottomY - height * layer.heightMul;
 		bgCtx.fillStyle = layer.colour;
 		bgCtx.beginPath();
