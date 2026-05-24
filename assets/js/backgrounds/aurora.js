@@ -9,15 +9,13 @@ var bg = initCanvas(function(w, h, c) {
 	c.style.height = pageHeight + "px";
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
-	stars = createBgStars(300, w, pageHeight, {yBias: 1.2, parallax: true, twinkle: false});
+	stars = createBgStars(200, w, pageHeight, {yBias: 1.2, parallax: true, twinkle: false});
 	bands = [
 		new AuroraBand(0, height * 0.3, ["rgba(0, 255, 100, 0.35)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"], 0.0006, 0, 0.80),
-		new AuroraBand(height * 0.05, height * 0.35, ["rgba(50, 200, 255, 0.2)", "rgba(200, 50, 255, 0.2)", "rgba(255, 100, 150, 0.15)"], 0.001, 1.5, 0.83),
-		new AuroraBand(height * 0.2, height * 0.25, ["rgba(0, 220, 120, 0.3)", "rgba(50, 200, 100, 0.25)", "rgba(150, 50, 255, 0.15)"], 0.0008, 3.2, 0.87),
-		new AuroraBand(height * 0.3, height * 0.3, ["rgba(200, 50, 200, 0.2)", "rgba(255, 100, 150, 0.2)", "rgba(0, 200, 200, 0.15)"], 0.0005, 0.8, 0.90),
-		new AuroraBand(height * 0.42, height * 0.28, ["rgba(100, 255, 200, 0.25)", "rgba(200, 100, 255, 0.2)", "rgba(0, 255, 80, 0.15)"], 0.0007, 5.1, 0.93),
-		new AuroraBand(height * 0.52, height * 0.3, ["rgba(0, 180, 100, 0.2)", "rgba(180, 50, 200, 0.15)", "rgba(255, 150, 50, 0.1)"], 0.0009, 2.7, 0.95),
-		new AuroraBand(height * 0.65, height * 0.28, ["rgba(50, 220, 150, 0.2)", "rgba(150, 50, 200, 0.15)", "rgba(50, 100, 255, 0.1)"], 0.0004, 4.0, 0.97),
+		new AuroraBand(height * 0.12, height * 0.3, ["rgba(0, 220, 120, 0.3)", "rgba(50, 200, 100, 0.25)", "rgba(150, 50, 255, 0.15)"], 0.0008, 3.2, 0.87),
+		new AuroraBand(height * 0.28, height * 0.3, ["rgba(200, 50, 200, 0.2)", "rgba(255, 100, 150, 0.2)", "rgba(0, 200, 200, 0.15)"], 0.0005, 0.8, 0.90),
+		new AuroraBand(height * 0.42, height * 0.28, ["rgba(100, 255, 200, 0.25)", "rgba(200, 100, 255, 0.2)", "rgba(0, 255, 80, 0.15)"], 0.0007, 5.1, 0.95),
+		new AuroraBand(height * 0.58, height * 0.3, ["rgba(0, 180, 100, 0.2)", "rgba(180, 50, 200, 0.15)", "rgba(255, 150, 50, 0.1)"], 0.0009, 2.7, 0.97),
 	];
 	cons = buildCons();
 });
@@ -46,7 +44,7 @@ AuroraBand.prototype.render = function(t, sy) {
 	bgCtx.fillStyle = grad;
 	bgCtx.beginPath();
 	bgCtx.moveTo(0, adjY);
-	for (var x = 0; x <= width; x += 8) {
+	for (var x = 0; x <= width; x += 16) {
 		var y = adjY + Math.sin(x * 0.008 + t * this.speed + this.phase) * 25
 			+ Math.sin(x * 0.015 + t * this.speed * 0.7 + this.phase * 1.3) * 15
 			+ Math.sin(x * 0.003 + t * this.speed * 1.3 + this.phase * 0.7) * 20;
@@ -63,7 +61,7 @@ AuroraBand.prototype.render = function(t, sy) {
 	bgCtx.fillStyle = grad;
 	bgCtx.beginPath();
 	bgCtx.moveTo(0, adjY);
-	for (var x = 0; x <= width; x += 8) {
+	for (var x = 0; x <= width; x += 16) {
 		var y = adjY + Math.sin(x * 0.008 + t * this.speed + this.phase) * 25
 			+ Math.sin(x * 0.015 + t * this.speed * 0.7 + this.phase * 1.3) * 15
 			+ Math.sin(x * 0.003 + t * this.speed * 1.3 + this.phase * 0.7) * 20;
@@ -145,7 +143,7 @@ function drawMountains(sy) {
 		bgCtx.fillStyle = layer.colour;
 		bgCtx.beginPath();
 		bgCtx.moveTo(0, bottomY);
-		for (var x = 0; x <= width; x += 15) {
+		for (var x = 0; x <= width; x += 20) {
 			var h = Math.sin(x * layer.freq + sy * layer.drift * 0.001) * layer.amp
 				+ Math.sin(x * layer.freq * 2.5 + sy * layer.drift * 0.002) * layer.amp * 0.4
 				+ Math.sin(x * layer.freq * 0.5 + sy * layer.drift * 0.0005) * layer.amp * 0.6;
@@ -188,9 +186,10 @@ function animate() {
 			bgCtx.save();
 			bgCtx.globalAlpha = 0.3;
 			bgCtx.fillStyle = grad;
-			bgCtx.beginPath();
-			bgCtx.moveTo(0, adjY);
-			for (var x = 0; x <= width; x += 8) {
+var step = 16;
+	bgCtx.beginPath();
+	bgCtx.moveTo(0, adjY);
+	for (var x = 0; x <= width; x += step) {
 				var y = adjY + Math.sin(x * 0.008 + time * b.speed + b.phase) * 25
 					+ Math.sin(x * 0.015 + time * b.speed * 0.7 + b.phase * 1.3) * 15
 					+ Math.sin(x * 0.003 + time * b.speed * 1.3 + b.phase * 0.7) * 20;
