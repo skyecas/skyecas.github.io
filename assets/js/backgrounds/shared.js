@@ -638,6 +638,9 @@ function renderBgStar(ctx, star, time, alpha, scrollY, height) {
   if (scrollY !== undefined && star.depth !== undefined) {
     ty = star.y + scrollY * (1 - star.depth);
   }
+  if (scrollY !== undefined && height !== undefined) {
+    if (ty < scrollY - 50 || ty > scrollY + height + 50) return;
+  }
   var twinkle = 0.5 + 0.5 * Math.sin(time * star.speed + star.phase);
   var a = (alpha !== undefined ? alpha : 1) * (0.3 + 0.7 * twinkle);
   ctx.fillStyle = hexToRgba(star.colour, a);
@@ -707,22 +710,21 @@ function renderConstellationLines(ctx, pts, connections, style, scrollY, paralla
   }
 }
 
-// Draw constellation stars with glow; main stars always visible
+// Draw constellation stars with glow; only main indices are rendered
 function renderConstellationStars(ctx, pts, mainIndices, time, scrollY, parallax) {
   var dy = scrollY && parallax ? -scrollY * parallax : 0;
-  for (var i = 0; i < pts.length; i++) {
+  for (var mi = 0; mi < (mainIndices || []).length; mi++) {
+    var i = mainIndices[mi];
     var p = pts[i];
-    var isMain = mainIndices && mainIndices.indexOf(i) !== -1;
-    var glow = isMain ? 1 : 0.4;
-    // Main stars always at least 40% brightness; non-main can drop to 0
+    if (!p) continue;
     var twinkle = 0.6 + 0.4 * Math.sin(time * 0.02 + i * 1.7);
-    var visible = isMain ? 0.4 + 0.6 * twinkle : twinkle;
-    var r = hexToRgba(p.colour, glow * 0.3 * visible);
+    var visible = 0.4 + 0.6 * twinkle;
+    var r = hexToRgba(p.colour, 0.3 * visible);
     ctx.fillStyle = r;
     ctx.beginPath();
     ctx.arc(p.x, p.y + scrollY + dy, p.size * 2, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = hexToRgba(p.colour, glow * visible);
+    ctx.fillStyle = hexToRgba(p.colour, visible);
     ctx.beginPath();
     ctx.arc(p.x, p.y + scrollY + dy, p.size, 0, Math.PI * 2);
     ctx.fill();
