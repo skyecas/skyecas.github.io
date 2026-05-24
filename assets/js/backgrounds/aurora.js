@@ -11,9 +11,13 @@ var bg = initCanvas(function(w, h, c) {
 	mScale = Math.min(sx, sy);
 	stars = createBgStars(300, w, pageHeight, {yBias: 1.2, parallax: true, twinkle: false});
 	bands = [
-		new AuroraBand(0, height * 0.45, ["rgba(0, 255, 100, 0.4)", "rgba(0, 200, 150, 0.3)", "rgba(100, 0, 200, 0.2)"], 0.0008, 0, 0.80),
-		new AuroraBand(height * 0.3, height * 0.4, ["rgba(0, 220, 120, 0.35)", "rgba(50, 255, 150, 0.3)", "rgba(150, 50, 255, 0.2)"], 0.001, 2.1, 0.90),
-		new AuroraBand(height * 0.55, height * 0.35, ["rgba(100, 255, 200, 0.3)", "rgba(200, 100, 255, 0.25)", "rgba(0, 255, 80, 0.2)"], 0.0006, 4.3, 0.97),
+		new AuroraBand(0, height * 0.3, ["rgba(0, 255, 100, 0.35)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"], 0.0006, 0, 0.80),
+		new AuroraBand(height * 0.05, height * 0.35, ["rgba(50, 200, 255, 0.2)", "rgba(200, 50, 255, 0.2)", "rgba(255, 100, 150, 0.15)"], 0.001, 1.5, 0.83),
+		new AuroraBand(height * 0.2, height * 0.25, ["rgba(0, 220, 120, 0.3)", "rgba(50, 200, 100, 0.25)", "rgba(150, 50, 255, 0.15)"], 0.0008, 3.2, 0.87),
+		new AuroraBand(height * 0.3, height * 0.3, ["rgba(200, 50, 200, 0.2)", "rgba(255, 100, 150, 0.2)", "rgba(0, 200, 200, 0.15)"], 0.0005, 0.8, 0.90),
+		new AuroraBand(height * 0.42, height * 0.28, ["rgba(100, 255, 200, 0.25)", "rgba(200, 100, 255, 0.2)", "rgba(0, 255, 80, 0.15)"], 0.0007, 5.1, 0.93),
+		new AuroraBand(height * 0.52, height * 0.3, ["rgba(0, 180, 100, 0.2)", "rgba(180, 50, 200, 0.15)", "rgba(255, 150, 50, 0.1)"], 0.0009, 2.7, 0.95),
+		new AuroraBand(height * 0.65, height * 0.28, ["rgba(50, 220, 150, 0.2)", "rgba(150, 50, 200, 0.15)", "rgba(50, 100, 255, 0.1)"], 0.0004, 4.0, 0.97),
 	];
 	cons = buildCons();
 });
