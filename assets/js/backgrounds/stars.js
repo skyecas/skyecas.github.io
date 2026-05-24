@@ -1,7 +1,7 @@
 var pageHeight;
 var bg = initCanvas(function(w, h, c) {
 	width = w; height = h;
-	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
+	pageHeight = Math.max(document.body.scrollHeight, h) || h;
 	c.height = pageHeight;
 	c.style.height = pageHeight + "px";
 });
