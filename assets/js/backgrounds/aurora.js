@@ -26,51 +26,50 @@ bg.canvas.style.position = "absolute";
 bg.canvas.style.top = "0";
 bg.canvas.style.left = "0";
 
-function AuroraBand(yBase, height, colours, speed, phase, bandParallax) {
+function AuroraBand(yBase, h, colours, speed, phase, bandParallax) {
 	this.yBase = yBase;
-	this.height = height;
+	this.h = h;
 	this.colours = colours;
 	this.speed = speed;
 	this.phase = phase;
 	this.bandParallax = bandParallax || 0.97;
+	// Pre-render noise shape at 2x width to allow horizontal panning
+	var bufW = Math.ceil(width * 2);
+	var bufH = Math.ceil(h + 80);
+	var buf = document.createElement("canvas");
+	buf.width = bufW;
+	buf.height = bufH;
+	var bx = buf.getContext("2d");
+	bx.beginPath();
+	bx.moveTo(0, 30);
+	for (var xi = 0; xi <= bufW; xi += 16) {
+		var yy = 30 + Math.sin(xi * 0.008) * 25 + Math.sin(xi * 0.015) * 15 + Math.sin(xi * 0.003) * 20;
+		bx.lineTo(xi, yy);
+	}
+	bx.lineTo(bufW, 30 + this.h);
+	bx.lineTo(0, 30 + this.h);
+	bx.closePath();
+	this._shapeBuf = buf;
+	this._shapeCtx = bx;
 }
 AuroraBand.prototype.render = function(t, sy) {
 	var adjY = this.yBase + sy * (1 - this.bandParallax);
-	var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + this.height + 30);
+	var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + this.h + 30);
 	for (var i = 0; i < this.colours.length; i++)
 		grad.addColorStop(i / (this.colours.length - 1), this.colours[i]);
+	var ox = (t * this.speed * 500 + this.phase * 200) % (width * 2);
+	// Solid pass
 	bgCtx.save();
 	bgCtx.globalAlpha = 0.18;
 	bgCtx.fillStyle = grad;
-	bgCtx.beginPath();
-	bgCtx.moveTo(0, adjY);
-	for (var x = 0; x <= width; x += 16) {
-		var y = adjY + Math.sin(x * 0.008 + t * this.speed + this.phase) * 25
-			+ Math.sin(x * 0.015 + t * this.speed * 0.7 + this.phase * 1.3) * 15
-			+ Math.sin(x * 0.003 + t * this.speed * 1.3 + this.phase * 0.7) * 20;
-		bgCtx.lineTo(x, y);
-	}
-	bgCtx.lineTo(width, adjY + this.height);
-	bgCtx.lineTo(0, adjY + this.height);
-	bgCtx.closePath();
-	bgCtx.fill();
+	bgCtx.drawImage(this._shapeBuf, ox, 0, width, this._shapeBuf.height, 0, adjY, width, this._shapeBuf.height);
 	bgCtx.restore();
+	// Blurred glow pass
 	bgCtx.save();
 	bgCtx.globalAlpha = 0.15;
 	bgCtx.filter = "blur(20px)";
 	bgCtx.fillStyle = grad;
-	bgCtx.beginPath();
-	bgCtx.moveTo(0, adjY);
-	for (var x = 0; x <= width; x += 16) {
-		var y = adjY + Math.sin(x * 0.008 + t * this.speed + this.phase) * 25
-			+ Math.sin(x * 0.015 + t * this.speed * 0.7 + this.phase * 1.3) * 15
-			+ Math.sin(x * 0.003 + t * this.speed * 1.3 + this.phase * 0.7) * 20;
-		bgCtx.lineTo(x, y);
-	}
-	bgCtx.lineTo(width, adjY + this.height + 40);
-	bgCtx.lineTo(0, adjY + this.height + 40);
-	bgCtx.closePath();
-	bgCtx.fill();
+	bgCtx.drawImage(this._shapeBuf, ox, 0, width, this._shapeBuf.height, 0, adjY, width, this._shapeBuf.height + 40);
 	bgCtx.restore();
 	bgCtx.filter = "none";
 };
@@ -180,25 +179,14 @@ function animate() {
 			var adjY = b.yBase + sy * (1 - b.bandParallax);
 			var colours = b.colours.slice();
 			colours.push("rgba(" + dc[0] + ", " + dc[1] + ", " + dc[2] + ", " + pulse * 0.08 + ")");
-			var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + b.height + 30);
+			var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + b.h + 30);
 			for (var i = 0; i < colours.length; i++)
 				grad.addColorStop(i / (colours.length - 1), colours[i]);
+			var ox = (time * b.speed * 500 + b.phase * 200) % (width * 2);
 			bgCtx.save();
 			bgCtx.globalAlpha = 0.3;
 			bgCtx.fillStyle = grad;
-var step = 16;
-	bgCtx.beginPath();
-	bgCtx.moveTo(0, adjY);
-	for (var x = 0; x <= width; x += step) {
-				var y = adjY + Math.sin(x * 0.008 + time * b.speed + b.phase) * 25
-					+ Math.sin(x * 0.015 + time * b.speed * 0.7 + b.phase * 1.3) * 15
-					+ Math.sin(x * 0.003 + time * b.speed * 1.3 + b.phase * 0.7) * 20;
-				bgCtx.lineTo(x, y);
-			}
-			bgCtx.lineTo(width, adjY + b.height);
-			bgCtx.lineTo(0, adjY + b.height);
-			bgCtx.closePath();
-			bgCtx.fill();
+			bgCtx.drawImage(b._shapeBuf, ox, 0, width, b._shapeBuf.height, 0, adjY, width, b._shapeBuf.height);
 			bgCtx.restore();
 		}
 	} else {
