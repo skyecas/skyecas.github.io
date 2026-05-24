@@ -49,27 +49,32 @@ function AuroraBand(yBase, h, colours, speed, phase, bandParallax) {
     bx.lineTo(bufW, 30 + this.h);
     bx.lineTo(0, 30 + this.h);
     bx.closePath();
+    bx.fillStyle = "white";
+    bx.fill();
     this._shapeBuf = buf;
-    this._shapeCtx = bx;
 }
 AuroraBand.prototype.render = function (t, sy) {
     var adjY = this.yBase + sy * (1 - this.bandParallax);
     var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + this.h + 30);
     for (var i = 0; i < this.colours.length; i++)
         grad.addColorStop(i / (this.colours.length - 1), this.colours[i]);
-    var ox = (t * this.speed * 500 + this.phase * 200) % (width * 2);
+    var ox = (t * this.speed * 500 + this.phase * 200) % (this._shapeBuf.width - width);
     // Solid pass
     bgCtx.save();
     bgCtx.globalAlpha = 0.18;
-    bgCtx.fillStyle = grad;
     bgCtx.drawImage(this._shapeBuf, ox, 0, width, this._shapeBuf.height, 0, adjY, width, this._shapeBuf.height);
+    bgCtx.globalCompositeOperation = "source-in";
+    bgCtx.fillStyle = grad;
+    bgCtx.fillRect(0, adjY, width, this._shapeBuf.height);
     bgCtx.restore();
     // Blurred glow pass
     bgCtx.save();
     bgCtx.globalAlpha = 0.15;
     bgCtx.filter = "blur(20px)";
-    bgCtx.fillStyle = grad;
     bgCtx.drawImage(this._shapeBuf, ox, 0, width, this._shapeBuf.height, 0, adjY, width, this._shapeBuf.height + 40);
+    bgCtx.globalCompositeOperation = "source-in";
+    bgCtx.fillStyle = grad;
+    bgCtx.fillRect(0, adjY, width, this._shapeBuf.height + 40);
     bgCtx.restore();
     bgCtx.filter = "none";
 };
@@ -77,10 +82,10 @@ AuroraBand.prototype.render = function (t, sy) {
 function buildCons() {
     var cons = [];
     var configs = [
-        { name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.08, cy: height * 0.35, sc: 13 * sx, plx: 0.05 },
+        { name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.08, cy: height * 0.25, sc: 13 * sx, plx: 0.05 },
         { name: "ORION", label: "Orion", cx: width * 0.92, cy: height * 0.2, sc: 8 * sx, plx: 0.1 },
         { name: "LYRA", label: "Lyra", cx: width * 0.06, cy: height * 0.5, sc: 8 * sx, plx: 0.08 },
-        { name: "CYGNUS", label: "Cygnus", cx: width * 0.82, cy: height * 0.7, sc: 8 * sx, plx: 0.06 },
+        { name: "CYGNUS", label: "Cygnus", cx: width * 0.82, cy: height * 0.7, sc: 8 * sx, plx: 0.085 },
         { name: "SCORPIUS", label: "Scorpius", cx: width * 0.12, cy: height * 0.82, sc: 6 * sx, plx: 0.07 },
         { name: "ANDROMEDA", label: "Andromeda", cx: width * 0.75, cy: height * 0.3, sc: 5 * sx, plx: 0.05 },
     ];
@@ -182,22 +187,13 @@ function animate() {
             var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + b.h + 30);
             for (var i = 0; i < colours.length; i++)
                 grad.addColorStop(i / (colours.length - 1), colours[i]);
-var ox = (time * b.speed * 500 + b.phase * 200) % (b._bufW - width);
+var ox = (time * b.speed * 500 + b.phase * 200) % (b._shapeBuf.width - width);
 			bgCtx.save();
 			bgCtx.globalAlpha = 0.3;
+			bgCtx.drawImage(b._shapeBuf, ox, 0, width, b._shapeBuf.height, 0, adjY, width, b._shapeBuf.height);
+			bgCtx.globalCompositeOperation = "source-in";
 			bgCtx.fillStyle = grad;
-			bgCtx.beginPath();
-			bgCtx.moveTo(0, adjY);
-			for (var pi = 0; pi < b._pts.length; pi++) {
-				var xi = b._pts[pi];
-				if (xi < ox || xi > ox + width) continue;
-				var yi = adjY + Math.sin((xi - ox) * 0.008) * 25 + Math.sin((xi - ox) * 0.015) * 15 + Math.sin((xi - ox) * 0.003) * 20;
-				bgCtx.lineTo(xi - ox, yi);
-			}
-			bgCtx.lineTo(width, adjY + b.h);
-			bgCtx.lineTo(0, adjY + b.h);
-			bgCtx.closePath();
-			bgCtx.fill();
+			bgCtx.fillRect(0, adjY, width, b._shapeBuf.height);
 			bgCtx.restore();
         }
     } else {
