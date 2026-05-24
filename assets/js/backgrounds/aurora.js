@@ -2,16 +2,16 @@ var pageHeight;
 var bg = initCanvas(function(w, h, c) {
 	rawWidth = w; rawHeight = h;
 	width = w; height = h;
-	pageHeight = Math.max(h * 4, document.body.scrollHeight || h * 4);
+	pageHeight = Math.max(document.body.scrollHeight, h) || h;
 	c.height = pageHeight;
 	c.style.height = pageHeight + "px";
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
 	stars = createBgStars(500, w, pageHeight, {yBias: 1.2, parallax: true});
 	bands = [
-		new AuroraBand(80 * sy, 180, ["rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"], 0.0008, 0, 0.97),
-		new AuroraBand(120 * sy, 200, ["rgba(0, 220, 120, 0.25)", "rgba(50, 255, 150, 0.2)", "rgba(150, 50, 255, 0.15)"], 0.001, 2.1, 0.95),
-		new AuroraBand(160 * sy, 250, ["rgba(100, 255, 200, 0.2)", "rgba(200, 100, 255, 0.2)", "rgba(0, 255, 80, 0.15)"], 0.0006, 4.3, 0.93),
+		new AuroraBand(80 * sy, 180, ["rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"], 0.0008, 0, 0.85),
+		new AuroraBand(120 * sy, 200, ["rgba(0, 220, 120, 0.25)", "rgba(50, 255, 150, 0.2)", "rgba(150, 50, 255, 0.15)"], 0.001, 2.1, 0.92),
+		new AuroraBand(160 * sy, 250, ["rgba(100, 255, 200, 0.2)", "rgba(200, 100, 255, 0.2)", "rgba(0, 255, 80, 0.15)"], 0.0006, 4.3, 0.97),
 	];
 	cons = buildCons();
 });
@@ -74,9 +74,9 @@ AuroraBand.prototype.render = function(t, sy) {
 function buildCons() {
 	var cons = [];
 	var configs = [
-		{ name: "CASSIOPEIA", cx: width * 0.1, cy: height * 0.12, sc: 18, rC: 0, dC: 60, plx: 0.25 },
-		{ name: "ORION", cx: width * 0.85, cy: height * 0.78, sc: 18, rC: 5.5, dC: 0, plx: 0.3 },
-		{ name: "LYRA", cx: width * 0.92, cy: height * 0.1, sc: 18, rC: 18.6, dC: 38, plx: 0.2 },
+		{ name: "CASSIOPEIA", cx: width * 0.15, cy: height * 0.12, sc: 18, rC: 0, dC: 60, plx: 0.05 },
+		{ name: "ORION", cx: width * 0.85, cy: height * 0.78, sc: 18, rC: 5.5, dC: 0, plx: 0.1 },
+		{ name: "LYRA", cx: width * 0.92, cy: height * 0.1, sc: 18, rC: 18.6, dC: 38, plx: 0.08 },
 	];
 	for (var i = 0; i < configs.length; i++) {
 		var c = configs[i];
