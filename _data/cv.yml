@@ -1,0 +1,19 @@
+# CV data (YAML format)
+# Used as fallback when assets/json/resume.json is not found
+basics:
+  name: "Your Name"
+  label: "Title"
+  email: ""
+  summary: "Your summary here"
+
+education: []
+work: []
+skills: []
+projects: []
+publications: []
+volunteer: []
+certificates: []
+awards: []
+languages: []
+interests: []
+references: []
