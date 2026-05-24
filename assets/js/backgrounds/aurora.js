@@ -2,16 +2,18 @@ var pageHeight;
 var bg = initCanvas(function(w, h, c) {
 	rawWidth = w; rawHeight = h;
 	width = w; height = h;
-	pageHeight = Math.max(document.body.scrollHeight, h) || h;
-	c.height = pageHeight;
-	c.style.height = pageHeight + "px";
+	if (!pageHeight) {
+		pageHeight = Math.max(document.body.scrollHeight, h) || h;
+		c.height = pageHeight;
+		c.style.height = pageHeight + "px";
+	}
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
 	stars = createBgStars(500, w, pageHeight, {yBias: 1.2, parallax: true});
 	bands = [
-		new AuroraBand(80 * sy, 180, ["rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"], 0.0008, 0, 0.85),
-		new AuroraBand(120 * sy, 200, ["rgba(0, 220, 120, 0.25)", "rgba(50, 255, 150, 0.2)", "rgba(150, 50, 255, 0.15)"], 0.001, 2.1, 0.92),
-		new AuroraBand(160 * sy, 250, ["rgba(100, 255, 200, 0.2)", "rgba(200, 100, 255, 0.2)", "rgba(0, 255, 80, 0.15)"], 0.0006, 4.3, 0.97),
+		new AuroraBand(100 * sy, 200, ["rgba(0, 255, 100, 0.3)", "rgba(0, 200, 150, 0.2)", "rgba(100, 0, 200, 0.15)"], 0.0008, 0, 0.80),
+		new AuroraBand(160 * sy, 260, ["rgba(0, 220, 120, 0.25)", "rgba(50, 255, 150, 0.2)", "rgba(150, 50, 255, 0.15)"], 0.001, 2.1, 0.90),
+		new AuroraBand(240 * sy, 340, ["rgba(100, 255, 200, 0.2)", "rgba(200, 100, 255, 0.2)", "rgba(0, 255, 80, 0.15)"], 0.0006, 4.3, 0.97),
 	];
 	cons = buildCons();
 });
@@ -74,9 +76,9 @@ AuroraBand.prototype.render = function(t, sy) {
 function buildCons() {
 	var cons = [];
 	var configs = [
-		{ name: "CASSIOPEIA", cx: width * 0.15, cy: height * 0.12, sc: 18, rC: 0, dC: 60, plx: 0.05 },
-		{ name: "ORION", cx: width * 0.85, cy: height * 0.78, sc: 18, rC: 5.5, dC: 0, plx: 0.1 },
-		{ name: "LYRA", cx: width * 0.92, cy: height * 0.1, sc: 18, rC: 18.6, dC: 38, plx: 0.08 },
+		{ name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.15, cy: height * 0.12, sc: 13 * sx, rC: 1, dC: 60, plx: 0.05 },
+		{ name: "ORION", label: "Orion", cx: width * 0.85, cy: height * 0.2, sc: 8 * sx, rC: 82.5, dC: 5, plx: 0.1 },
+		{ name: "LYRA", label: "Lyra", cx: width * 0.08, cy: height * 0.35, sc: 8 * sx, rC: 282, dC: 38, plx: 0.08 },
 	];
 	for (var i = 0; i < configs.length; i++) {
 		var c = configs[i];
@@ -87,6 +89,7 @@ function buildCons() {
 			connections: data.connections,
 			mainIndices: data.mainIndices,
 			parallax: c.plx,
+			label: c.label,
 		});
 	}
 	return cons;
@@ -116,9 +119,9 @@ function getY() {
 }
 
 var mountainLayers = [
-	{ colour: "#04040e", parallax: 0.16, amp: 20, freq: 0.012, heightMul: 0.15 },
-	{ colour: "#050510", parallax: 0.08, amp: 30, freq: 0.025, heightMul: 0.20 },
-	{ colour: "#060612", parallax: 0.0, amp: 40, freq: 0.04, heightMul: 0.25 },
+	{ colour: "#030308", parallax: 0.0, amp: 15, freq: 0.012, heightMul: 0.12 },
+	{ colour: "#050510", parallax: 0.12, amp: 30, freq: 0.025, heightMul: 0.18 },
+	{ colour: "#08081a", parallax: 0.24, amp: 50, freq: 0.04, heightMul: 0.25 },
 ];
 
 function drawMountains(sy) {
@@ -197,6 +200,26 @@ function animate() {
 	for (var ec of cons) {
 		renderConstellationStars(bgCtx, ec.pts, ec.mainIndices, time, sy, ec.parallax);
 		renderConstellationLines(bgCtx, ec.pts, ec.connections, "rgba(255, 255, 255, 0.15)", sy, ec.parallax);
+	}
+
+	// Constellation labels
+	bgCtx.font = "11px sans-serif";
+	bgCtx.textAlign = "center";
+	bgCtx.fillStyle = "rgba(255, 255, 255, 0.2)";
+	for (var ec of cons) {
+		if (!ec.pts || ec.pts.length === 0 || !ec.label) continue;
+		var lx = 0, ly = 0, n = 0;
+		var mains = ec.mainIndices || [];
+		if (mains.length === 0) { lx = ec.pts[0].x; ly = ec.pts[0].y; n = 1; }
+		else {
+			for (var j = 0; j < Math.min(4, mains.length); j++) {
+				var p = ec.pts[mains[j]];
+				if (p) { lx += p.x; ly += p.y; n++; }
+			}
+		}
+		if (n > 0) {
+			bgCtx.fillText(ec.label, lx / n, ly / n + 16 + sy * (1 - ec.parallax));
+		}
 	}
 
 	drawMountains(sy);
