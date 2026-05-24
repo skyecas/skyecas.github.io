@@ -666,13 +666,19 @@ function projectConstellation(consData, cx, cy, sc, rC, dC, onlyMain) {
     var all = onlyMain && consData.mainIndices
       ? consData.mainIndices.map(function(i) { return consData.stars[i]; })
       : consData.stars;
+    var refRA = 0;
     for (var k = 0; k < all.length; k++) {
       var sk = all[k];
       var rk = typeof sk.ra === "number" ? sk.ra : raDeg(sk.ra[0], sk.ra[1], sk.ra[2] || 0);
       var dk = typeof sk.dec === "number" ? sk.dec : decDeg(sk.dec[0], sk.dec[1], sk.dec[2] || 0);
+      if (k === 0) refRA = rk;
+      while (rk - refRA > 180) rk -= 360;
+      while (rk - refRA < -180) rk += 360;
       rC += rk; dC += dk; n++;
     }
-    if (n > 0) { rC /= n; dC /= n; }
+    if (n > 0) { rC = rC / n; dC /= n; }
+    while (rC < 0) rC += 360;
+    while (rC >= 360) rC -= 360;
   }
   var cosFac = Math.cos(dC * Math.PI / 180);
   var pts = [];

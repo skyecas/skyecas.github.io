@@ -122,9 +122,9 @@ function getY() {
 }
 
 var mountainLayers = [
-	{ colour: "#030308", drift: 0.0, amp: 20, freq: 0.012, heightMul: 0.35 },
-	{ colour: "#050510", drift: 0.15, amp: 40, freq: 0.025, heightMul: 0.45 },
-	{ colour: "#08081a", drift: 0.25, amp: 60, freq: 0.04, heightMul: 0.55 },
+	{ colour: "#08081a", drift: 0.0, amp: 20, freq: 0.012, heightMul: 0.55 },
+	{ colour: "#050510", drift: 0.15, amp: 40, freq: 0.025, heightMul: 0.40 },
+	{ colour: "#030308", drift: 0.25, amp: 60, freq: 0.04, heightMul: 0.25 },
 ];
 
 var maxMountainScroll = 0;
