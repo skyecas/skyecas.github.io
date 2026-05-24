@@ -609,9 +609,10 @@ function createBgStars(count, width, height, opts) {
   for (var i = 0; i < count; i++) {
     var spec = randomSpectralType();
     var mag = randomStarMagnitude();
-    var speed = opts.speedRange
-      ? opts.speedRange[0] + Math.random() * (opts.speedRange[1] - opts.speedRange[0])
-      : 0.01 + Math.random() * 0.03;
+    var speed = opts.twinkle === false ? 0
+      : opts.speedRange
+        ? opts.speedRange[0] + Math.random() * (opts.speedRange[1] - opts.speedRange[0])
+        : 0.01 + Math.random() * 0.03;
     var star = {
       x: Math.random() * width,
       y: Math.random() * height,
@@ -620,12 +621,13 @@ function createBgStars(count, width, height, opts) {
       colour: spectralToHex(spec),
       mag: mag,
       spec: spec,
-      phase: Math.random() * Math.PI * 2,
+      phase: opts.twinkle === false ? 0 : Math.random() * Math.PI * 2,
       speed: speed,
     };
     if (opts.yBias) star.y = Math.pow(Math.random(), opts.yBias) * height;
     if (opts.parallax) star.depth = (opts.depthRange || [0.0, 0.7])[0] +
       Math.random() * ((opts.depthRange || [0.0, 0.7])[1] - (opts.depthRange || [0.0, 0.7])[0]);
+    if (opts.twinkle === false) star.twinkle = false;
     stars.push(star);
   }
   return stars;
@@ -641,11 +643,11 @@ function renderBgStar(ctx, star, time, alpha, scrollY, height) {
   if (scrollY !== undefined && height !== undefined) {
     if (ty < scrollY - 50 || ty > scrollY + height + 50) return;
   }
-  var twinkle = 0.5 + 0.5 * Math.sin(time * star.speed + star.phase);
+  var twinkle = star.twinkle !== false ? 0.5 + 0.5 * Math.sin(time * star.speed + star.phase) : 0.5;
   var a = (alpha !== undefined ? alpha : 1) * (0.3 + 0.7 * twinkle);
   ctx.fillStyle = hexToRgba(star.colour, a);
   ctx.beginPath();
-  ctx.arc(tx, ty, star.size * (0.5 + 0.5 * twinkle), 0, Math.PI * 2);
+  ctx.arc(tx, ty, star.size * (star.twinkle !== false ? 0.5 + 0.5 * twinkle : 1), 0, Math.PI * 2);
   ctx.fill();
 }
 

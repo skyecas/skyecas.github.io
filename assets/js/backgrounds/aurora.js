@@ -9,7 +9,7 @@ var bg = initCanvas(function(w, h, c) {
 	}
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
-	stars = createBgStars(300, w, pageHeight, {yBias: 1.2, parallax: true});
+	stars = createBgStars(300, w, pageHeight, {yBias: 1.2, parallax: true, twinkle: false});
 	bands = [
 		new AuroraBand(0, height * 0.45, ["rgba(0, 255, 100, 0.4)", "rgba(0, 200, 150, 0.3)", "rgba(100, 0, 200, 0.2)"], 0.0008, 0, 0.80),
 		new AuroraBand(height * 0.3, height * 0.4, ["rgba(0, 220, 120, 0.35)", "rgba(50, 255, 150, 0.3)", "rgba(150, 50, 255, 0.2)"], 0.001, 2.1, 0.90),
