@@ -138,12 +138,9 @@ function drawBrightCore(t, sy) {
 
 function projectConstellationLocal() {
   var sc = 12 * sy;
-  var cosFac = 6.5 * sx / (12 * sy);
-  if (cosFac > 1) cosFac = 1;
-  var dC = Math.acos(cosFac) * 180 / Math.PI;
   var cx = width * 0.13;
-  var cy = height * 0.93 - sc * dC;
-  cassPts = projectConstellation(cassData, cx, cy, sc, 0, dC);
+  var cy = height * 0.93;
+  cassPts = projectConstellation(cassData, cx, cy, sc);
 }
 
 function drawConstellationLabel(sy) {

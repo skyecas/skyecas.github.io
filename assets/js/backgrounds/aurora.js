@@ -76,19 +76,19 @@ AuroraBand.prototype.render = function(t, sy) {
 function buildCons() {
 	var cons = [];
 	var configs = [
-		{ name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.15, cy: height * 0.15, sc: 13 * sx, rC: 1, dC: 60, plx: 0.05 },
-		{ name: "ORION", label: "Orion", cx: width * 0.85, cy: height * 0.25, sc: 8 * sx, rC: 82.5, dC: 5, plx: 0.1 },
-		{ name: "LYRA", label: "Lyra", cx: width * 0.08, cy: height * 0.55, sc: 8 * sx, rC: 282, dC: 38, plx: 0.08 },
-		{ name: "CYGNUS", label: "Cygnus", cx: width * 0.75, cy: height * 0.65, sc: 8 * sx, rC: 310, dC: 40, plx: 0.06 },
-		{ name: "SCORPIUS", label: "Scorpius", cx: width * 0.2, cy: height * 0.8, sc: 6 * sx, rC: 245, dC: -35, plx: 0.07 },
-		{ name: "ANDROMEDA", label: "Andromeda", cx: width * 0.92, cy: height * 0.45, sc: 5 * sx, rC: 15, dC: 40, plx: 0.05 },
+		{ name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.15, cy: height * 0.15, sc: 13 * sx, plx: 0.05 },
+		{ name: "ORION", label: "Orion", cx: width * 0.85, cy: height * 0.25, sc: 8 * sx, plx: 0.1 },
+		{ name: "LYRA", label: "Lyra", cx: width * 0.08, cy: height * 0.55, sc: 8 * sx, plx: 0.08 },
+		{ name: "CYGNUS", label: "Cygnus", cx: width * 0.75, cy: height * 0.65, sc: 8 * sx, plx: 0.06 },
+		{ name: "SCORPIUS", label: "Scorpius", cx: width * 0.2, cy: height * 0.8, sc: 6 * sx, plx: 0.07 },
+		{ name: "ANDROMEDA", label: "Andromeda", cx: width * 0.92, cy: height * 0.45, sc: 5 * sx, plx: 0.05 },
 	];
 	for (var i = 0; i < configs.length; i++) {
 		var c = configs[i];
 		var data = consDataByName[c.name];
 		if (!data) continue;
 		cons.push({
-			pts: projectConstellation(data, c.cx, c.cy, c.sc, c.rC, c.dC),
+			pts: projectConstellation(data, c.cx, c.cy, c.sc),
 			connections: data.connections,
 			mainIndices: data.mainIndices,
 			parallax: c.plx,

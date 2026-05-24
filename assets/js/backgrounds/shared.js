@@ -654,7 +654,21 @@ function renderBgStars(ctx, stars, time, alpha, scrollY, height) {
 }
 
 // Project a constellation to screen coordinates
+// rC/dC are the celestial center (RA/Dec in degrees). Auto-computed from star data if omitted.
 function projectConstellation(consData, cx, cy, sc, rC, dC, onlyMain) {
+  if (rC === undefined || dC === undefined) {
+    rC = 0; dC = 0; var n = 0;
+    var all = onlyMain && consData.mainIndices
+      ? consData.mainIndices.map(function(i) { return consData.stars[i]; })
+      : consData.stars;
+    for (var k = 0; k < all.length; k++) {
+      var sk = all[k];
+      var rk = typeof sk.ra === "number" ? sk.ra : raDeg(sk.ra[0], sk.ra[1], sk.ra[2] || 0);
+      var dk = typeof sk.dec === "number" ? sk.dec : decDeg(sk.dec[0], sk.dec[1], sk.dec[2] || 0);
+      rC += rk; dC += dk; n++;
+    }
+    if (n > 0) { rC /= n; dC /= n; }
+  }
   var cosFac = Math.cos(dC * Math.PI / 180);
   var pts = [];
   var stars = onlyMain && consData.mainIndices

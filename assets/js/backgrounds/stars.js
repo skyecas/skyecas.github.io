@@ -14,15 +14,12 @@ bgCtx.fillRect(0, 0, width, pageHeight);
 // === Constellations ===
 var cassWCoords = projectConstellation(consDataByName.CASSIOPEIA,
 	width * 0.15, height * 0.25,
-	13 * (width / 1920),
-	1, 60
+	13 * (width / 1920)
 );
 
-var orionCenterRA = 82.5, orionCenterDec = 5;
 var orionWCoords = projectConstellation(consDataByName.ORION,
 	width * 0.85, height * 0.75,
-	7 * (width / 1920),
-	orionCenterRA, orionCenterDec
+	7 * (width / 1920)
 );
 
 // === Background stars via shared.js ===
