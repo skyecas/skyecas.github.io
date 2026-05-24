@@ -116,15 +116,15 @@ function getY() {
 }
 
 var mountainLayers = [
-	{ colour: "#04040e", parallax: 1.0, amp: 30, freq: 0.012, heightMul: 0.35 },
-	{ colour: "#050510", parallax: 1.0, amp: 50, freq: 0.025, heightMul: 0.45 },
-	{ colour: "#060612", parallax: 1.0, amp: 70, freq: 0.04, heightMul: 0.55 },
+	{ colour: "#04040e", parallax: 0.0, amp: 30, freq: 0.012, heightMul: 0.35 },
+	{ colour: "#050510", parallax: 0.05, amp: 50, freq: 0.025, heightMul: 0.45 },
+	{ colour: "#060612", parallax: 0.1, amp: 70, freq: 0.04, heightMul: 0.55 },
 ];
 
 function drawMountains(sy) {
 	for (var m = 0; m < mountainLayers.length; m++) {
 		var layer = mountainLayers[m];
-		var bottomY = height + sy;
+		var bottomY = pageHeight + sy * (layer.parallax - 1);
 		var topY = bottomY - height * layer.heightMul;
 		bgCtx.fillStyle = layer.colour;
 		bgCtx.beginPath();
