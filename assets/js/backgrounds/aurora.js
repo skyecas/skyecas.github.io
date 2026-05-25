@@ -33,34 +33,23 @@ function AuroraBand(yBase, h, colours, speed, phase, bandParallax) {
 	this.speed = speed;
 	this.phase = phase;
 	this.bandParallax = bandParallax || 0.97;
-	// Pre-compute all noise values at 16px intervals
-	var bufW = Math.ceil(width * 2);
-	this._pts = [];
-	for (var xi = 0; xi <= bufW; xi += 16) {
-		this._pts.push({
-			x: xi,
-			y: Math.sin(xi * 0.008) * 25 + Math.sin(xi * 0.015) * 15 + Math.sin(xi * 0.003) * 20
-		});
-	}
-	this._bufW = bufW;
 }
 AuroraBand.prototype.render = function(t, sy) {
 	var adjY = this.yBase + sy * (1 - this.bandParallax);
 	var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + this.h + 30);
 	for (var i = 0; i < this.colours.length; i++)
 		grad.addColorStop(i / (this.colours.length - 1), this.colours[i]);
-	var ox = (t * this.speed * 500 + this.phase * 200) % (this._bufW - width);
+	var tOff = t * this.speed;
 	// Solid pass
 	bgCtx.save();
 	bgCtx.globalAlpha = 0.18;
 	bgCtx.fillStyle = grad;
 	bgCtx.beginPath();
 	bgCtx.moveTo(0, adjY);
-	for (var pi = 0; pi < this._pts.length; pi++) {
-		var p = this._pts[pi];
-		if (p.x < ox || p.x > ox + width) continue;
-		bgCtx.lineTo(p.x - ox, adjY + p.y);
-	}
+	for (var x = 0; x <= width; x += 16)
+		bgCtx.lineTo(x, adjY + Math.sin(x * 0.008 + tOff + this.phase) * 25
+			+ Math.sin(x * 0.015 + tOff * 0.7 + this.phase * 1.3) * 15
+			+ Math.sin(x * 0.003 + tOff * 1.3 + this.phase * 0.7) * 20);
 	bgCtx.lineTo(width, adjY + this.h);
 	bgCtx.lineTo(0, adjY + this.h);
 	bgCtx.closePath();
@@ -73,11 +62,10 @@ AuroraBand.prototype.render = function(t, sy) {
 	bgCtx.fillStyle = grad;
 	bgCtx.beginPath();
 	bgCtx.moveTo(0, adjY);
-	for (var pi = 0; pi < this._pts.length; pi++) {
-		var p = this._pts[pi];
-		if (p.x < ox || p.x > ox + width) continue;
-		bgCtx.lineTo(p.x - ox, adjY + p.y);
-	}
+	for (var x = 0; x <= width; x += 16)
+		bgCtx.lineTo(x, adjY + Math.sin(x * 0.008 + tOff + this.phase) * 25
+			+ Math.sin(x * 0.015 + tOff * 0.7 + this.phase * 1.3) * 15
+			+ Math.sin(x * 0.003 + tOff * 1.3 + this.phase * 0.7) * 20);
 	bgCtx.lineTo(width, adjY + this.h + 40);
 	bgCtx.lineTo(0, adjY + this.h + 40);
 	bgCtx.closePath();
@@ -194,17 +182,16 @@ function animate() {
             var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + b.h + 30);
             for (var i = 0; i < colours.length; i++)
                 grad.addColorStop(i / (colours.length - 1), colours[i]);
-var ox = (time * b.speed * 500 + b.phase * 200) % (b._bufW - width);
 			bgCtx.save();
 			bgCtx.globalAlpha = 0.3;
 			bgCtx.fillStyle = grad;
 			bgCtx.beginPath();
 			bgCtx.moveTo(0, adjY);
-			for (var pi = 0; pi < b._pts.length; pi++) {
-				var p = b._pts[pi];
-				if (p.x < ox || p.x > ox + width) continue;
-				bgCtx.lineTo(p.x - ox, adjY + p.y);
-			}
+			var tO = time * b.speed;
+			for (var x = 0; x <= width; x += 16)
+				bgCtx.lineTo(x, adjY + Math.sin(x * 0.008 + tO + b.phase) * 25
+					+ Math.sin(x * 0.015 + tO * 0.7 + b.phase * 1.3) * 15
+					+ Math.sin(x * 0.003 + tO * 1.3 + b.phase * 0.7) * 20);
 			bgCtx.lineTo(width, adjY + b.h);
 			bgCtx.lineTo(0, adjY + b.h);
 			bgCtx.closePath();
