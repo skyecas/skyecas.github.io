@@ -229,9 +229,7 @@ function animate() {
 
 drawMountains(sy);
 
-	if (!window.__bgTick) {
-		window.__bgTick = function() { animate(); };
-	}
+	requestAnimFrame(animate);
 }
 
 animate();

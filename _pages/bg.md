@@ -25,11 +25,7 @@ if (bg && bgNames.indexOf(bg) !== -1) {
       window.lenis = new Lenis({ duration: 0, syncTouch: true, wheelMultiplier: 1 });
       window.lenisScroll = 0;
       window.lenis.on('scroll', function(e) { window.lenisScroll = e.animatedScroll; });
-      function lenisRaf(time) {
-        window.lenis.raf(time);
-        if (window.__bgTick) window.__bgTick(time);
-        requestAnimationFrame(lenisRaf);
-      }
+      function lenisRaf(time) { window.lenis.raf(time); requestAnimationFrame(lenisRaf); }
       requestAnimationFrame(lenisRaf);
       var script = document.createElement("script");
       script.src = "/assets/js/backgrounds/" + bg + ".js?v=" + Date.now();
