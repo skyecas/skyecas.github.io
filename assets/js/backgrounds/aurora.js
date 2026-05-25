@@ -27,56 +27,63 @@ bg.canvas.style.top = "0";
 bg.canvas.style.left = "0";
 
 function AuroraBand(yBase, h, colours, speed, phase, bandParallax) {
-    this.yBase = yBase;
-    this.h = h;
-    this.colours = colours;
-    this.speed = speed;
-    this.phase = phase;
-    this.bandParallax = bandParallax || 0.97;
-    // Pre-render noise shape at 2x width to allow horizontal panning
-    var bufW = Math.ceil(width * 2);
-    var bufH = Math.ceil(h + 80);
-    var buf = document.createElement("canvas");
-    buf.width = bufW;
-    buf.height = bufH;
-    var bx = buf.getContext("2d");
-    bx.beginPath();
-    bx.moveTo(0, 30);
-    for (var xi = 0; xi <= bufW; xi += 16) {
-        var yy = 30 + Math.sin(xi * 0.008) * 25 + Math.sin(xi * 0.015) * 15 + Math.sin(xi * 0.003) * 20;
-        bx.lineTo(xi, yy);
-    }
-    bx.lineTo(bufW, 30 + this.h);
-    bx.lineTo(0, 30 + this.h);
-    bx.closePath();
-    bx.fillStyle = "white";
-    bx.fill();
-    this._shapeBuf = buf;
+	this.yBase = yBase;
+	this.h = h;
+	this.colours = colours;
+	this.speed = speed;
+	this.phase = phase;
+	this.bandParallax = bandParallax || 0.97;
+	// Pre-compute all noise values at 16px intervals
+	var bufW = Math.ceil(width * 2);
+	this._pts = [];
+	for (var xi = 0; xi <= bufW; xi += 16) {
+		this._pts.push({
+			x: xi,
+			y: Math.sin(xi * 0.008) * 25 + Math.sin(xi * 0.015) * 15 + Math.sin(xi * 0.003) * 20
+		});
+	}
+	this._bufW = bufW;
 }
-AuroraBand.prototype.render = function (t, sy) {
-    var adjY = this.yBase + sy * (1 - this.bandParallax);
-    var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + this.h + 30);
-    for (var i = 0; i < this.colours.length; i++)
-        grad.addColorStop(i / (this.colours.length - 1), this.colours[i]);
-    var ox = (t * this.speed * 500 + this.phase * 200) % (this._shapeBuf.width - width);
-    // Solid pass
-    bgCtx.save();
-    bgCtx.globalAlpha = 0.18;
-    bgCtx.drawImage(this._shapeBuf, ox, 0, width, this._shapeBuf.height, 0, adjY, width, this._shapeBuf.height);
-    bgCtx.globalCompositeOperation = "source-in";
-    bgCtx.fillStyle = grad;
-    bgCtx.fillRect(0, adjY, width, this._shapeBuf.height);
-    bgCtx.restore();
-    // Blurred glow pass
-    bgCtx.save();
-    bgCtx.globalAlpha = 0.15;
-    bgCtx.filter = "blur(20px)";
-    bgCtx.drawImage(this._shapeBuf, ox, 0, width, this._shapeBuf.height, 0, adjY, width, this._shapeBuf.height + 40);
-    bgCtx.globalCompositeOperation = "source-in";
-    bgCtx.fillStyle = grad;
-    bgCtx.fillRect(0, adjY, width, this._shapeBuf.height + 40);
-    bgCtx.restore();
-    bgCtx.filter = "none";
+AuroraBand.prototype.render = function(t, sy) {
+	var adjY = this.yBase + sy * (1 - this.bandParallax);
+	var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + this.h + 30);
+	for (var i = 0; i < this.colours.length; i++)
+		grad.addColorStop(i / (this.colours.length - 1), this.colours[i]);
+	var ox = (t * this.speed * 500 + this.phase * 200) % (this._bufW - width);
+	// Solid pass
+	bgCtx.save();
+	bgCtx.globalAlpha = 0.18;
+	bgCtx.fillStyle = grad;
+	bgCtx.beginPath();
+	bgCtx.moveTo(0, adjY);
+	for (var pi = 0; pi < this._pts.length; pi++) {
+		var p = this._pts[pi];
+		if (p.x < ox || p.x > ox + width) continue;
+		bgCtx.lineTo(p.x - ox, adjY + p.y);
+	}
+	bgCtx.lineTo(width, adjY + this.h);
+	bgCtx.lineTo(0, adjY + this.h);
+	bgCtx.closePath();
+	bgCtx.fill();
+	bgCtx.restore();
+	// Blurred glow pass
+	bgCtx.save();
+	bgCtx.globalAlpha = 0.15;
+	bgCtx.filter = "blur(20px)";
+	bgCtx.fillStyle = grad;
+	bgCtx.beginPath();
+	bgCtx.moveTo(0, adjY);
+	for (var pi = 0; pi < this._pts.length; pi++) {
+		var p = this._pts[pi];
+		if (p.x < ox || p.x > ox + width) continue;
+		bgCtx.lineTo(p.x - ox, adjY + p.y);
+	}
+	bgCtx.lineTo(width, adjY + this.h + 40);
+	bgCtx.lineTo(0, adjY + this.h + 40);
+	bgCtx.closePath();
+	bgCtx.fill();
+	bgCtx.restore();
+	bgCtx.filter = "none";
 };
 
 function buildCons() {
@@ -187,13 +194,21 @@ function animate() {
             var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + b.h + 30);
             for (var i = 0; i < colours.length; i++)
                 grad.addColorStop(i / (colours.length - 1), colours[i]);
-var ox = (time * b.speed * 500 + b.phase * 200) % (b._shapeBuf.width - width);
+var ox = (time * b.speed * 500 + b.phase * 200) % (b._bufW - width);
 			bgCtx.save();
 			bgCtx.globalAlpha = 0.3;
-			bgCtx.drawImage(b._shapeBuf, ox, 0, width, b._shapeBuf.height, 0, adjY, width, b._shapeBuf.height);
-			bgCtx.globalCompositeOperation = "source-in";
 			bgCtx.fillStyle = grad;
-			bgCtx.fillRect(0, adjY, width, b._shapeBuf.height);
+			bgCtx.beginPath();
+			bgCtx.moveTo(0, adjY);
+			for (var pi = 0; pi < b._pts.length; pi++) {
+				var p = b._pts[pi];
+				if (p.x < ox || p.x > ox + width) continue;
+				bgCtx.lineTo(p.x - ox, adjY + p.y);
+			}
+			bgCtx.lineTo(width, adjY + b.h);
+			bgCtx.lineTo(0, adjY + b.h);
+			bgCtx.closePath();
+			bgCtx.fill();
 			bgCtx.restore();
         }
     } else {
