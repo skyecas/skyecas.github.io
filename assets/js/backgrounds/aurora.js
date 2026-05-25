@@ -227,9 +227,11 @@ function animate() {
         }
     }
 
-    drawMountains(sy);
+drawMountains(sy);
 
-    requestAnimFrame(animate);
+	if (!window.__bgTick) {
+		window.__bgTick = function() { animate(); };
+	}
 }
 
 animate();
