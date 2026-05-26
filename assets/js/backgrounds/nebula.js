@@ -27,12 +27,15 @@ function noise2D(x, y, t) {
 }
 
 // === Nebula gas (viewport-fixed, time-animated) ===
+var _gasBuf = null, _gasCtx = null;
 function drawNebulaGas(t) {
-  var blurred = document.createElement("canvas");
-  var bw = width, bh = height * 0.85;
-  blurred.width = bw;
-  blurred.height = bh;
-  var bCtx = blurred.getContext("2d");
+  if (!_gasBuf || _gasBuf.width !== width) {
+    _gasBuf = document.createElement("canvas");
+    _gasBuf.width = width;
+    _gasBuf.height = height * 0.85;
+    _gasCtx = _gasBuf.getContext("2d");
+  }
+  _gasCtx.clearRect(0, 0, _gasBuf.width, _gasBuf.height);
   var centres = [
     { x: 500 * sx, y: 350 * sy, rx: 450 * sx, ry: 300 * sy, colours: ["rgba(180, 40, 200, 0.1)", "rgba(120, 20, 160, 0.18)", "rgba(60, 10, 100, 0.08)"], speed: 0.00008, phase: 0 },
     { x: 900 * sx, y: 500 * sy, rx: 500 * sx, ry: 350 * sy, colours: ["rgba(30, 80, 200, 0.08)", "rgba(20, 50, 160, 0.15)", "rgba(10, 20, 100, 0.05)"], speed: -0.00006, phase: 1.5 },
@@ -44,17 +47,17 @@ function drawNebulaGas(t) {
   for (var c of centres) {
     var ox = Math.sin(t * 0.00003 + c.phase) * 30;
     var oy = Math.cos(t * 0.00004 + c.phase * 0.7) * 20;
-    var grad = bCtx.createRadialGradient(c.x + ox, c.y + oy, 0, c.x + ox, c.y + oy, Math.max(c.rx, c.ry));
+    var grad = _gasCtx.createRadialGradient(c.x + ox, c.y + oy, 0, c.x + ox, c.y + oy, Math.max(c.rx, c.ry));
     for (var i = 0; i < c.colours.length; i++)
       grad.addColorStop(i / (c.colours.length - 1), c.colours[i]);
-    bCtx.fillStyle = grad;
-    bCtx.beginPath();
-    bCtx.ellipse(c.x + ox, c.y + oy, c.rx, c.ry, c.phase * 0.1, 0, Math.PI * 2);
-    bCtx.fill();
+    _gasCtx.fillStyle = grad;
+    _gasCtx.beginPath();
+    _gasCtx.ellipse(c.x + ox, c.y + oy, c.rx, c.ry, c.phase * 0.1, 0, Math.PI * 2);
+    _gasCtx.fill();
   }
   bgCtx.save();
   bgCtx.filter = "blur(40px)";
-  bgCtx.drawImage(blurred, 0, 0, bw, bh, 0, 0, width, height * 0.85);
+  bgCtx.drawImage(_gasBuf, 0, 0, _gasBuf.width, _gasBuf.height, 0, 0, width, _gasBuf.height);
   bgCtx.restore();
   bgCtx.filter = "none";
 }
