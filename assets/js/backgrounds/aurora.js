@@ -34,13 +34,16 @@ function AuroraBand(yBase, h, colours, speed, phase, bandParallax) {
 }
 AuroraBand.prototype.render = function(t, sy) {
 	var adjY = this.yBase + sy * (1 - this.bandParallax);
-	var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + this.h + 30);
-	for (var i = 0; i < this.colours.length; i++)
-		grad.addColorStop(i / (this.colours.length - 1), this.colours[i]);
+	if (adjY !== this._lastAdjY || !this._grad) {
+		this._grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + this.h + 30);
+		for (var i = 0; i < this.colours.length; i++)
+			this._grad.addColorStop(i / (this.colours.length - 1), this.colours[i]);
+		this._lastAdjY = adjY;
+	}
 	var tOff = t * this.speed;
 	bgCtx.save();
 	bgCtx.globalAlpha = 0.2;
-	bgCtx.fillStyle = grad;
+	bgCtx.fillStyle = this._grad;
 	bgCtx.beginPath();
 	bgCtx.moveTo(0, adjY);
 	for (var x = 0; x <= width; x += 16)
@@ -79,8 +82,11 @@ function buildCons() {
     return cons;
 }
 
+var _dcKey = "", _dcVal = null;
 function getDateColour() {
     var key = getDateKey();
+    if (key === _dcKey) return _dcVal;
+    _dcKey = key;
     for (var consKey in consDataByName) {
         var c = consDataByName[consKey];
         if (c.date === key) {
@@ -90,10 +96,12 @@ function getDateColour() {
             }
             if (bri) {
                 var hex = spectralToHex(bri.spec || "G2V");
-                return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+                _dcVal = [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+                return _dcVal;
             }
         }
     }
+    _dcVal = null;
     return null;
 }
 
