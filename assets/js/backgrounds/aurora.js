@@ -11,9 +11,9 @@ var bg = initCanvas(function (w, h, c) {
     mScale = Math.min(sx, sy);
     stars = createBgStars(200, w, pageHeight, { yBias: 1.2, parallax: true, twinkle: false });
     bands = [
-        new AuroraBand(0, height * 0.35, ["rgba(0, 255, 100, 0.4)", "rgba(0, 200, 150, 0.3)", "rgba(100, 0, 200, 0.2)"], 0.004, 0, 0.80),
-        new AuroraBand(height * 0.25, height * 0.35, ["rgba(0, 220, 120, 0.35)", "rgba(50, 200, 100, 0.3)", "rgba(150, 50, 255, 0.2)"], 0.003, 3.2, 0.90),
-        new AuroraBand(height * 0.5, height * 0.35, ["rgba(100, 255, 200, 0.3)", "rgba(200, 100, 255, 0.25)", "rgba(0, 255, 80, 0.2)"], 0.002, 5.1, 0.97),
+        new AuroraBand(height * 0.15, height * 0.35, ["rgba(18, 239, 225, 0.4)", "rgba(229, 23, 191, 0.49)", "rgba(100, 240, 61, 0.75)"], 0.004, 0, 0.70),
+        new AuroraBand(height * 0.35, height * 0.45, ["rgba(0, 220, 120, 0.35)", "rgba(50, 200, 100, 0.3)", "rgba(150, 50, 255, 0.2)"], 0.003, 3.2, 0.83),
+        new AuroraBand(height * 0.55, height * 0.3 , ["rgba(100, 255, 200, 0.3)", "rgba(200, 100, 255, 0.25)", "rgba(0, 255, 80, 0.2)"], 0.002, 5.1, 0.97),
     ];
     cons = buildCons();
 });
@@ -105,10 +105,6 @@ function getDateColour() {
     return null;
 }
 
-function getY() {
-    return window.lenisScroll !== undefined ? window.lenisScroll
-        : document.documentElement.scrollTop || window.pageYOffset || 0;
-}
 
 var mountainLayers = [
     { colour: "#08081a", drift: 0.0, amp: 20, freq: 0.012, heightMul: 0.55 },
@@ -147,7 +143,7 @@ var time = 0;
 
 function animate() {
     time++;
-    var sy = getY();
+    var sy = window.getScrollY ? window.getScrollY() : 0;
 
     bgCtx.fillStyle = "#08081a";
     bgCtx.fillRect(0, sy, width, height);
