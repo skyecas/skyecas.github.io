@@ -8,11 +8,6 @@ var bg = initCanvas(function(w, h, c) {
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
 	stars = createBgStars(800, w, pageHeight, { parallax: true });
-	dustLanes = [
-		new DustLane(200 * sy, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
-		new DustLane(900 * sx, 500 * sy, 700 * sx, 100 * sy, 0.3, 0.00015),
-		new DustLane(400 * sx, 700 * sy, 600 * sx, 80 * sy, -0.1, 0.00025),
-	];
 	cons = buildCons();
 });
 var bgCtx = bg.ctx;
@@ -31,48 +26,7 @@ function noise2D(x, y, t) {
          Math.sin((x + y) * 0.002 + t * 0.0004) * 0.2;
 }
 
-// === Dust Lanes (viewport-fixed, time-animated only) ===
-function DustLane(xBase, yBase, width, height, angle, speed) {
-  this.xBase = xBase;
-  this.yBase = yBase;
-  this.width = width;
-  this.height = height;
-  this.angle = angle;
-  this.speed = speed;
-  this.phase = Math.random() * Math.PI * 2;
-}
-DustLane.prototype.update = function(t) {
-  bgCtx.save();
-  bgCtx.translate(this.xBase, this.yBase);
-  bgCtx.rotate(this.angle);
-  var segments = 40;
-  var segW = this.width / segments;
-  bgCtx.fillStyle = "rgba(2, 2, 8, 0.3)";
-  bgCtx.beginPath();
-  bgCtx.moveTo(0, 0);
-  for (var i = 0; i <= segments; i++) {
-    var x = i * segW;
-    var y = noise2D(x, this.yBase, t * this.speed + this.phase) * this.height * 0.5;
-    bgCtx.lineTo(x, y);
-  }
-  bgCtx.lineTo(this.width, 0);
-  bgCtx.closePath();
-  bgCtx.fill();
-  bgCtx.fillStyle = "rgba(2, 2, 8, 0.2)";
-  bgCtx.beginPath();
-  bgCtx.moveTo(0, this.height * 0.3);
-  for (var i = 0; i <= segments; i++) {
-    var x = i * segW;
-    var y = noise2D(x, this.yBase + this.height, t * this.speed + this.phase + 2) * this.height * 0.4 + this.height * 0.3;
-    bgCtx.lineTo(x, y);
-  }
-  bgCtx.lineTo(this.width, this.height * 0.3);
-  bgCtx.closePath();
-  bgCtx.fill();
-  bgCtx.restore();
-};
-
-// === Nebula gas (viewport-fixed, time-animated only) ===
+// === Nebula gas (viewport-fixed, time-animated) ===
 function drawNebulaGas(t) {
   var blurred = document.createElement("canvas");
   var bw = width, bh = height * 0.85;
@@ -128,9 +82,9 @@ function drawBrightCore(t) {
 function buildCons() {
 	var cons = [];
 	var configs = [
-		{ name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.15, cy: height * 0.2, sc: 12 * sy, plx: 0.7 },
-		{ name: "ANDROMEDA", label: "Andromeda", cx: width * 0.75, cy: height * 0.3, sc: 5 * sx, plx: 0.65 },
-		{ name: "SCORPIUS", label: "Scorpius", cx: width * 0.2, cy: height * 0.8, sc: 6 * sx, plx: 0.6 },
+		{ name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.15, cy: height * 0.2, sc: 12 * sy, plx: 0.2 },
+		{ name: "ANDROMEDA", label: "Andromeda", cx: width * 0.75, cy: height * 0.3, sc: 5 * sx, plx: 0.15 },
+		{ name: "SCORPIUS", label: "Scorpius", cx: width * 0.2, cy: height * 0.8, sc: 6 * sx, plx: 0.25 },
 	];
 	for (var i = 0; i < configs.length; i++) {
 		var c = configs[i];
@@ -157,8 +111,6 @@ function animate() {
   bgCtx.fillRect(0, sy, width, height);
 
   drawNebulaGas(time);
-
-  for (var d of dustLanes) { d.update(time); }
 
   drawBrightCore(time);
 
