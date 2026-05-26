@@ -132,7 +132,7 @@ function animate() {
     var sy = window.getScrollY ? window.getScrollY() : 0;
 
     bgCtx.fillStyle = "#08081a";
-    bgCtx.fillRect(0, sy, width, height);
+    bgCtx.fillRect(0, sy - 50, width, height + 100);
 
     var skyGrad = bgCtx.createLinearGradient(0, sy, 0, sy + height);
     skyGrad.addColorStop(0, "#08081a");
@@ -140,7 +140,7 @@ function animate() {
     skyGrad.addColorStop(0.7, "#0d0d1e");
     skyGrad.addColorStop(1, "#0a0a14");
     bgCtx.fillStyle = skyGrad;
-    bgCtx.fillRect(0, sy, width, height);
+    bgCtx.fillRect(0, sy - 50, width, height + 100);
 
 var dc = getDateColour();
      if (dc) {
