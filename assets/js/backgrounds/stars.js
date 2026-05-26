@@ -12,15 +12,28 @@ bgCtx.fillStyle = "#110E19";
 bgCtx.fillRect(0, 0, width, pageHeight);
 
 // === Constellations ===
-var cassWCoords = projectConstellation(consDataByName.CASSIOPEIA,
-	width * 0.15, height * 0.25,
-	13 * (width / 1920)
-);
+var cons = buildCons();
 
-var orionWCoords = projectConstellation(consDataByName.ORION,
-	width * 0.85, height * 0.75,
-	7 * (width / 1920)
-);
+function buildCons() {
+	var configs = [
+		{ name: "CASSIOPEIA", cx: width * 0.15, cy: height * 0.25, sc: 13 * (width / 1920), plx: 0.7 },
+		{ name: "ORION", cx: width * 0.85, cy: height * 0.75, sc: 7 * (width / 1920), plx: 0.8 },
+	];
+	var arr = [];
+	for (var i = 0; i < configs.length; i++) {
+		var c = configs[i];
+		var data = consDataByName[c.name];
+		if (!data) continue;
+		arr.push({
+			pts: projectConstellation(data, c.cx, c.cy, c.sc, undefined, undefined, false),
+			connections: data.connections,
+			mainIndices: data.mainIndices,
+			parallax: c.plx,
+			label: c.name,
+		});
+	}
+	return arr;
+}
 
 // === Background stars via shared.js ===
 function ShootingStar(special) {
@@ -114,7 +127,6 @@ for (var i = 1; i > 0; i--) { movers.push(new ShootingStar()); }
 for (var i = 20; i > 0; i--) { movers.push(new ShootingStar(true)); }
 
 var bgTime = 0;
-var cassTime = 0;
 
 function animate() {
 	var todayStr = getDateKey();
@@ -126,29 +138,36 @@ function animate() {
 		}
 	}
 
-	var sy = window.getScrollY ? window.getScrollY() : 0;
+  var sy = window.getScrollY ? window.getScrollY() : 0;
 
 	bgCtx.fillStyle = "#110E19";
 	bgCtx.fillRect(0, 0, width, pageHeight);
 
-	cassTime++;
+	bgTime++;
 	renderBgStars(bgCtx, stars, bgTime, undefined, sy);
-	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", sy, 0.7);
-	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, sy, 0.7);
-	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", sy, 0.8);
-	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, sy, 0.8);
 
+	for (var ci = 0; ci < cons.length; ci++) {
+		var ec = cons[ci];
+		renderConstellationLines(bgCtx, ec.pts, ec.connections, "rgba(255, 255, 255, 0.15)", sy, ec.parallax);
+		renderConstellationStars(bgCtx, ec.pts, ec.mainIndices, bgTime, sy, ec.parallax);
+	}
+
+	// Labels
 	bgCtx.font = "10px sans-serif";
 	bgCtx.textAlign = "center";
 	bgCtx.fillStyle = "rgba(255, 255, 255, 0.18)";
-	var lx = 0, maxY = -Infinity;
-	var orionMains = consDataByName.ORION.mainIndices || [];
-	for (var j = 0; j < Math.min(4, orionMains.length); j++) {
-		var s = orionWCoords[orionMains[j]];
-		lx += s.x;
-		if (s.y > maxY) maxY = s.y;
+	for (var ci = 0; ci < cons.length; ci++) {
+		var ec = cons[ci];
+		if (!ec.pts || ec.pts.length === 0) continue;
+		var lx = 0, maxY = -Infinity, n = 0;
+		var mains = ec.mainIndices || [];
+		for (var j = 0; j < Math.min(4, mains.length); j++) {
+			var p = ec.pts[mains[j]];
+			if (p) { lx += p.x; n++; if (p.y > maxY) maxY = p.y; }
+		}
+		if (n > 0)
+			bgCtx.fillText(ec.label, lx / n, maxY + 16 + sy * (1 - ec.parallax));
 	}
-	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16 + sy * (1 - 0.8));
 
 	bgTime++;
 	for (let m of movers) { m.update(); }
