@@ -37,12 +37,12 @@ function drawNebulaGas(t, sy) {
   }
   _gasCtx.clearRect(0, 0, _gasBuf.width, _gasBuf.height);
   var centres = [
-    { x: 500 * sx, y: 350 * sy, rx: 450 * sx, ry: 300 * sy, colours: ["rgba(180, 40, 200, 0.1)", "rgba(120, 20, 160, 0.18)", "rgba(60, 10, 100, 0.08)"], speed: 0.00008, phase: 0 },
-    { x: 900 * sx, y: 500 * sy, rx: 500 * sx, ry: 350 * sy, colours: ["rgba(30, 80, 200, 0.08)", "rgba(20, 50, 160, 0.15)", "rgba(10, 20, 100, 0.05)"], speed: -0.00006, phase: 1.5 },
-    { x: 700 * sx, y: 350 * sy, rx: 350 * sx, ry: 250 * sy, colours: ["rgba(255, 80, 120, 0.08)", "rgba(200, 40, 80, 0.15)", "rgba(140, 20, 60, 0.05)"], speed: 0.0001, phase: -0.8 },
-    { x: 1100 * sx, y: 650 * sy, rx: 400 * sx, ry: 250 * sy, colours: ["rgba(200, 140, 40, 0.05)", "rgba(160, 100, 20, 0.1)", "rgba(100, 60, 10, 0.05)"], speed: -0.00005, phase: 2.5 },
-    { x: 400 * sx, y: 700 * sy, rx: 350 * sx, ry: 200 * sy, colours: ["rgba(40, 180, 160, 0.05)", "rgba(20, 140, 120, 0.1)", "rgba(10, 90, 80, 0.05)"], speed: 0.00007, phase: -1.5 },
-    { x: 1300 * sx, y: 350 * sy, rx: 300 * sx, ry: 350 * sy, colours: ["rgba(130, 40, 220, 0.05)", "rgba(90, 20, 180, 0.1)", "rgba(50, 10, 120, 0.05)"], speed: -0.00009, phase: 0.5 },
+    { x: 500 * sx, y: 350 * sy, rx: 450 * sx, ry: 300 * sy, colours: ["rgba(180, 40, 200, 0.06)", "rgba(120, 20, 160, 0.1)", "rgba(60, 10, 100, 0.05)"], speed: 0.00008, phase: 0 },
+    { x: 900 * sx, y: 500 * sy, rx: 500 * sx, ry: 350 * sy, colours: ["rgba(30, 80, 200, 0.05)", "rgba(20, 50, 160, 0.08)", "rgba(10, 20, 100, 0.03)"], speed: -0.00006, phase: 1.5 },
+    { x: 700 * sx, y: 350 * sy, rx: 350 * sx, ry: 250 * sy, colours: ["rgba(255, 80, 120, 0.05)", "rgba(200, 40, 80, 0.08)", "rgba(140, 20, 60, 0.03)"], speed: 0.0001, phase: -0.8 },
+    { x: 1100 * sx, y: 650 * sy, rx: 400 * sx, ry: 250 * sy, colours: ["rgba(200, 140, 40, 0.03)", "rgba(160, 100, 20, 0.06)", "rgba(100, 60, 10, 0.03)"], speed: -0.00005, phase: 2.5 },
+    { x: 400 * sx, y: 700 * sy, rx: 350 * sx, ry: 200 * sy, colours: ["rgba(40, 180, 160, 0.03)", "rgba(20, 140, 120, 0.06)", "rgba(10, 90, 80, 0.03)"], speed: 0.00007, phase: -1.5 },
+    { x: 1300 * sx, y: 350 * sy, rx: 300 * sx, ry: 350 * sy, colours: ["rgba(130, 40, 220, 0.03)", "rgba(90, 20, 180, 0.06)", "rgba(50, 10, 120, 0.03)"], speed: -0.00009, phase: 0.5 },
   ];
   for (var c of centres) {
     var ox = Math.sin(t * 0.00003 + c.phase) * 30;
@@ -55,11 +55,7 @@ function drawNebulaGas(t, sy) {
     _gasCtx.ellipse(c.x + ox, c.y + oy, c.rx, c.ry, c.phase * 0.1, 0, Math.PI * 2);
     _gasCtx.fill();
   }
-  bgCtx.save();
-  bgCtx.filter = "blur(40px)";
   bgCtx.drawImage(_gasBuf, 0, 0, _gasBuf.width, _gasBuf.height, 0, 0, width, _gasBuf.height);
-  bgCtx.restore();
-  bgCtx.filter = "none";
 }
 
 // === Bright cores (viewport-fixed) ===
@@ -82,27 +78,13 @@ function drawBrightCore(t, sy) {
   }
 }
 
-// === Constellations: Cassiopeia, Andromeda, Scorpius spread across page ===
+// === Constellations ===
 function buildCons() {
-	var cons = [];
-	var configs = [
+	return buildConstellations([
 		{ name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.15, cy: height * 0.2, sc: 12 * sy, plx: 0.2 },
 		{ name: "ANDROMEDA", label: "Andromeda", cx: width * 0.75, cy: height * 0.3, sc: 5 * sx, plx: 0.15 },
 		{ name: "SCORPIUS", label: "Scorpius", cx: width * 0.2, cy: height * 0.8, sc: 6 * sx, plx: 0.25 },
-	];
-	for (var i = 0; i < configs.length; i++) {
-		var c = configs[i];
-		var data = consDataByName[c.name];
-		if (!data) continue;
-		cons.push({
-			pts: projectConstellation(data, c.cx, c.cy, c.sc),
-			connections: data.connections,
-			mainIndices: data.mainIndices,
-			parallax: c.plx,
-			label: c.label,
-		});
-	}
-	return cons;
+	]);
 }
 
 var time = 0;

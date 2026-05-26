@@ -701,6 +701,24 @@ function projectConstellation(consData, cx, cy, sc, rC, dC, onlyMain) {
   return pts;
 }
 
+// Build constellation objects for rendering. Config entries: {name, cx, cy, sc, plx, label?}
+function buildConstellations(configs) {
+  var arr = [];
+  for (var i = 0; i < configs.length; i++) {
+    var c = configs[i];
+    var data = consDataByName[c.name];
+    if (!data) continue;
+    arr.push({
+      pts: projectConstellation(data, c.cx, c.cy, c.sc, undefined, undefined, c.onlyMain),
+      connections: data.connections,
+      mainIndices: data.mainIndices,
+      parallax: c.plx !== undefined ? c.plx : 0,
+      label: c.label || c.name,
+    });
+  }
+  return arr;
+}
+
 // Draw constellation connection lines with optional parallax offset
 function renderConstellationLines(ctx, pts, connections, style, scrollY, parallax) {
   ctx.strokeStyle = style || "rgba(200, 200, 255, 0.15)";
