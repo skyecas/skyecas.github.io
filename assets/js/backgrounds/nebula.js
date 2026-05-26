@@ -81,9 +81,9 @@ function drawBrightCore(t, sy) {
 // === Constellations ===
 function buildCons() {
 	return buildConstellations([
-		{ name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.15, cy: height * 0.2, sc: 12 * sy, plx: 0.2 },
-		{ name: "ANDROMEDA", label: "Andromeda", cx: width * 0.75, cy: height * 0.3, sc: 5 * sx, plx: 0.15 },
-		{ name: "SCORPIUS", label: "Scorpius", cx: width * 0.2, cy: height * 0.8, sc: 6 * sx, plx: 0.25 },
+		{ name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.15, cy: height * 0.2, sc: 12 * sy, plx: 0.2, onlyMain: true },
+		{ name: "ANDROMEDA", label: "Andromeda", cx: width * 0.75, cy: height * 0.3, sc: 5 * sx, plx: 0.15, onlyMain: true },
+		{ name: "SCORPIUS", label: "Scorpius", cx: width * 0.2, cy: height * 0.8, sc: 6 * sx, plx: 0.25, onlyMain: true },
 	]);
 }
 
