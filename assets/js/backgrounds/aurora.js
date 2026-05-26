@@ -40,9 +40,8 @@ AuroraBand.prototype.render = function(t, sy) {
 	for (var i = 0; i < this.colours.length; i++)
 		grad.addColorStop(i / (this.colours.length - 1), this.colours[i]);
 	var tOff = t * this.speed;
-	// Solid pass
 	bgCtx.save();
-	bgCtx.globalAlpha = 0.18;
+	bgCtx.globalAlpha = 0.2;
 	bgCtx.fillStyle = grad;
 	bgCtx.beginPath();
 	bgCtx.moveTo(0, adjY);
@@ -55,23 +54,6 @@ AuroraBand.prototype.render = function(t, sy) {
 	bgCtx.closePath();
 	bgCtx.fill();
 	bgCtx.restore();
-	// Blurred glow pass
-	bgCtx.save();
-	bgCtx.globalAlpha = 0.15;
-	bgCtx.filter = "blur(20px)";
-	bgCtx.fillStyle = grad;
-	bgCtx.beginPath();
-	bgCtx.moveTo(0, adjY);
-	for (var x = 0; x <= width; x += 16)
-		bgCtx.lineTo(x, adjY + Math.sin(x * 0.008 + tOff + this.phase) * 25
-			+ Math.sin(x * 0.015 + tOff * 0.7 + this.phase * 1.3) * 15
-			+ Math.sin(x * 0.003 + tOff * 1.3 + this.phase * 0.7) * 20);
-	bgCtx.lineTo(width, adjY + this.h + 40);
-	bgCtx.lineTo(0, adjY + this.h + 40);
-	bgCtx.closePath();
-	bgCtx.fill();
-	bgCtx.restore();
-	bgCtx.filter = "none";
 };
 
 function buildCons() {
@@ -172,31 +154,31 @@ function animate() {
     bgCtx.fillStyle = skyGrad;
     bgCtx.fillRect(0, sy, width, height);
 
-    var dc = getDateColour();
-    if (dc) {
-        var pulse = Math.sin(time * 0.02) * 0.5 + 0.5;
-        for (var b of bands) {
-            var adjY = b.yBase + sy * (1 - b.bandParallax);
-            var colours = b.colours.slice();
-            colours.push("rgba(" + dc[0] + ", " + dc[1] + ", " + dc[2] + ", " + pulse * 0.08 + ")");
-            var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + b.h + 30);
-            for (var i = 0; i < colours.length; i++)
-                grad.addColorStop(i / (colours.length - 1), colours[i]);
-			bgCtx.save();
-			bgCtx.globalAlpha = 0.3;
-			bgCtx.fillStyle = grad;
-			bgCtx.beginPath();
-			bgCtx.moveTo(0, adjY);
-			var tO = time * b.speed;
-			for (var x = 0; x <= width; x += 16)
-				bgCtx.lineTo(x, adjY + Math.sin(x * 0.008 + tO + b.phase) * 25
-					+ Math.sin(x * 0.015 + tO * 0.7 + b.phase * 1.3) * 15
-					+ Math.sin(x * 0.003 + tO * 1.3 + b.phase * 0.7) * 20);
-			bgCtx.lineTo(width, adjY + b.h);
-			bgCtx.lineTo(0, adjY + b.h);
-			bgCtx.closePath();
-			bgCtx.fill();
-			bgCtx.restore();
+var dc = getDateColour();
+     if (dc) {
+         var pulse = Math.sin(time * 0.02) * 0.5 + 0.5;
+         for (var b of bands) {
+             var adjY = b.yBase + sy * (1 - b.bandParallax);
+             var colours = b.colours.slice();
+             colours.push("rgba(" + dc[0] + ", " + dc[1] + ", " + dc[2] + ", " + pulse * 0.08 + ")");
+             var grad = bgCtx.createLinearGradient(0, adjY - 30, 0, adjY + b.h + 30);
+             for (var i = 0; i < colours.length; i++)
+                 grad.addColorStop(i / (colours.length - 1), colours[i]);
+ 			bgCtx.save();
+ 			bgCtx.globalAlpha = 0.3;
+ 			bgCtx.fillStyle = grad;
+ 			bgCtx.beginPath();
+ 			bgCtx.moveTo(0, adjY);
+ 			var tO = time * b.speed;
+ 			for (var x = 0; x <= width; x += 16)
+ 				bgCtx.lineTo(x, adjY + Math.sin(x * 0.008 + tO + b.phase) * 25
+ 					+ Math.sin(x * 0.015 + tO * 0.7 + b.phase * 1.3) * 15
+ 					+ Math.sin(x * 0.003 + tO * 1.3 + b.phase * 0.7) * 20);
+ 			bgCtx.lineTo(width, adjY + b.h);
+ 			bgCtx.lineTo(0, adjY + b.h);
+ 			bgCtx.closePath();
+ 			bgCtx.fill();
+ 			bgCtx.restore();
         }
     } else {
         for (var b of bands) { b.render(time, sy); }
