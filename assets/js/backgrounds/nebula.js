@@ -136,17 +136,13 @@ function buildCons() {
 		var c = configs[i];
 		var data = consDataByName[c.name];
 		if (!data) continue;
-		// Place 3 copies at random page positions
-		for (var s = 0; s < 3; s++) {
-			var py = c.cy + Math.random() * pageHeight * 0.6;
-			cons.push({
-				pts: projectConstellation(data, c.cx, py, c.sc),
-				connections: data.connections,
-				mainIndices: data.mainIndices,
-				parallax: c.plx,
-				label: c.label,
-			});
-		}
+		cons.push({
+			pts: projectConstellation(data, c.cx, c.cy, c.sc),
+			connections: data.connections,
+			mainIndices: data.mainIndices,
+			parallax: c.plx,
+			label: c.label,
+		});
 	}
 	return cons;
 }
@@ -155,7 +151,7 @@ var time = 0;
 
 function animate() {
   time++;
-  var sy = getY();
+  var sy = window.getScrollY ? window.getScrollY() : 0;
 
   bgCtx.fillStyle = "#030308";
   bgCtx.fillRect(0, sy, width, height);
