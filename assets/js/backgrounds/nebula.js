@@ -28,7 +28,7 @@ function noise2D(x, y, t) {
 
 // === Nebula gas (viewport-fixed, time-animated) ===
 var _gasBuf = null, _gasCtx = null;
-function drawNebulaGas(t) {
+function drawNebulaGas(t, sy) {
   if (!_gasBuf || _gasBuf.width !== width) {
     _gasBuf = document.createElement("canvas");
     _gasBuf.width = width;
@@ -46,7 +46,7 @@ function drawNebulaGas(t) {
   ];
   for (var c of centres) {
     var ox = Math.sin(t * 0.00003 + c.phase) * 30;
-    var oy = Math.cos(t * 0.00004 + c.phase * 0.7) * 20;
+    var oy = Math.cos(t * 0.00004 + c.phase * 0.7) * 20 + sy * (1 - scrollDrift);
     var grad = _gasCtx.createRadialGradient(c.x + ox, c.y + oy, 0, c.x + ox, c.y + oy, Math.max(c.rx, c.ry));
     for (var i = 0; i < c.colours.length; i++)
       grad.addColorStop(i / (c.colours.length - 1), c.colours[i]);
@@ -63,7 +63,7 @@ function drawNebulaGas(t) {
 }
 
 // === Bright cores (viewport-fixed) ===
-function drawBrightCore(t) {
+function drawBrightCore(t, sy) {
   var pulse = Math.sin(t * 0.005) * 0.2 + 0.8;
   var cores = [
     { x: 650 * sx, y: 380 * sy, r: 80 * mScale, colour: "rgba(200, 150, 255, " + pulse * 0.18 + ")" },
@@ -71,12 +71,13 @@ function drawBrightCore(t) {
     { x: 500 * sx, y: 300 * sy, r: 100 * mScale, colour: "rgba(255, 150, 200, " + pulse * 0.12 + ")" },
   ];
   for (var c of cores) {
-    var grad = bgCtx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
+    var cy = c.y + sy * (1 - scrollDrift);
+    var grad = bgCtx.createRadialGradient(c.x, cy, 0, c.x, cy, c.r);
     grad.addColorStop(0, c.colour);
     grad.addColorStop(1, "rgba(0, 0, 0, 0)");
     bgCtx.fillStyle = grad;
     bgCtx.beginPath();
-    bgCtx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+    bgCtx.arc(c.x, cy, c.r, 0, Math.PI * 2);
     bgCtx.fill();
   }
 }
@@ -113,9 +114,9 @@ function animate() {
   bgCtx.fillStyle = "#030308";
   bgCtx.fillRect(0, sy, width, height);
 
-  drawNebulaGas(time);
+  drawNebulaGas(time, sy);
 
-  drawBrightCore(time);
+  drawBrightCore(time, sy);
 
   renderBgStars(bgCtx, stars, time, undefined, sy);
 
