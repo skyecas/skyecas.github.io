@@ -15,24 +15,10 @@ bgCtx.fillRect(0, 0, width, pageHeight);
 var cons = buildCons();
 
 function buildCons() {
-	var configs = [
+	return buildConstellations([
 		{ name: "CASSIOPEIA", cx: width * 0.15, cy: height * 0.25, sc: 13 * (width / 1920), plx: 0.7 },
 		{ name: "ORION", cx: width * 0.85, cy: height * 0.75, sc: 7 * (width / 1920), plx: 0.8 },
-	];
-	var arr = [];
-	for (var i = 0; i < configs.length; i++) {
-		var c = configs[i];
-		var data = consDataByName[c.name];
-		if (!data) continue;
-		arr.push({
-			pts: projectConstellation(data, c.cx, c.cy, c.sc, undefined, undefined, false),
-			connections: data.connections,
-			mainIndices: data.mainIndices,
-			parallax: c.plx,
-			label: c.name,
-		});
-	}
-	return arr;
+	]);
 }
 
 // === Background stars via shared.js ===

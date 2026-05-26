@@ -229,17 +229,20 @@ for (var i = wavecount; i > 0; i--) {
 }
 for (var i = 10; i > 0; i--) { shootingstars.push(new ShootingStar()); }
 
-var orionPts = projectConstellation(consDataByName.ORION, 2400, 200, 8, undefined, undefined, true);
-var cassPts = projectConstellation(consDataByName.CASSIOPEIA, 400, 120, 8, undefined, undefined, true);
+var cons = buildConstellations([
+	{ name: "ORION", cx: 2400, cy: 200, sc: 8, onlyMain: true },
+	{ name: "CASSIOPEIA", cx: 400, cy: 120, sc: 8, onlyMain: true },
+]);
 
 function animate() {
 	const time = performance.now() / 1000;
 	drawSky();
 	renderBgStars(bgCtx, stars, time, 1, undefined);
-	renderConstellationLines(bgCtx, orionPts, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.15)", 0, 0.3);
-	renderConstellationLines(bgCtx, cassPts, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", 0, 0.35);
-	renderConstellationStars(bgCtx, orionPts, consDataByName.ORION.mainIndices, time, 0, 0.3);
-	renderConstellationStars(bgCtx, cassPts, consDataByName.CASSIOPEIA.mainIndices, time, 0, 0.35);
+	for (var ci = 0; ci < cons.length; ci++) {
+		var c = cons[ci];
+		renderConstellationLines(bgCtx, c.pts, c.connections, "rgba(255, 255, 255, 0.15)", 0, c.parallax);
+		renderConstellationStars(bgCtx, c.pts, c.mainIndices, time, 0, c.parallax);
+	}
 	drawSun();
 	drawSea();
 	for (let wave of waves) { wave.update(time); };
