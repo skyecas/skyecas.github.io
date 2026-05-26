@@ -387,7 +387,7 @@ function animate() {
     for (var ci = 0; ci < cons.length; ci++) {
         var c = cons[ci];
         renderConstellationLines(bgCtx, c.pts, c.connections, "rgba(255, 255, 255, 0.15)", 0, c.parallax);
-        renderConstellationStars(bgCtx, c.pts, c.mainIndices, time, 0, c.parallax);
+        renderConstellationStars(bgCtx, c.pts, c.mainIndices, windTime, 0, c.parallax);
     }
 
     drawWindow();
