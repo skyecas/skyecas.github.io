@@ -759,5 +759,27 @@ function initCanvas(callback) {
   window.addEventListener("resize", resize, { passive: true });
   return { canvas: c, ctx: cx, width: function() { return w; }, height: function() { return h; },
            sx: function() { return w / 1920; }, sy: function() { return h / 1080; },
-           mScale: function() { return Math.min(w / 1920, h / 1080); } };
+            mScale: function() { return Math.min(w / 1920, h / 1080); } };
 }
+
+// ── Lenis smooth scroll (loaded once from CDN) ─────────
+window.getScrollY = function() {
+  return window.lenisScroll !== undefined ? window.lenisScroll
+    : document.documentElement.scrollTop || window.pageYOffset || 0;
+};
+
+(function() {
+  if (window.lenis || window.__lenisLoading) return;
+  window.__lenisLoading = true;
+  var s = document.createElement('script');
+  s.src = 'https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js';
+  s.onload = function() {
+    window.lenis = new Lenis({ duration: 0, syncTouch: true, wheelMultiplier: 1 });
+    window.lenisScroll = 0;
+    window.lenis.on('scroll', function(e) { window.lenisScroll = e.animatedScroll; });
+    function lenisRaf(time) { window.lenis.raf(time); requestAnimationFrame(lenisRaf); }
+    requestAnimationFrame(lenisRaf);
+  };
+  s.onerror = function() { window.lenisScroll = 0; };
+  document.head.appendChild(s);
+})();

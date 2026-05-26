@@ -19,19 +19,9 @@ if (bg && bgNames.indexOf(bg) !== -1) {
   var shared = document.createElement("script");
   shared.src = "/assets/js/backgrounds/shared.js?v=" + Date.now();
   shared.onload = function() {
-    var lenisScript = document.createElement("script");
-    lenisScript.src = "https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js";
-    lenisScript.onload = function() {
-      window.lenis = new Lenis({ duration: 0, syncTouch: true, wheelMultiplier: 1 });
-      window.lenisScroll = 0;
-      window.lenis.on('scroll', function(e) { window.lenisScroll = e.animatedScroll; });
-      function lenisRaf(time) { window.lenis.raf(time); requestAnimationFrame(lenisRaf); }
-      requestAnimationFrame(lenisRaf);
-      var script = document.createElement("script");
-      script.src = "/assets/js/backgrounds/" + bg + ".js?v=" + Date.now();
-      document.body.appendChild(script);
-    };
-    document.body.appendChild(lenisScript);
+    var script = document.createElement("script");
+    script.src = "/assets/js/backgrounds/" + bg + ".js?v=" + Date.now();
+    document.body.appendChild(script);
   };
   document.body.appendChild(shared);
 } else {

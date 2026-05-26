@@ -1,6 +1,3 @@
-var cassData = consDataByName.CASSIOPEIA;
-var cassPts = [];
-
 var pageHeight;
 var bg = initCanvas(function(w, h, c) {
 	rawWidth = w; rawHeight = h;
@@ -10,13 +7,13 @@ var bg = initCanvas(function(w, h, c) {
 	c.style.height = pageHeight + "px";
 	sx = w / 1920; sy = h / 1080;
 	mScale = Math.min(sx, sy);
-	stars = createBgStars(1200, w, pageHeight, { parallax: true });
+	stars = createBgStars(800, w, pageHeight, { parallax: true });
 	dustLanes = [
 		new DustLane(200 * sy, 300 * sy, 800 * sx, 120 * sy, -0.2, 0.0002),
 		new DustLane(900 * sx, 500 * sy, 700 * sx, 100 * sy, 0.3, 0.00015),
 		new DustLane(400 * sx, 700 * sy, 600 * sx, 80 * sy, -0.1, 0.00025),
 	];
-	projectConstellationLocal();
+	cons = buildCons();
 });
 var bgCtx = bg.ctx;
 var width = rawWidth, height = rawHeight;
@@ -25,8 +22,8 @@ bg.canvas.style.position = "absolute";
 bg.canvas.style.top = "0";
 bg.canvas.style.left = "0";
 
-var nebulaMult = 2.5;
 var scrollDrift = 0.05;
+
 
 function noise2D(x, y, t) {
   return Math.sin(x * 0.003 + t * 0.0003) * 0.5 +
@@ -34,6 +31,7 @@ function noise2D(x, y, t) {
          Math.sin((x + y) * 0.002 + t * 0.0004) * 0.2;
 }
 
+// === Dust Lanes (viewport-fixed, time-animated only) ===
 function DustLane(xBase, yBase, width, height, angle, speed) {
   this.xBase = xBase;
   this.yBase = yBase;
@@ -43,15 +41,12 @@ function DustLane(xBase, yBase, width, height, angle, speed) {
   this.speed = speed;
   this.phase = Math.random() * Math.PI * 2;
 }
-DustLane.prototype.update = function(t, sy) {
-  var driftY = this.yBase + sy * (1 - scrollDrift);
+DustLane.prototype.update = function(t) {
   bgCtx.save();
-  bgCtx.translate(this.xBase, driftY);
+  bgCtx.translate(this.xBase, this.yBase);
   bgCtx.rotate(this.angle);
-
   var segments = 40;
   var segW = this.width / segments;
-
   bgCtx.fillStyle = "rgba(2, 2, 8, 0.3)";
   bgCtx.beginPath();
   bgCtx.moveTo(0, 0);
@@ -63,7 +58,6 @@ DustLane.prototype.update = function(t, sy) {
   bgCtx.lineTo(this.width, 0);
   bgCtx.closePath();
   bgCtx.fill();
-
   bgCtx.fillStyle = "rgba(2, 2, 8, 0.2)";
   bgCtx.beginPath();
   bgCtx.moveTo(0, this.height * 0.3);
@@ -75,11 +69,16 @@ DustLane.prototype.update = function(t, sy) {
   bgCtx.lineTo(this.width, this.height * 0.3);
   bgCtx.closePath();
   bgCtx.fill();
-
   bgCtx.restore();
 };
 
-function drawNebulaGas(t, sy) {
+// === Nebula gas (viewport-fixed, time-animated only) ===
+function drawNebulaGas(t) {
+  var blurred = document.createElement("canvas");
+  var bw = width, bh = height * 0.85;
+  blurred.width = bw;
+  blurred.height = bh;
+  var bCtx = blurred.getContext("2d");
   var centres = [
     { x: 500 * sx, y: 350 * sy, rx: 450 * sx, ry: 300 * sy, colours: ["rgba(180, 40, 200, 0.1)", "rgba(120, 20, 160, 0.18)", "rgba(60, 10, 100, 0.08)"], speed: 0.00008, phase: 0 },
     { x: 900 * sx, y: 500 * sy, rx: 500 * sx, ry: 350 * sy, colours: ["rgba(30, 80, 200, 0.08)", "rgba(20, 50, 160, 0.15)", "rgba(10, 20, 100, 0.05)"], speed: -0.00006, phase: 1.5 },
@@ -88,34 +87,26 @@ function drawNebulaGas(t, sy) {
     { x: 400 * sx, y: 700 * sy, rx: 350 * sx, ry: 200 * sy, colours: ["rgba(40, 180, 160, 0.05)", "rgba(20, 140, 120, 0.1)", "rgba(10, 90, 80, 0.05)"], speed: 0.00007, phase: -1.5 },
     { x: 1300 * sx, y: 350 * sy, rx: 300 * sx, ry: 350 * sy, colours: ["rgba(130, 40, 220, 0.05)", "rgba(90, 20, 180, 0.1)", "rgba(50, 10, 120, 0.05)"], speed: -0.00009, phase: 0.5 },
   ];
-
-  var blurred = document.createElement("canvas");
-  blurred.width = width;
-  blurred.height = height;
-  var bCtx = blurred.getContext("2d");
-
   for (var c of centres) {
     var ox = Math.sin(t * 0.00003 + c.phase) * 30;
-    var oy = Math.cos(t * 0.00004 + c.phase * 0.7) * 20 + sy * (1 - scrollDrift);
-
+    var oy = Math.cos(t * 0.00004 + c.phase * 0.7) * 20;
     var grad = bCtx.createRadialGradient(c.x + ox, c.y + oy, 0, c.x + ox, c.y + oy, Math.max(c.rx, c.ry));
-    for (var i = 0; i < c.colours.length; i++) {
+    for (var i = 0; i < c.colours.length; i++)
       grad.addColorStop(i / (c.colours.length - 1), c.colours[i]);
-    }
     bCtx.fillStyle = grad;
     bCtx.beginPath();
     bCtx.ellipse(c.x + ox, c.y + oy, c.rx, c.ry, c.phase * 0.1, 0, Math.PI * 2);
     bCtx.fill();
   }
-
   bgCtx.save();
   bgCtx.filter = "blur(40px)";
-  bgCtx.drawImage(blurred, 0, 0);
+  bgCtx.drawImage(blurred, 0, 0, bw, bh, 0, 0, width, height * 0.85);
   bgCtx.restore();
   bgCtx.filter = "none";
 }
 
-function drawBrightCore(t, sy) {
+// === Bright cores (viewport-fixed) ===
+function drawBrightCore(t) {
   var pulse = Math.sin(t * 0.005) * 0.2 + 0.8;
   var cores = [
     { x: 650 * sx, y: 380 * sy, r: 80 * mScale, colour: "rgba(200, 150, 255, " + pulse * 0.18 + ")" },
@@ -123,60 +114,81 @@ function drawBrightCore(t, sy) {
     { x: 500 * sx, y: 300 * sy, r: 100 * mScale, colour: "rgba(255, 150, 200, " + pulse * 0.12 + ")" },
   ];
   for (var c of cores) {
-    var cy = c.y + sy * (1 - scrollDrift);
-    var grad = bgCtx.createRadialGradient(c.x, cy, 0, c.x, cy, c.r);
+    var grad = bgCtx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
     grad.addColorStop(0, c.colour);
     grad.addColorStop(1, "rgba(0, 0, 0, 0)");
     bgCtx.fillStyle = grad;
     bgCtx.beginPath();
-    bgCtx.arc(c.x, cy, c.r, 0, Math.PI * 2);
+    bgCtx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
     bgCtx.fill();
   }
 }
 
-// === Cassiopeia Constellation ===
-
-function projectConstellationLocal() {
-  var sc = 12 * sy;
-  var cx = width * 0.13;
-  var cy = height * 0.93;
-  cassPts = projectConstellation(cassData, cx, cy, sc);
-}
-
-function drawConstellationLabel(sy) {
-  bgCtx.font = "11px sans-serif";
-  bgCtx.textAlign = "center";
-  bgCtx.fillStyle = "rgba(255, 255, 255, 0.24)";
-  var labelX = 0, minY = Infinity;
-  for (var i = 0; i < 5; i++) {
-    var s = cassPts[i];
-    labelX += s.x;
-    if (s.y < minY) minY = s.y;
-  }
-  bgCtx.fillText("Cassiopeia", labelX / 5, minY - 20 + sy * (1 - 0.9));
+// === Constellations: Cassiopeia, Andromeda, Scorpius spread across page ===
+function buildCons() {
+	var cons = [];
+	var configs = [
+		{ name: "CASSIOPEIA", label: "Cassiopeia", cx: width * 0.15, cy: height * 0.2, sc: 12 * sy, plx: 0.7 },
+		{ name: "ANDROMEDA", label: "Andromeda", cx: width * 0.75, cy: height * 0.3, sc: 5 * sx, plx: 0.65 },
+		{ name: "SCORPIUS", label: "Scorpius", cx: width * 0.2, cy: height * 0.8, sc: 6 * sx, plx: 0.6 },
+	];
+	for (var i = 0; i < configs.length; i++) {
+		var c = configs[i];
+		var data = consDataByName[c.name];
+		if (!data) continue;
+		// Place 3 copies at random page positions
+		for (var s = 0; s < 3; s++) {
+			var py = c.cy + Math.random() * pageHeight * 0.6;
+			cons.push({
+				pts: projectConstellation(data, c.cx, py, c.sc),
+				connections: data.connections,
+				mainIndices: data.mainIndices,
+				parallax: c.plx,
+				label: c.label,
+			});
+		}
+	}
+	return cons;
 }
 
 var time = 0;
 
 function animate() {
   time++;
+  var sy = getY();
 
   bgCtx.fillStyle = "#030308";
-  bgCtx.fillRect(0, 0, width, pageHeight);
+  bgCtx.fillRect(0, sy, width, height);
 
-  var sy = window.lenisScroll !== undefined ? window.lenisScroll : 0;
+  drawNebulaGas(time);
+
+  for (var d of dustLanes) { d.update(time); }
+
+  drawBrightCore(time);
 
   renderBgStars(bgCtx, stars, time, undefined, sy);
 
-	renderConstellationLines(bgCtx, cassPts, cassData.connections, "rgba(255, 255, 255, 0.15)", sy, 0.9);
-	renderConstellationStars(bgCtx, cassPts, cassData.mainIndices, time, sy, 0.9);
+  for (var ec of cons) {
+    renderConstellationLines(bgCtx, ec.pts, ec.connections, "rgba(255, 255, 255, 0.12)", sy, ec.parallax);
+    renderConstellationStars(bgCtx, ec.pts, ec.mainIndices, time, sy, ec.parallax);
+  }
 
-  for (var d of dustLanes) { d.update(time, sy); }
-
-  drawNebulaGas(time, sy);
-
-  drawBrightCore(time, sy);
-  drawConstellationLabel(sy);
+  // Labels
+  bgCtx.font = "11px sans-serif";
+  bgCtx.textAlign = "center";
+  bgCtx.fillStyle = "rgba(255, 255, 255, 0.2)";
+  for (var ec of cons) {
+    if (!ec.pts || ec.pts.length === 0 || !ec.label) continue;
+    var lx = 0, lowestY = -Infinity, n = 0;
+    var idxs = ec.mainIndices || [];
+    if (idxs.length === 0) idxs = [0];
+    for (var j = 0; j < Math.min(4, idxs.length); j++) {
+      var p = ec.pts[idxs[j]];
+      if (p) { lx += p.x; n++; if (p.y > lowestY) lowestY = p.y; }
+    }
+    if (n > 0)
+      bgCtx.fillText(ec.label, lx / n, lowestY + 16 + sy * (1 - ec.parallax));
+  }
 
   var todayKey = getDateKey();
   for (var key in consDataByName) {
@@ -187,7 +199,7 @@ function animate() {
       grad.addColorStop(0.5, "rgba(255, 215, 0, " + pulse * 0.015 + ")");
       grad.addColorStop(1, "rgba(255, 215, 0, 0)");
       bgCtx.fillStyle = grad;
-      bgCtx.fillRect(0, 0, width, height);
+      bgCtx.fillRect(0, sy, width, height);
       break;
     }
   }

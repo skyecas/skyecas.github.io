@@ -126,7 +126,7 @@ function animate() {
 		}
 	}
 
-	var sy = window.lenisScroll !== undefined ? window.lenisScroll : 0;
+	var sy = window.getScrollY ? window.getScrollY() : 0;
 
 	bgCtx.fillStyle = "#110E19";
 	bgCtx.fillRect(0, 0, width, pageHeight);
