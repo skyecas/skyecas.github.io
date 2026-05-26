@@ -736,16 +736,17 @@ function renderConstellationLines(ctx, pts, connections, style, scrollY, paralla
   }
 }
 
-// Draw constellation stars with glow; only main indices are rendered
+// Draw constellation stars with glow; main indices get brighter glow
 function renderConstellationStars(ctx, pts, mainIndices, time, scrollY, parallax) {
   var dy = scrollY && parallax ? -scrollY * parallax : 0;
-  for (var mi = 0; mi < (mainIndices || []).length; mi++) {
-    var i = mainIndices[mi];
+  for (var i = 0; i < pts.length; i++) {
     var p = pts[i];
     if (!p) continue;
+    var isMain = mainIndices && mainIndices.indexOf(i) !== -1;
+    var glow = isMain ? 1 : 0.4;
     var twinkle = 0.6 + 0.4 * Math.sin(time * 0.02 + i * 1.7);
-    var visible = 0.4 + 0.6 * twinkle;
-    var r = hexToRgba(p.colour, 0.3 * visible);
+    var visible = isMain ? 0.4 + 0.6 * twinkle : twinkle;
+    var r = hexToRgba(p.colour, glow * 0.3 * visible);
     ctx.fillStyle = r;
     ctx.beginPath();
     ctx.arc(p.x, p.y + scrollY + dy, p.size * 2, 0, Math.PI * 2);

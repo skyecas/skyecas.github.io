@@ -55,7 +55,7 @@ function drawNebulaGas(t, sy) {
     _gasCtx.ellipse(c.x + ox, c.y + oy, c.rx, c.ry, c.phase * 0.1, 0, Math.PI * 2);
     _gasCtx.fill();
   }
-  bgCtx.drawImage(_gasBuf, 0, 0, _gasBuf.width, _gasBuf.height, 0, 0, width, _gasBuf.height);
+  bgCtx.drawImage(_gasBuf, 0, 0, _gasBuf.width, _gasBuf.height, 0, sy, width, _gasBuf.height);
 }
 
 // === Bright cores (viewport-fixed) ===
@@ -94,7 +94,7 @@ function animate() {
   var sy = window.getScrollY ? window.getScrollY() : 0;
 
   bgCtx.fillStyle = "#030308";
-  bgCtx.fillRect(0, sy, width, height);
+  bgCtx.fillRect(0, sy - 50, width, height + 100);
 
   drawNebulaGas(time, sy);
 
@@ -133,7 +133,7 @@ function animate() {
       grad.addColorStop(0.5, "rgba(255, 215, 0, " + pulse * 0.015 + ")");
       grad.addColorStop(1, "rgba(255, 215, 0, 0)");
       bgCtx.fillStyle = grad;
-      bgCtx.fillRect(0, sy, width, height);
+      bgCtx.fillRect(0, sy - 50, width, height + 100);
       break;
     }
   }
