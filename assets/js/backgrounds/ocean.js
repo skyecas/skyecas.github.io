@@ -1,6 +1,7 @@
 var bg = initCanvas(function(w, h) {
 	width = w; height = h;
 });
+var bgCtx = bg.ctx;
 
 // the sky
 function drawSky() {
