@@ -125,7 +125,7 @@ function Bubble() {
 }
 Bubble.prototype.update = function (t) {
 	if (isFinite(this.x) && isFinite(this.y) && isFinite(this.radius)) {
-		this.y += 0.3 * Math.sin(0.002 * (t + this.offset));
+		this.y += 0.3 * Math.sin(0.02 * (t + this.offset));
 		this.x += this.speedX;
 		if (this.x < -this.radius) {
 			this.x = width + this.radius;
@@ -232,7 +232,6 @@ for (var i = 10; i > 0; i--) { shootingstars.push(new ShootingStar()); }
 
 var cons = buildConstellations([
 	{ name: "ORION", cx: 2400, cy: 200, sc: 8, onlyMain: true },
-	{ name: "CASSIOPEIA", cx: 400, cy: 120, sc: 8, onlyMain: true },
 ]);
 
 function animate() {

@@ -31,7 +31,7 @@ var bg = initCanvas(function (w, h, c) {
 var bgCtx = bg.ctx;
 
 var cons = buildConstellations([
-    { name: "CASSIOPEIA", cx: 400, cy: 320, sc: 8, onlyMain: false, },
+    { name: "CASSIOPEIA", cx: 400, cy: 320, sc: 20, onlyMain: false, },
 ]);
 
 function drawWindow() {
