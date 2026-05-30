@@ -91,7 +91,7 @@ function buildCons() {
 		var data = consDataByName[c.name];
 		if (!data) continue;
 		cons.push({
-			pts: projectConstellation(data, c.cx, c.cy, c.sc),
+			pts: projectConstellation(data, c.cx, c.cy, c.sc, undefined, undefined, true),
 			connections: data.connections,
 			mainIndices: data.mainIndices,
 			parallax: c.plx,

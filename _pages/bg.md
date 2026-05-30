@@ -1,7 +1,7 @@
 ---
 layout: bg
 permalink: /bg/
-title: 
+title:
 description:
 nav: false
 ---
@@ -14,7 +14,7 @@ if (bg && bgNames.indexOf(bg) !== -1) {
   document.querySelector(".content").style.display = "none";
   document.body.style.paddingBottom = "0";
   var spacer = document.createElement("div");
-  spacer.style.height = "400vh"; spacer.style.pointerEvents = "none";
+  spacer.style.height = "200vh"; spacer.style.pointerEvents = "none";
   document.body.appendChild(spacer);
   var shared = document.createElement("script");
   shared.src = "/assets/js/backgrounds/shared.js?v=" + Date.now();
