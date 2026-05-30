@@ -12,15 +12,22 @@ bgCtx.fillStyle = "#110E19";
 bgCtx.fillRect(0, 0, width, pageHeight);
 
 // === Constellations ===
-var cassWCoords = projectConstellation(consDataByName.CASSIOPEIA,
+var cassCoords = projectConstellation(consDataByName.CASSIOPEIA,
 	width * 0.15, height * 0.25,
 	13 * (width / 1920),
+    undefined, undefined, false
+);
+
+var orionCoords = projectConstellation(consDataByName.ORION,
+	width * 0.85, height * 0.75,
+    7 * (width / 1920),
     undefined, undefined, true
 );
 
-var orionWCoords = projectConstellation(consDataByName.ORION,
-	width * 0.85, height * 0.75,
-	7 * (width / 1920)
+var lyraCoords = projectConstellation(consDataByName.LYRA,
+    width * 0.2, height * 0.83,
+    10 * (width / 1920),
+    undefined, undefined, false
 );
 
 // === Background stars via shared.js ===
@@ -134,22 +141,16 @@ function animate() {
 
 	cassTime++;
 	renderBgStars(bgCtx, stars, bgTime, undefined, sy);
-	renderConstellationLines(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", sy, 0.7);
-	renderConstellationStars(bgCtx, cassWCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, sy, 0.7);
-	renderConstellationLines(bgCtx, orionWCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", sy, 0.8);
-	renderConstellationStars(bgCtx, orionWCoords, consDataByName.ORION.mainIndices, cassTime, sy, 0.8);
+	renderConstellationLines(bgCtx, cassCoords, consDataByName.CASSIOPEIA.connections, "rgba(255, 255, 255, 0.15)", sy, 0.3);
+	renderConstellationStars(bgCtx, cassCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, sy, 0.3);
+	renderConstellationLines(bgCtx, orionCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", sy, 0.4);
+    renderConstellationStars(bgCtx, orionCoords, consDataByName.ORION.mainIndices, cassTime, sy, 0.4);
+    renderConstellationLines(bgCtx, lyraCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", sy, 0.2);
+    renderConstellationStars(bgCtx, lyraCoords, consDataByName.ORION.mainIndices, cassTime, sy, 0.2);
 
 	bgCtx.font = "10px sans-serif";
 	bgCtx.textAlign = "center";
 	bgCtx.fillStyle = "rgba(255, 255, 255, 0.18)";
-	var lx = 0, maxY = -Infinity;
-	var orionMains = consDataByName.ORION.mainIndices || [];
-	for (var j = 0; j < Math.min(4, orionMains.length); j++) {
-		var s = orionWCoords[orionMains[j]];
-		lx += s.x;
-		if (s.y > maxY) maxY = s.y;
-	}
-	bgCtx.fillText("Orion", lx / Math.min(4, orionMains.length), maxY + 16 + sy * (1 - 0.8));
 
 	bgTime++;
 	for (let m of movers) { m.update(); }
