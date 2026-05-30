@@ -145,8 +145,8 @@ function animate() {
 	renderConstellationStars(bgCtx, cassCoords, consDataByName.CASSIOPEIA.mainIndices, cassTime, sy, 0.3);
 	renderConstellationLines(bgCtx, orionCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", sy, 0.4);
     renderConstellationStars(bgCtx, orionCoords, consDataByName.ORION.mainIndices, cassTime, sy, 0.4);
-    renderConstellationLines(bgCtx, lyraCoords, consDataByName.ORION.connections, "rgba(255, 255, 255, 0.12)", sy, 0.2);
-    renderConstellationStars(bgCtx, lyraCoords, consDataByName.ORION.mainIndices, cassTime, sy, 0.2);
+    renderConstellationLines(bgCtx, lyraCoords, consDataByName.LYRA.connections, "rgba(255, 255, 255, 0.12)", sy, 0.2);
+    renderConstellationStars(bgCtx, lyraCoords, consDataByName.LYRA.mainIndices, cassTime, sy, 0.2);
 
 	bgCtx.font = "10px sans-serif";
 	bgCtx.textAlign = "center";

@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from typing import Any, Callable
+from collections import Counter
 from collections.abc import Iterable
 from enum import Enum
 import json
@@ -832,6 +833,49 @@ class TransitClient:
             for metric in mode
         ))
 
+    def _fallback_date_query(self, params: dict, original_time: Time, start: Location, end: Location, adjust_time: bool) -> dict:
+        """Try all alternative dates (same weekday, +1..+8 weeks) and return the API response whose
+        route signatures are most common across all dates (MCMC-style majority voting)."""
+        candidates = []
+        for week_offset in range(1, 9):
+            alt_time = original_time + timedelta(weeks=week_offset)
+            alt_params = dict(params)
+            alt_params["time"] = alt_time.closest_past_equivelent.format if adjust_time else alt_time.format
+            try:
+                data = self.get("v5/plan", alt_params)
+            except Exception:
+                continue
+            routes = [Route.from_json(start, end, r) for r in data.get("itineraries", [])]
+            if routes:
+                candidates.append((alt_time.format, data, routes))
+
+        if not candidates:
+            raise ValueError("No routes found on alternative dates within the Transitous window")
+
+        # Count how often each route signature appears across all candidate dates
+        sig_counts: Counter[str] = Counter()
+        for _, _, routes in candidates:
+            seen = set()
+            for r in routes:
+                sig = r.signature_hash
+                if sig not in seen:
+                    seen.add(sig)
+                    sig_counts[sig] += 1
+
+        most_common_sig = sig_counts.most_common(1)[0][0]
+
+        # Pick the candidate date whose routes best match the most common signature
+        best = max(candidates, key=lambda c: sum(
+            1 for r in c[2] if r.signature_hash == most_common_sig
+        ))
+
+        best[1]["_fallback_time"] = best[0]
+        return best[1]
+
+    def _apply_fallback_offset(self, routes: list[Route], original_time: Time, fallback_time_str: str | None) -> list[Route]:
+        """Offset route times so they align with the user's original requested time when fallback was used."""
+        return routes
+
     def _find_routes(
             self,
             start: Location,
@@ -877,25 +921,22 @@ class TransitClient:
 
         if depart_after is not None:
             if isinstance(depart_after, datetime):
-                params["time"] = Time(depart_after.astimezone(start.timezone), start.timezone)
+                original_time = Time(depart_after.astimezone(start.timezone), start.timezone)
             else:
-                params["time"] = depart_after
+                original_time = depart_after
         else:
             if isinstance(arrive_before, datetime):
-                params["time"] = Time(arrive_before.astimezone(end.timezone), end.timezone)
+                original_time = Time(arrive_before.astimezone(end.timezone), end.timezone)
             else:
-                params["time"] = arrive_before
+                original_time = arrive_before
             params["arriveBy"] = "true"
 
         if adjust_time:
-            params["time"] = params["time"].closest_past_equivelent.format
+            params["time"] = original_time.closest_past_equivelent.format
         else:
-            params["time"] = params["time"].format
+            params["time"] = original_time.format
 
-        data = self.get(
-            "v5/plan",
-            params
-        )
+        data = self.get("v5/plan", params)
         routes = self._filter_avoid(
             routes=[Route.from_json(start, end, route) for route in data["itineraries"]],
             avoid=avoid or [],

@@ -105,27 +105,19 @@ button:hover { opacity: .85; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .modal-header h3 { margin: 0; }
 
-/* Journey bar */
-#journey-bar { display: flex; align-items: center; flex-wrap: nowrap; gap: 3px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; font-size: 0.82rem; overflow-x: auto; }
-.journey-station { padding: 2px 7px; border-radius: 3px; background: var(--bg); white-space: nowrap; }
+/* Spinner */
+.spinner { width: 40px; height: 40px; margin: 0 auto; border: 4px solid var(--border); border-top-color: var(--accent2); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Journey bar (vertical) */
+#journey-bar { display: flex; flex-direction: column; gap: 0; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; font-size: 0.82rem; }
+.journey-step { display: flex; align-items: center; min-height: 22px; }
+.journey-station { display: inline-block; padding: 2px 7px; border-radius: 3px; background: var(--bg); white-space: nowrap; }
 .journey-station.connected { border: 1px solid var(--good); color: var(--good); }
 .journey-station.gap { border: 1px solid var(--warn); color: var(--warn); }
 .journey-station.journey-end { border: 1px dashed var(--accent2); color: var(--accent2); }
-.journey-arrow { color: var(--muted); font-size: 0.78rem; }
-.journey-label { color: var(--muted); font-size: 0.7rem; margin-right: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-
-/* Compact timeline bar */
-#timeline-bar { display: flex; align-items: stretch; gap: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; margin-top: -10px; margin-bottom: 10px; overflow-x: auto; overflow-y: hidden; min-height: 24px; }
-.timeline-day { display: flex; flex: 1; align-items: stretch; min-width: 30px; position: relative; }
-.timeline-day + .timeline-day { border-left: 2px solid var(--border); }
-.timeline-day-label { position: absolute; top: 1px; left: 3px; font-size: 0.55rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; }
-.timeline-segment { flex: 1; display: flex; align-items: flex-end; justify-content: center; font-size: 0.5rem; color: #fff; padding: 12px 1px 1px; position: relative; min-height: 24px; }
-.timeline-segment.transit { background: var(--accent2); color: #111; }
-.timeline-segment.transfer { background: #666; }
-.timeline-segment.stay { background: #FF9800; }
-.timeline-segment.bus { background: #795548; }
-.timeline-segment.flight { background: #1a237e; }
-.timeline-segment.unincluded { background: #444; opacity: 0.5; }
+.journey-arrow { color: var(--muted); font-size: 0.7rem; }
+.journey-label { color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
 
 /* Global map */
 #global-map { height: 200px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; z-index: 1; }
@@ -166,6 +158,12 @@ button:hover { opacity: .85; }
 .leg-remove:hover { color: #d32f2f; }
 .move-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; padding: 0 5px; border-radius: 4px; font-size: 0.65rem; line-height: 1.5; }
 .move-btn:hover { border-color: var(--accent2); color: var(--text); }
+
+.offset-indicator { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; padding: 4px 8px; background: rgba(255,193,7,0.08); border: 1px solid rgba(255,193,7,0.25); border-radius: 6px; font-size: 0.75rem; }
+.offset-info { color: var(--muted); flex: 1; }
+.offset-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; }
+.offset-btn.active { background: var(--accent2); color: #111; border-color: var(--accent2); }
+.offset-btn:hover:not(.active) { border-color: var(--accent2); }
 
 .leg-photos { display: flex; flex-wrap: wrap; gap: 3px; margin: 4px 0; }
 .leg-photo-thumb { width: 50px; height: 38px; border-radius: 3px; object-fit: cover; cursor: pointer; border: 2px solid transparent; }
@@ -236,9 +234,83 @@ button:hover { opacity: .85; }
 /* Generate modal wider for blog preview */
 #generate-modal .modal-content { max-width: 800px; }
 
+/* Fallback date picker */
+.fallback-date-btn { display:block; width:100%; text-align:left; padding:8px 12px; border-radius:6px; cursor:pointer; font-size:0.85rem; }
+.fallback-date-btn:hover { background:rgba(255,255,255,0.06); }
+
 /* Outbound vs inbound accent for timeline summary border */
 .timeline-summary.outbound { border-left: 3px solid var(--accent2); }
 .timeline-summary.inbound { border-left: 3px solid var(--accent); }
+
+/* Collapse children when route is collapsed */
+.route-section.collapsed .route-photo-grid,
+.route-section.collapsed .route-notes-area,
+.route-section.collapsed .route-footer {
+  display: none;
+}
+
+/* Vertical timeline */
+#timeline-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+.timeline-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  position: relative;
+  min-height: 28px;
+}
+.timeline-bar-row + .timeline-bar-row {
+  border-top: none;
+}
+.timeline-bar-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  z-index: 1;
+  background: var(--accent2);
+  border: 2px solid var(--surface);
+}
+.timeline-bar-dot.transfer { background: #9E9E9E; }
+.timeline-bar-dot.stay { background: #FF9800; }
+.timeline-bar-dot.layover { background: #FFC107; }
+.timeline-bar-dot.unincluded { background: #757575; }
+.timeline-bar-dot.outbound { background: var(--accent2); }
+.timeline-bar-dot.inbound { background: var(--accent); }
+.timeline-bar-line {
+  position: absolute;
+  left: 4px; top: 20px; bottom: 4px;
+  width: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+.timeline-bar-row:last-child .timeline-bar-line { display: none; }
+.timeline-bar-time { font-size: 0.72rem; font-family: monospace; color: var(--muted); min-width: 38px; white-space: nowrap; }
+.timeline-bar-stations { flex: 1; font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.timeline-bar-mode { font-size: 0.8rem; width: 20px; text-align: center; flex-shrink: 0; }
+.timeline-bar-meta { font-size: 0.68rem; color: var(--muted); white-space: nowrap; display: flex; gap: 6px; }
+
+/* Stats panel */
+.stats-panel { margin-bottom: 10px; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.stat-item { display: flex; flex-direction: column; gap: 1px; }
+.stat-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); }
+.stat-value { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+.stat-value.good { color: var(--good); }
+.stat-value.warn { color: var(--warn); }
+.stat-sub { font-size: 0.72rem; color: var(--muted); }
+
+/* Two-axis leg controls */
+.leg-type-mode { display: flex; gap: 4px; align-items: center; }
+.leg-type-select, .leg-mode-select { font-size: 10px; padding: 1px 6px; border-radius: 4px; border: 1px solid #555; background: var(--bg); color: var(--text); }
 </style>
 </head>
 <body>
@@ -274,14 +346,16 @@ button:hover { opacity: .85; }
       <div class="dropdown">
         <input id="journey-origin" placeholder="Start of this direction..." autocomplete="off"
                oninput="debounceJourneySearch('journey-origin', 'origin')"
-               onblur="saveJourneyField('origin',this.value)">
+               onblur="saveJourneyField('origin',this.value)"
+               onkeydown="autocompleteKeyboard(event, 'journey-origin', 'origin')">
         <div class="dropdown-menu" id="journey-origin-drop"></div>
       </div>
       <label>Journey destination</label>
       <div class="dropdown">
         <input id="journey-dest" placeholder="End of this direction..." autocomplete="off"
                oninput="debounceJourneySearch('journey-dest', 'dest')"
-               onblur="saveJourneyField('dest',this.value)">
+               onblur="saveJourneyField('dest',this.value)"
+               onkeydown="autocompleteKeyboard(event, 'journey-dest', 'dest')">
         <div class="dropdown-menu" id="journey-dest-drop"></div>
       </div>
     </div>
@@ -299,6 +373,8 @@ button:hover { opacity: .85; }
     <div class="sidebar-section">
       <details>
         <summary>Trip Info</summary>
+        <div id="journey-bar" class="hidden"></div>
+        <div id="timeline-bar" class="hidden"></div>
         <label>Tags</label>
         <input id="trip-tags" value="train travel canonical">
         <label>Destination notes</label>
@@ -313,12 +389,11 @@ button:hover { opacity: .85; }
     </div>
   </aside>
 
-  <!-- Main content: journey bar, map, timeline -->
+  <!-- Main content: map, route list -->
   <main class="main-content">
-    <div id="journey-bar" class="hidden"></div>
-    <div id="timeline-bar" class="hidden"></div>
     <div id="global-map" class="hidden"></div>
     <div id="route-map" class="hidden"></div>
+    <div id="stats-panel" class="stats-panel hidden"></div>
     <div id="route-list"></div>
   </main>
 
@@ -349,6 +424,17 @@ button:hover { opacity: .85; }
       <button class="btn-primary" onclick="generateBlog(true)">Write to File</button>
     </div>
     <div class="preview" id="preview-content">Generate a post to see a preview here.</div>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="modal-overlay hidden">
+  <div class="modal-content" style="max-width:360px;text-align:center">
+    <div class="modal-header"><h3>Searching...</h3></div>
+    <div style="padding:24px 0">
+      <div class="spinner"></div>
+      <p id="loading-msg" style="font-size:0.9rem;color:var(--muted);margin-top:16px">Looking up services...</p>
+    </div>
   </div>
 </div>
 
@@ -388,6 +474,188 @@ const state = {
   _collapsedRoutes: new Set(),
   tripCountries: [],
 };
+
+// ---- Leg type/mode helpers ----
+function normalizeLeg(leg) {
+  if (leg.mode !== undefined) return;
+  const t = leg.type || 'transit';
+  if (t === 'bus') { leg.type = 'transit'; leg.mode = 'bus'; }
+  else if (t === 'flight') { leg.type = 'transit'; leg.mode = 'plane'; }
+  else if (t === 'transfer') { leg.mode = 'walking'; }
+  else if (t === 'stay') { leg.mode = ''; }
+  else if (t === 'unincluded') { leg.mode = 'other'; }
+  else { leg.mode = 'train'; }
+}
+
+function modeIcon(type, mode) {
+  const t = type || 'transit';
+  const m = mode || 'train';
+  if (t === 'stay') return '🛌';
+  if (t === 'transfer') return '🚶';
+  if (t === 'layover') return '⏳';
+  if (t === 'unincluded') return '⊘';
+  if (m === 'bus' || m === 'coach') return '🚌';
+  if (m === 'plane') return '✈️';
+  if (m === 'ferry') return '⛴️';
+  if (m === 'walking') return '🚶';
+  if (m === 'tram' || m === 'light_rail') return '🚊';
+  if (m === 'subway') return '🚇';
+  if (m === 'high_speed') return '🚄';
+  if (m === 'regional') return '🚃';
+  if (m === 'car') return '🚗';
+  return '🚄';
+}
+
+function modeLabel(mode) {
+  const labels = { high_speed: 'High Speed', train: 'Train', regional: 'Regional',
+    subway: 'Underground', tram: 'Tram', light_rail: 'Light Rail',
+    bus: 'Bus', coach: 'Coach', car: 'Car',
+    plane: 'Plane', ferry: 'Ferry', walking: 'Walking', other: 'Other' };
+  return labels[mode] || mode || '';
+}
+
+function modeColor(type, mode) {
+  const t = type || 'transit';
+  if (t === 'stay') return '#FF9800';
+  if (t === 'transfer') return '#9E9E9E';
+  if (t === 'layover') return '#FFC107';
+  if (t === 'unincluded') return '#666';
+  const m = mode || 'train';
+  if (m === 'walking') return '#6D4C41';
+  if (m === 'bus' || m === 'coach') return '#795548';
+  if (m === 'plane') return '#1a237e';
+  if (m === 'ferry') return '#00897B';
+  if (m === 'tram' || m === 'light_rail') return '#00838F';
+  if (m === 'subway') return '#4E342E';
+  if (m === 'high_speed') return '#1E88E5';
+  if (m === 'regional') return '#43A047';
+  if (m === 'car') return '#424242';
+  return '#66D9EE';
+}
+
+// ---- Stats ----
+function computeStats() {
+  const allLegs = [];
+  for (const dir of ['outbound', 'inbound']) {
+    for (const r of state[dir].routes) {
+      for (const l of r.legs) {
+        normalizeLeg(l);
+        const selIdx = l.selectedServices.length > 0 ? l.selectedServices[0] : -1;
+        const svc = selIdx >= 0 && l.services[selIdx] ? l.services[selIdx] : null;
+        allLegs.push({
+          leg: l, svc, dir, routeName: r.name,
+        });
+      }
+    }
+  }
+  if (!allLegs.length) return null;
+
+  let knownDist = 0, guessDist = 0;
+  let totalDurSec = 0;
+  let maxSpeed = 0;
+  let fastestName = '', longestDistName = '', longestTimeName = '';
+  let longestDistVal = 0, longestTimeVal = 0;
+  const modeCounts = {};
+  const typeCounts = {};
+
+  for (const { leg: l, svc } of allLegs) {
+    const type = l.type || 'transit';
+    const mode = l.mode || 'train';
+    typeCounts[type] = (typeCounts[type] || 0) + 1;
+    modeCounts[mode] = (modeCounts[mode] || 0) + 1;
+
+    const dist = svc?.distance_km || l.distance_km || 0;
+    const hasGeo = svc?.geometry?.length > 0;
+    if (hasGeo) knownDist += dist;
+    else guessDist += dist;
+
+    if (l.departure && l.arrival && type !== 'stay') {
+      const [dh, dm] = l.departure.split(':').map(Number);
+      const [ah, am] = l.arrival.split(':').map(Number);
+      let min = (ah * 60 + am) - (dh * 60 + dm);
+      if (min < 0) min += 24 * 60;
+      totalDurSec += min * 60;
+    }
+
+    const speed = svc?.max_speed_kmh || 0;
+    if (speed > maxSpeed) { maxSpeed = speed; fastestName = l.origin + '→' + l.dest; }
+    if (dist > longestDistVal) { longestDistVal = dist; longestDistName = l.origin + '→' + l.dest; }
+    if (type !== 'stay') {
+      const dur = l.departure && l.arrival ? (() => {
+        const [dh, dm] = l.departure.split(':').map(Number);
+        const [ah, am] = l.arrival.split(':').map(Number);
+        let min = (ah * 60 + am) - (dh * 60 + dm);
+        if (min < 0) min += 24 * 60;
+        return min * 60;
+      })() : 0;
+      if (dur > longestTimeVal) { longestTimeVal = dur; longestTimeName = l.origin + '→' + l.dest; }
+    }
+  }
+
+  const totalDist = knownDist + guessDist;
+  const avgSpeed = totalDurSec > 0 ? (totalDist / (totalDurSec / 3600)) : 0;
+  const avgOpSpeed = totalDurSec > 0 ? (knownDist / (totalDurSec / 3600)) : 0;
+  const totalHours = totalDurSec / 3600;
+  const h = Math.floor(totalHours);
+  const m = Math.round((totalHours - h) * 60);
+
+  return {
+    knownDist, guessDist, totalDist,
+    totalDur: h + 'h' + (m ? m + 'm' : ''),
+    avgSpeed: avgSpeed.toFixed(0),
+    avgOpSpeed: avgOpSpeed.toFixed(0),
+    maxSpeed, fastestName,
+    longestDistVal, longestDistName,
+    longestTimeVal, longestTimeName,
+    modeCounts, typeCounts,
+    legCount: allLegs.length,
+  };
+}
+
+function renderStatsPanel() {
+  const container = document.getElementById('stats-panel');
+  const stats = computeStats();
+  if (!stats || !stats.legCount) { container?.classList.add('hidden'); return; }
+  if (container) container.classList.remove('hidden');
+
+  const modeBreakdown = Object.entries(stats.modeCounts)
+    .filter(([k]) => k)
+    .map(([k, v]) => `${modeLabel(k)}: ${v}`).join(', ');
+
+  container.innerHTML = `<div class="card">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <span class="stat-label">Total Distance</span>
+        <span class="stat-value">${stats.totalDist.toFixed(0)} km</span>
+        <span class="stat-sub">${stats.knownDist.toFixed(0)} km known / ${stats.guessDist.toFixed(0)} km estimated</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Total Time</span>
+        <span class="stat-value">${stats.totalDur}</span>
+        <span class="stat-sub">${stats.legCount} legs</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Avg Speed</span>
+        <span class="stat-value">${stats.avgSpeed} km/h</span>
+        <span class="stat-sub">operational: ${stats.avgOpSpeed} km/h</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Fastest</span>
+        <span class="stat-value good">${stats.maxSpeed} km/h</span>
+        <span class="stat-sub">${stats.fastestName}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Longest Distance</span>
+        <span class="stat-value">${stats.longestDistVal.toFixed(0)} km</span>
+        <span class="stat-sub">${stats.longestDistName}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Modes</span>
+        <span class="stat-value" style="font-size:0.78rem">${modeBreakdown}</span>
+      </div>
+    </div>
+  </div>`;
+}
 
 // ---- Direction switching ----
 function switchDirection(dir) {
@@ -457,18 +725,21 @@ async function searchJourneyStation(inputId, field) {
   const data = await res.json();
   if (!drop) return;
   drop.innerHTML = data.map(s =>
-    `<div class="dropdown-item" onmousedown="selectJourneyStation('${inputId}', '${field}', '${s.name.replace(/'/g, "\\'")}')" onmouseenter="previewStation(${s.lat ?? 0}, ${s.lon ?? 0}, '${s.name.replace(/'/g, "\\'")}')" onmouseleave="clearPreviewStation()">
+    `<div class="dropdown-item" data-station-name="${s.name.replace(/"/g, '&quot;')}" data-station-id="${s.id}" data-station-lat="${s.lat ?? 0}" data-station-lon="${s.lon ?? 0}" onmousedown="selectJourneyStation('${inputId}', '${field}', '${s.name.replace(/'/g, "\\'")}')" onmouseenter="previewStation(${s.lat ?? 0}, ${s.lon ?? 0}, '${s.name.replace(/'/g, "\\'")}')" onmouseleave="clearPreviewStation()">
       ${s.name} <span class="text-muted">${s.id}</span>
     </div>`
   ).join('');
   drop.classList.add('open');
 }
 
-function selectJourneyStation(inputId, field, name) {
+function selectJourneyStation(inputId, field, name, id, lat, lon) {
   document.getElementById(inputId).value = name;
   const drop = document.getElementById(inputId + '-drop');
   if (drop) drop.classList.remove('open');
   saveJourneyField(field, name);
+  if (id) saveJourneyField(field + 'Id', id);
+  if (lat && lat !== 0) saveJourneyField(field + 'Lat', lat);
+  if (lon && lon !== 0) saveJourneyField(field + 'Lon', lon);
 }
 
 // Close dropdowns on outside click
@@ -516,7 +787,7 @@ function addLeg(routeId) {
   }
   const id = state.legIdCounter++;
   route.legs.push({
-    id, type: 'transit',
+    id, type: 'transit', mode: 'train',
     origin: '', originId: '', dest: '', destId: '',
     originLat: null, originLon: null, destLat: null, destLon: null,
     departure: '', arrival: '',
@@ -737,6 +1008,7 @@ function renderTimeline() {
   renderJourneyBar();
   renderCompactTimeline();
   renderGlobalMap();
+  renderStatsPanel();
 }
 
 function renderRoutes() { renderTimeline(); }
@@ -766,7 +1038,7 @@ function fillGapByLegs(prevLegId, nextLegId) {
       const next = r.legs[nIdx];
       const id = state.legIdCounter++;
       r.legs.splice(pIdx + 1, 0, {
-        id, type: 'transit',
+        id, type: 'transit', mode: 'train',
         origin: prev.dest, originId: '',
         dest: next.origin, destId: '',
         departure: prev.arrival || '', arrival: next.departure || '',
@@ -786,7 +1058,7 @@ function fillGapByLegs(prevLegId, nextLegId) {
     if (lastLeg && firstLeg && lastLeg.id === prevLegId && firstLeg.id === nextLegId) {
       const id = state.legIdCounter++;
       cr.legs.push({
-        id, type: 'transit',
+        id, type: 'transit', mode: 'train',
         origin: lastLeg.dest, originId: '',
         dest: firstLeg.origin, destId: '',
         departure: lastLeg.arrival || '', arrival: firstLeg.departure || '',
@@ -891,21 +1163,27 @@ function renderJourneyBar() {
     }
   }
 
-  let html = '<span class="journey-label">Journey</span>';
+  let html = '<div class="journey-label">Journey</div>';
+  const addStation = (name, cls) => {
+    html += `<div class="journey-step"><span class="journey-station ${cls}">${name}</span></div>`;
+  };
+  const addArrow = () => {
+    html += `<div class="journey-step"><span class="journey-arrow">↓</span></div>`;
+  };
   const firstStation = stations[0];
   if (dirState.journeyOrigin && dirState.journeyOrigin !== firstStation) {
-    html += `<span class="journey-station journey-end">${dirState.journeyOrigin}</span><span class="journey-arrow">→</span>`;
+    addStation(dirState.journeyOrigin, 'journey-end');
+    addArrow();
   }
   for (const [si, s] of stations.entries()) {
     const isEnd = si === 0 || si === stations.length - 1;
     const status = (isEnd || connected.has(s.toLowerCase())) ? 'connected' : 'gap';
-    html += `<span class="journey-station ${status}">${s}</span>`;
-    if (s !== stations[stations.length - 1]) {
-      html += `<span class="journey-arrow">→</span>`;
-    }
+    addStation(s, status);
+    if (s !== stations[stations.length - 1]) addArrow();
   }
   if (dirState.journeyDest && dirState.journeyDest !== stations[stations.length - 1]) {
-    html += `<span class="journey-arrow">→</span><span class="journey-station journey-end">${dirState.journeyDest}</span>`;
+    addArrow();
+    addStation(dirState.journeyDest, 'journey-end');
   }
   bar.innerHTML = html;
 }
@@ -941,18 +1219,33 @@ function renderCompactTimeline() {
   const bar = document.getElementById('timeline-bar');
   if (!allLegs.length) { bar.classList.add('hidden'); return; }
 
-  const days = computeDays(allLegs);
+  for (const l of allLegs) normalizeLeg(l);
 
   bar.classList.remove('hidden');
-  bar.innerHTML = days.map((dayLegs, di) => `
-    <div class="timeline-day">
-      <span class="timeline-day-label">${days.length > 1 ? 'Day ' + (di + 1) : 'All'}</span>
-      ${dayLegs.map(l => {
-        const label = l.departure ? l.departure : '';
-        return `<div class="timeline-segment ${l.type || 'transit'}" title="${l.origin || ''} → ${l.dest || ''}">${l.type === 'stay' ? '🛌' : label}</div>`;
-      }).join('')}
-    </div>
-  `).join('');
+  let html = '';
+  for (let i = 0; i < allLegs.length; i++) {
+    const l = allLegs[i];
+    const icon = modeIcon(l.type, l.mode);
+    const dotColor = modeColor(l.type, l.mode);
+    const dur = l.departure && l.arrival ? (() => {
+      const [dh, dm] = l.departure.split(':').map(Number);
+      const [ah, am] = l.arrival.split(':').map(Number);
+      let min = (ah * 60 + am) - (dh * 60 + dm);
+      if (min < 0) min += 24 * 60;
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return h + 'h' + (m ? m + 'm' : '');
+    })() : '';
+    html += `<div class="timeline-bar-row">
+      <span class="timeline-bar-dot" style="background:${dotColor}"></span>
+      <span class="timeline-bar-line"></span>
+      <span class="timeline-bar-time">${l.departure || ''}</span>
+      <span class="timeline-bar-stations">${l.origin || '?'} → ${l.dest || '?'}</span>
+      <span class="timeline-bar-mode">${icon}</span>
+      <span class="timeline-bar-meta"><span>${dur}</span></span>
+    </div>`;
+  }
+  bar.innerHTML = html;
 }
 
 function _flightArc(fromLat, fromLon, toLat, toLon) {
@@ -996,8 +1289,8 @@ function renderGlobalMap() {
   container.classList.remove('hidden');
 
   const map = L.map('global-map').setView([51.5, -0.1], 5);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors', maxZoom: 18,
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>', maxZoom: 19,
   }).addTo(map);
   state._globalMap = map;
 
@@ -1013,8 +1306,7 @@ function renderGlobalMap() {
       const svc = svcIdx >= 0 && leg.services[svcIdx] ? leg.services[svcIdx] : null;
       if (svc && svc.geometry && svc.geometry.length) {
         svc.geometry.forEach(pt => coords.push([pt.lat, pt.lon]));
-      } else if (leg.type === 'flight' && leg.originLat != null && leg.destLat != null) {
-        // Curved great-circle arc for flights
+      } else if ((leg.mode === 'plane' || leg.type === 'flight') && leg.originLat != null && leg.destLat != null) {
         const pts = _flightArc(leg.originLat, leg.originLon, leg.destLat, leg.destLon);
         pts.forEach(p => coords.push(p));
       } else if (svc && svc.origin_lat != null && svc.dest_lat != null) {
@@ -1059,10 +1351,10 @@ function _collectRouteCoords(r) {
     const svc = svcIdx >= 0 && leg.services[svcIdx] ? leg.services[svcIdx] : null;
     if (svc && svc.geometry && svc.geometry.length) {
       svc.geometry.forEach(pt => coords.push([pt.lat, pt.lon]));
-    } else if (leg.type === 'flight' && leg.originLat != null && leg.destLat != null) {
-      const pts = _flightArc(leg.originLat, leg.originLon, leg.destLat, leg.destLon);
-      pts.forEach(p => coords.push(p));
-    } else if (leg.originLat != null && leg.destLat != null) {
+      } else if ((leg.mode === 'plane' || leg.type === 'flight') && leg.originLat != null && leg.destLat != null) {
+        const pts = _flightArc(leg.originLat, leg.originLon, leg.destLat, leg.destLon);
+        pts.forEach(p => coords.push(p));
+      } else if (leg.originLat != null && leg.destLat != null) {
       coords.push([leg.originLat, leg.originLon]);
       coords.push([leg.destLat, leg.destLon]);
     }
@@ -1110,8 +1402,11 @@ function clearPreviewStation() {
 }
 
 function renderTimelineEntry(l, routeId, idx) {
+  normalizeLeg(l);
   const isExpanded = state._expandedLegIds && state._expandedLegIds.has(l.id);
   const dirClass = state.currentDir;
+  const icon = modeIcon(l.type, l.mode);
+  const dotColor = modeColor(l.type, l.mode);
 
   const durHtml = l.departure && l.arrival ? (() => {
     if (l.type === 'stay') {
@@ -1132,24 +1427,20 @@ function renderTimelineEntry(l, routeId, idx) {
     return `<span class="duration-badge">${h}h${m > 0 ? m + 'm' : ''}${overnight ? ' +1' : ''}</span>`;
   })() : '';
 
-  // Distance from selected service or leg-level
   const selIdx = l.selectedServices.length > 0 ? l.selectedServices[0] : -1;
   const svc = selIdx >= 0 && l.services[selIdx] ? l.services[selIdx] : null;
   const distKm = svc?.distance_km || l.distance_km;
   const distHtml = distKm ? ` <span class="duration-badge">${distKm.toFixed(0)}km</span>` : '';
 
-  const typeIcon = l.type === 'stay' ? ' 🛌' : l.type === 'transfer' ? ' 🚶' : l.type === 'unincluded' ? ' ⊘' : l.type === 'bus' ? ' 🚌' : l.type === 'flight' ? ' ✈️' : ' 🚄';
-
-  // Collapsed summary row
   const expandedClass = isExpanded ? ' expanded' : '';
   let html = `
     <div class="timeline-entry${expandedClass}" data-leg-id="${l.id}">
       <div class="timeline-line"></div>
-      <div class="timeline-dot ${l.type !== 'transit' ? l.type : ''} ${dirClass}"></div>
+      <div class="timeline-dot ${dirClass}" style="background:${dotColor}"></div>
       <div class="timeline-summary ${dirClass}${expandedClass}" onclick="event.stopPropagation();toggleLegExpand(${l.id})">
         <span class="time">${l.departure || ''}</span>
         <span class="stations">${l.origin || '?'} → ${l.dest || '?'}</span>
-        <span class="meta">${durHtml}${distHtml}${typeIcon}
+        <span class="meta">${durHtml}${distHtml} <span style="font-size:0.85rem">${icon}</span>
           ${!l.originLat || !l.destLat ? `<span class="fixme" title="Station coordinates missing — map can't show this leg">⚠ fixme</span>` : ''}
         </span>
         <span class="expand-icon">▼</span>
@@ -1160,6 +1451,7 @@ function renderTimelineEntry(l, routeId, idx) {
             <label>From</label>
             <input id="origin-${routeId}-${l.id}" placeholder="Station..."
                    oninput="debounceSearch('origin-${routeId}-${l.id}', '${routeId}', ${l.id}, 'origin')"
+                   onkeydown="autocompleteKeyboard(event, 'origin-${routeId}-${l.id}', 'origin', '${routeId}', ${l.id})"
                    value="${l.origin}">
             <div class="dropdown-menu" id="origin-drop-${routeId}-${l.id}"></div>
           </div>
@@ -1167,6 +1459,7 @@ function renderTimelineEntry(l, routeId, idx) {
             <label>To</label>
             <input id="dest-${routeId}-${l.id}" placeholder="Station..."
                    oninput="debounceSearch('dest-${routeId}-${l.id}', '${routeId}', ${l.id}, 'dest')"
+                   onkeydown="autocompleteKeyboard(event, 'dest-${routeId}-${l.id}', 'dest', '${routeId}', ${l.id})"
                    value="${l.dest}">
             <div class="dropdown-menu" id="dest-drop-${routeId}-${l.id}"></div>
           </div>
@@ -1179,18 +1472,46 @@ function renderTimelineEntry(l, routeId, idx) {
                 onclick="toggleService('${routeId}', ${l.id}, ${i})" title="${s.operator} ${s.display_name}">
             ${s.departure} ${s.display_name} → ${s.arrival}
           </span>`).join('')}
+          ${l._offsetMinutes ? `
+          <div class="offset-indicator">
+            <span class="offset-info">${l._fallbackDate} timetable · ${l._offsetMinutes >= 0 ? '+' : ''}${l._offsetMinutes}min offset</span>
+            <button class="btn-sm offset-btn ${l._useExactTimes !== false ? 'active' : ''}" onclick="setTimeOffset('${routeId}',${l.id},true)">Exact</button>
+            <button class="btn-sm offset-btn ${l._useExactTimes === false ? 'active' : ''}" onclick="setTimeOffset('${routeId}',${l.id},false)">Shifted</button>
+          </div>` : ''}
         </div>
         <div class="leg-detail-controls">
           <button class="move-btn" onclick="moveLeg(${l.id}, -1)" title="Move leg up">↑</button>
           <button class="move-btn" onclick="moveLeg(${l.id}, 1)" title="Move leg down">↓</button>
-          <select class="leg-type-select" onchange="updateLeg('${routeId}',${l.id},'type',this.value)">
-            <option value="transit"${l.type === 'transit' ? ' selected' : ''}>Transit</option>
-            <option value="transfer"${l.type === 'transfer' ? ' selected' : ''}>Transfer</option>
-            <option value="stay"${l.type === 'stay' ? ' selected' : ''}>Stay</option>
-            <option value="bus"${l.type === 'bus' ? ' selected' : ''}>Bus</option>
-            <option value="flight"${l.type === 'flight' ? ' selected' : ''}>Flight</option>
-            <option value="unincluded"${l.type === 'unincluded' ? ' selected' : ''}>Unincluded</option>
-          </select>
+          <div class="leg-type-mode">
+            <select class="leg-type-select" onchange="updateLeg('${routeId}',${l.id},'type',this.value)">
+              <option value="transit"${l.type === 'transit' ? ' selected' : ''}>Transit</option>
+              <option value="transfer"${l.type === 'transfer' ? ' selected' : ''}>Transfer</option>
+              <option value="layover"${l.type === 'layover' ? ' selected' : ''}>Layover</option>
+              <option value="stay"${l.type === 'stay' ? ' selected' : ''}>Stay</option>
+              <option value="unincluded"${l.type === 'unincluded' ? ' selected' : ''}>Unincl.</option>
+            </select>
+            <select class="leg-mode-select" onchange="updateLeg('${routeId}',${l.id},'mode',this.value)">
+              <optgroup label="Rail">
+                <option value="high_speed"${l.mode === 'high_speed' ? ' selected' : ''}>High Speed</option>
+                <option value="train"${l.mode === 'train' ? ' selected' : ''}>Train</option>
+                <option value="regional"${l.mode === 'regional' ? ' selected' : ''}>Regional</option>
+                <option value="subway"${l.mode === 'subway' ? ' selected' : ''}>Underground</option>
+                <option value="tram"${l.mode === 'tram' ? ' selected' : ''}>Tram</option>
+                <option value="light_rail"${l.mode === 'light_rail' ? ' selected' : ''}>Light Rail</option>
+              </optgroup>
+              <optgroup label="Road">
+                <option value="bus"${l.mode === 'bus' ? ' selected' : ''}>Bus</option>
+                <option value="coach"${l.mode === 'coach' ? ' selected' : ''}>Coach</option>
+                <option value="car"${l.mode === 'car' ? ' selected' : ''}>Car</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="plane"${l.mode === 'plane' ? ' selected' : ''}>Plane</option>
+                <option value="ferry"${l.mode === 'ferry' ? ' selected' : ''}>Ferry</option>
+                <option value="walking"${l.mode === 'walking' ? ' selected' : ''}>Walking</option>
+                <option value="other"${l.mode === 'other' ? ' selected' : ''}>Other</option>
+              </optgroup>
+            </select>
+          </div>
           <button class="leg-remove" onclick="removeLeg(${l.id})">✕</button>
         </div>
       </div>
@@ -1214,7 +1535,7 @@ async function searchStation(inputId, routeId, legId, field) {
   const res = await fetch(`/api/search-stations?q=${encodeURIComponent(q)}`);
   const data = await res.json();
   drop.innerHTML = data.map(s =>
-    `<div class="dropdown-item" onmousedown="selectStation('${inputId}', '${routeId}', ${legId}, '${field}', '${s.name.replace(/'/g, "\\'")}', '${s.id}', ${s.lat ?? 0}, ${s.lon ?? 0})" onmouseenter="previewStation(${s.lat ?? 0}, ${s.lon ?? 0}, '${s.name.replace(/'/g, "\\'")}')" onmouseleave="clearPreviewStation()">
+    `<div class="dropdown-item" data-station-name="${s.name.replace(/"/g, '&quot;')}" data-station-id="${s.id}" data-station-lat="${s.lat ?? 0}" data-station-lon="${s.lon ?? 0}" onmousedown="selectStation('${inputId}', '${routeId}', ${legId}, '${field}', '${s.name.replace(/'/g, "\\'")}', '${s.id}', ${s.lat ?? 0}, ${s.lon ?? 0})" onmouseenter="previewStation(${s.lat ?? 0}, ${s.lon ?? 0}, '${s.name.replace(/'/g, "\\'")}')" onmouseleave="clearPreviewStation()">
       ${s.name} <span class="text-muted">${s.id}</span>
     </div>`
   ).join('');
@@ -1238,30 +1559,40 @@ function setupAutocomplete(inputId, routeId, legId, field) {
   }
 }
 
-async function searchStation(inputId, legId, field) {
-  const input = document.getElementById(inputId);
-  const drop = document.getElementById(inputId.replace('origin-', 'origin-drop-').replace('dest-', 'dest-drop-'));
-  const q = input.value.trim();
-  if (q.length < 2) { drop.classList.remove('open'); return; }
+function autocompleteKeyboard(event, inputId, field, routeId, legId) {
+  const dropId = routeId !== undefined
+    ? inputId.replace('origin-', 'origin-drop-').replace('dest-', 'dest-drop-')
+    : inputId + '-drop';
+  const drop = document.getElementById(dropId);
+  if (!drop || !drop.classList.contains('open')) return;
+  const items = drop.querySelectorAll('.dropdown-item');
+  if (!items.length) return;
 
-  const res = await fetch(`/api/search-stations?q=${encodeURIComponent(q)}`);
-  const data = await res.json();
-  drop.innerHTML = data.map(s =>
-    `<div class="dropdown-item" onmousedown="selectStation('${inputId}', ${legId}, '${field}', '${s.name.replace(/'/g, "\\'")}', '${s.id}', ${s.lat ?? 0}, ${s.lon ?? 0})" onmouseenter="previewStation(${s.lat ?? 0}, ${s.lon ?? 0}, '${s.name.replace(/'/g, "\\'")}')" onmouseleave="clearPreviewStation()">
-      ${s.name} <span class="text-muted">${s.id}</span>
-    </div>`
-  ).join('');
-  drop.classList.add('open');
-}
+  let idx = Array.from(items).findIndex(el => el.classList.contains('highlighted'));
 
-function selectStation(inputId, legId, field, name, id, lat, lon) {
-  document.getElementById(inputId).value = name;
-  document.getElementById(inputId.replace('origin-', 'origin-drop-').replace('dest-', 'dest-drop-')).classList.remove('open');
-  updateLeg(legId, field, name);
-  updateLeg(legId, field + 'Id', id);
-  if (lat && lon) {
-    updateLeg(legId, field + 'Lat', lat);
-    updateLeg(legId, field + 'Lon', lon);
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    items.forEach(el => el.classList.remove('highlighted'));
+    idx = Math.min(idx + 1, items.length - 1);
+    if (idx < 0) idx = 0;
+    items[idx].classList.add('highlighted');
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    items.forEach(el => el.classList.remove('highlighted'));
+    idx = idx <= 0 ? items.length - 1 : idx - 1;
+    items[idx].classList.add('highlighted');
+  } else if (event.key === 'Enter') {
+    event.preventDefault();
+    const target = idx >= 0 ? items[idx] : items[0];
+    const name = target.dataset.stationName;
+    const id = target.dataset.stationId;
+    const lat = parseFloat(target.dataset.stationLat);
+    const lon = parseFloat(target.dataset.stationLon);
+    if (routeId !== undefined) {
+      selectStation(inputId, routeId, legId, field, name, id, lat, lon);
+    } else {
+      selectJourneyStation(inputId, field, name, id, lat, lon);
+    }
   }
 }
 
@@ -1276,7 +1607,13 @@ async function findServices(routeId, legId) {
   const leg = findLeg(routeId, legId);
   if (!leg || !leg.origin || !leg.dest) return alert('Set origin and destination first');
 
-  const body = { origin: leg.origin, destination: leg.dest, via: leg.stops, leg_type: leg.type || 'transit' };
+  // Show loading overlay
+  const overlay = document.getElementById('loading-overlay');
+  const msg = document.getElementById('loading-msg');
+  msg.textContent = `Searching ${leg.origin} → ${leg.dest}...`;
+  overlay.classList.remove('hidden');
+
+  const body = { origin: leg.origin, destination: leg.dest, via: leg.stops, leg_type: leg.type || 'transit', mode: leg.mode || 'train', origin_id: leg.originId || '', dest_id: leg.destId || '' };
   if (document.getElementById('trip-date').value) {
     body.date = document.getElementById('trip-date').value;
   }
@@ -1284,25 +1621,40 @@ async function findServices(routeId, legId) {
     body.time = leg.departure;
   }
 
-  const res = await fetch('/api/find-routes', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  if (data.error) return alert(data.error);
+  try {
+    const res = await fetch('/api/find-routes', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
 
-  leg.services = [];
-  const seen = new Set();
-  for (const r of data.routes) {
-    for (const l of r.legs) {
-      const key = l.operator + l.display_name + l.departure;
-      if (!seen.has(key) && l.mode !== 'WALK') {
-        seen.add(key);
-        leg.services.push(l);
+    if (data.error) return alert(data.error);
+
+    leg.services = [];
+    const seen = new Set();
+    for (const r of data.routes) {
+      for (const l of r.legs) {
+        const key = l.operator + l.display_name + l.departure;
+        if (!seen.has(key) && l.mode !== 'WALK') {
+          seen.add(key);
+          leg.services.push(l);
+        }
       }
     }
+
+    // Store offset metadata if fallback date was used
+    if (data._offset_minutes) {
+      leg._offsetMinutes = data._offset_minutes;
+      leg._fallbackDate = data._fallback_date;
+    } else {
+      delete leg._offsetMinutes;
+      delete leg._fallbackDate;
+    }
+
+    renderRoutes();
+  } finally {
+    overlay.classList.add('hidden');
   }
-  renderRoutes();
 }
 
 async function fillLegGeometries() {
@@ -1324,7 +1676,7 @@ async function fillLegGeometries() {
   if (bar) bar.after(status);
   let done = 0;
   await Promise.all(todo.map(async ({ route, leg }) => {
-    const body = { origin: leg.origin, destination: leg.dest };
+    const body = { origin: leg.origin, destination: leg.dest, origin_id: leg.originId || '', dest_id: leg.destId || '' };
     if (document.getElementById('trip-date').value) body.date = document.getElementById('trip-date').value;
     try {
       const res = await fetch('/api/find-routes', {
@@ -1357,12 +1709,47 @@ async function fillLegGeometries() {
   renderGlobalMap();
 }
 
+function setTimeOffset(routeId, legId, useExact) {
+  const leg = findLeg(routeId, legId);
+  if (!leg) return;
+  leg._useExactTimes = useExact;
+  // Re-apply the selected service times with the new offset mode
+  const selIdx = leg.selectedServices.length > 0 ? leg.selectedServices[0] : -1;
+  if (selIdx >= 0 && leg.services[selIdx]) {
+    applyServiceTimes(leg, leg.services[selIdx]);
+  }
+  renderRoutes();
+}
+
+function applyServiceTimes(leg, svc) {
+  leg.departure = svc.departure;
+  leg.arrival = svc.arrival;
+  if (leg._useExactTimes === false && leg._offsetMinutes) {
+    // Shift times by offset to match the user's original input
+    const shiftMin = -leg._offsetMinutes;
+    const adjust = (t) => {
+      if (!t) return t;
+      const [h, m] = t.split(':').map(Number);
+      let total = h * 60 + m + shiftMin;
+      if (total < 0) total += 1440;
+      if (total >= 1440) total -= 1440;
+      return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+    };
+    leg.departure = adjust(svc.departure);
+    leg.arrival = adjust(svc.arrival);
+  }
+}
+
 function toggleService(routeId, legId, idx) {
   const leg = findLeg(routeId, legId);
   if (!leg) return;
   const i = leg.selectedServices.indexOf(idx);
-  if (i >= 0) leg.selectedServices.splice(i, 1);
-  else leg.selectedServices.push(idx);
+  if (i >= 0) {
+    leg.selectedServices.splice(i, 1);
+  } else {
+    leg.selectedServices = [idx];
+    applyServiceTimes(leg, leg.services[idx]);
+  }
   renderRoutes();
 }
 
@@ -1721,6 +2108,7 @@ async function importPost() {
         const id = state.legIdCounter++;
         newRoute.legs.push({
           id, type: lc.leg_type || rl.leg_type || 'transit',
+          mode: (rl.mode && rl.mode !== 'WALK' ? rl.mode.toLowerCase() : '') || 'train',
           origin: rl.origin || '', originId: '',
           dest: rl.destination || '', destId: '',
           originLat: rl.origin_lat ?? null,
@@ -1768,7 +2156,7 @@ async function importPost() {
           const id = state.legIdCounter++;
           const origin = ri === 0 ? sec.name : rows[ri - 1].destination;
           newRoute.legs.push({
-            id, type: 'transit',
+            id, type: 'transit', mode: 'train',
             origin, originId: '',
             dest: row.destination, destId: '',
             originLat: null, originLon: null, destLat: null, destLon: null,
@@ -1871,10 +2259,14 @@ async function findRoutes() {
 
   if (!allLegs.length) return alert('Add at least one leg with origin and destination');
 
-  const lastLeg = allLegs[allLegs.length - 1];
+  const firstLeg = allLegs[0]._leg;
+  const lastLegEntry = allLegs[allLegs.length - 1];
+  const lastLeg = lastLegEntry._leg;
   const body = {
     origin: allLegs[0].origin,
-    destination: lastLeg.destination,
+    destination: lastLegEntry.destination,
+    origin_id: firstLeg?.originId || '',
+    dest_id: lastLeg?.destId || '',
     via: allLegs.slice(1, -1).map(l => l.origin),
   };
   const date = document.getElementById('trip-date').value;
@@ -1886,7 +2278,8 @@ async function findRoutes() {
   for (const entry of allLegs) {
     if (!entry.service) {
       try {
-        const fb = { origin: entry.origin, destination: entry.destination, date };
+        const leg = entry._leg;
+        const fb = { origin: entry.origin, destination: entry.destination, date, origin_id: leg?.originId || '', dest_id: leg?.destId || '' };
         if (entry.departure) fb.time = entry.departure;
         const res = await fetch('/api/find-routes', {
           method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -1977,9 +2370,9 @@ function renderRouteMap(idx) {
 
   if (state._map) state._map.remove();
   const map = L.map('route-map').setView([51.5, -0.1], 5);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-    maxZoom: 18,
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    maxZoom: 19,
   }).addTo(map);
   state._map = map;
 
@@ -2140,11 +2533,12 @@ async function generateBlog(writeFile) {
         leg_index: l.leg_index,
         direction: l.direction,
         route_name: l.route_name,
-        leg_type: l.leg_type,
-        highlighted: l.highlighted,
-        photos: l.photos,
-        notes: l.notes,
-        omit: l.omit,
+          leg_type: l.leg_type,
+          mode: l.mode || '',
+          highlighted: l.highlighted,
+          photos: l.photos,
+          notes: l.notes,
+          omit: l.omit,
       })),
     },
     write_file: writeFile,

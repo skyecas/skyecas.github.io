@@ -85,17 +85,30 @@ async def photos(sprint: str = "", direction: str = "", exclude: str = ""):
 async def find_routes(body: dict):
     origin_name = body.get("origin", "")
     dest_name = body.get("destination", "")
+    origin_id = body.get("origin_id", "")
+    dest_id = body.get("dest_id", "")
     via = body.get("via", [])
     dep_date = body.get("date", "")
     dep_time = body.get("time", "08:00")
     leg_type = body.get("leg_type", "transit")
+    mode = body.get("mode", "")
 
     from datetime import datetime
     from zoneinfo import ZoneInfo
 
+    def resolve_station(name, station_id=""):
+        if station_id:
+            from geo import Position
+            from rail_planner import Location
+            return Location(
+                position=Position(0, 0), timezone=ZoneInfo("Europe/London"),
+                id=station_id, name=name, address=name,
+            )
+        return client.exact(client.search_stations, name)
+
     try:
-        origin = client.exact(client.search_stations, origin_name)
-        dest = client.exact(client.search_stations, dest_name)
+        origin = resolve_station(origin_name, origin_id)
+        dest = resolve_station(dest_name, dest_id)
     except (IndexError, ValueError):
         return JSONResponse({"error": f"Could not find station"}, status_code=400)
 
@@ -112,7 +125,24 @@ async def find_routes(body: dict):
         from datetime import timedelta
         depart_after = datetime.now() + timedelta(hours=1)
 
-    modes = TransitClient.TRAVEL_SKYE_BUSINESS if leg_type in ('bus', 'flight') else TransitClient.TRAVEL_SKYE
+    if mode == "walking":
+        modes = "WALK"
+    elif mode in ("bus", "plane", "coach"):
+        modes = TransitClient.TRAVEL_SKYE_BUSINESS
+    elif mode == "ferry":
+        modes = TransitClient.TRAVEL_SKYE + ",FERRY"
+    elif mode == "car":
+        modes = "CAR,RIDE_SHARING"
+    elif mode == "high_speed":
+        modes = "HIGHSPEED_RAIL,REGIONAL_FAST_RAIL,NIGHT_RAIL"
+    elif mode == "regional":
+        modes = "REGIONAL_RAIL,SUBURBAN"
+    elif mode == "light_rail":
+        modes = "TRAM,SUBWAY,METRO,SUBURBAN"
+    elif mode:
+        modes = TransitClient.TRAVEL_SKYE
+    else:
+        modes = TransitClient.TRAVEL_SKYE_BUSINESS if leg_type in ('bus', 'flight') else TransitClient.TRAVEL_SKYE
 
     try:
         routes = client.routes_between(
@@ -124,12 +154,42 @@ async def find_routes(body: dict):
             model=emissions_model,
         )
     except Exception as e:
+        if "400" in str(e) and dep_date:
+            from datetime import timedelta
+            user_dt = depart_after
+            target_weekday = user_dt.weekday()
+            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            days_ahead = target_weekday - today.weekday()
+            if days_ahead <= 0:
+                days_ahead += 7
+            first_match = today + timedelta(days=days_ahead)
+            for week_offset in range(0, 9):
+                alt_date = first_match + timedelta(weeks=week_offset)
+                alt_dt = alt_date.replace(hour=user_dt.hour, minute=user_dt.minute)
+                try:
+                    alt_routes = client.routes_between(
+                        origin, dest,
+                        depart_after=alt_dt,
+                        via=via_locs or None,
+                        modes=modes,
+                        sort=EMISSIONS + TRANSFERS + DURATION,
+                        model=emissions_model,
+                    )
+                except Exception:
+                    continue
+                offset_min = int((alt_dt - user_dt).total_seconds() / 60)
+                alt_body = dict(body, date=alt_dt.strftime("%Y-%m-%d"))
+                return _route_response(alt_routes, alt_body, offset_min, alt_dt.strftime("%Y-%m-%d"))
         return JSONResponse({"error": str(e)}, status_code=500)
 
-    from truth.snapshot import TruthSnapshot
-    snapshot = TruthSnapshot.from_routes(routes, query=body)
+    return _route_response(routes, body)
 
-    return {
+
+def _route_response(routes, query_body, offset_minutes=None, fallback_date=None):
+    from truth.snapshot import TruthSnapshot
+    snapshot = TruthSnapshot.from_routes(routes, query=query_body)
+
+    resp = {
         "snapshot_id": snapshot.snapshot_id,
         "routes": [
             {
@@ -148,7 +208,7 @@ async def find_routes(body: dict):
                 "max_speed_kmh": r.max_speed_kmh,
                 "tortuosity_pct": r.tortuosity_pct,
                 "operators": r.operators,
-                    "legs": [
+                "legs": [
                     {
                         "mode": l.mode,
                         "display_name": l.display_name,
@@ -174,6 +234,10 @@ async def find_routes(body: dict):
             for r in snapshot.routes
         ],
     }
+    if offset_minutes is not None:
+        resp["_offset_minutes"] = offset_minutes
+        resp["_fallback_date"] = fallback_date
+    return resp
 
 
 @app.post("/api/generate-blog")
@@ -296,8 +360,8 @@ async def health():
 
 @app.post("/api/shutdown")
 async def shutdown():
-    import os, signal, threading, time
-    threading.Thread(target=lambda: (time.sleep(0.5), os.kill(os.getpid(), signal.SIGTERM)), daemon=True).start()
+    import threading, os, time
+    threading.Thread(target=lambda: (time.sleep(0.5), os._exit(0)), daemon=True).start()
     return {"status": "shutting_down"}
 
 
