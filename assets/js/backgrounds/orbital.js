@@ -1,3 +1,9 @@
+// --- Constants ---
+var baseW = 1920, baseH = 1080;
+var AU = 250;
+var MU = 5000;
+
+// --- Canvas ---
 var bg = initCanvas(function(w, h) {
 	rawW = w; rawH = h;
 	W = w; H = h;
@@ -10,6 +16,7 @@ var bg = initCanvas(function(w, h) {
 	camScale = Math.min(w, h) / (maxA * 2.4);
 	if (!isFinite(camScale) || camScale < 0.01) camScale = 1;
 });
+var ctx = bg.ctx;
 
 // --- Kepler utilities ---
 function solveKepler(M, e) {

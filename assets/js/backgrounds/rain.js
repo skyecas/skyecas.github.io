@@ -37,7 +37,7 @@ var cons = buildConstellations([
 function drawWindow() {
     const top = height * 0.95;
     const gradient = bgCtx.createLinearGradient(0, top, 0, height);
-    gradient.addColorStop(0, 'rgba(76, 76, 76, 0.1)');
+	gradient.addColorStop(0, 'rgba(160, 160, 160, 0.15)');
     gradient.addColorStop(1, 'rgba(0, 0, 0, 0.1)');
     bgCtx.fillStyle = gradient;
     bgCtx.fillRect(0, top, width, height - top);
