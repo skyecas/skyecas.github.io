@@ -10,6 +10,8 @@ class LegCuration:
     photos: list[str] = field(default_factory=list)
     notes: str = ""
     omit_from_narrative: bool = False
+    delay_minutes: int = 0
+    delay_reason: str = ""
 
 
 @dataclass

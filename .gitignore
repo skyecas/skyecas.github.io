@@ -26,3 +26,7 @@ _posts/*.json
 # Session files from opencode
 session-ses_*.md
 *.md.not_node
+
+# Railway geometry database (downloaded OSM PBF + extracted cache)
+*.osm.pbf
+*.json.gz

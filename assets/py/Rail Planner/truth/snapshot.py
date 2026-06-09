@@ -29,6 +29,8 @@ class TruthLeg:
     dest_lon: float = 0.0
     geometry: list[dict[str, float]] | None = None
     leg_type: str = 'transit'
+    origin_platform: str | None = None
+    destination_platform: str | None = None
 
 
 @dataclass
@@ -94,11 +96,30 @@ def _build_truth_leg(leg: Leg) -> TruthLeg:
             "name": s.name,
             "arrival": str(s.arrival.time.time())[:5] if hasattr(s, "arrival") and s.arrival else None,
             "departure": str(s.departure.time.time())[:5] if hasattr(s, "departure") and s.departure else None,
+            "lat": s.position.lat.degrees if hasattr(s, "position") else None,
+            "lon": s.position.lon.degrees if hasattr(s, "position") else None,
+            "track": getattr(s, "track", None),
         })
 
     geometry = None
     if leg.geometry:
         geometry = [{"lat": p.lat.degrees, "lon": p.lon.degrees} for p in leg.geometry]
+        # If geometry is very sparse for a transit leg with known stops,
+        # inject intermediate stop positions between origin and dest
+        if leg.mode != "WALK" and len(geometry) < 5 and len(stops) > 2:
+            seen = set()
+            deduped = [geometry[0]]
+            seen.add((geometry[0]["lat"], geometry[0]["lon"]))
+            for s in stops:
+                if s["lat"] is not None:
+                    key = (round(s["lat"], 4), round(s["lon"], 4))
+                    if key not in seen:
+                        seen.add(key)
+                        deduped.append({"lat": s["lat"], "lon": s["lon"]})
+            last_key = (geometry[-1]["lat"], geometry[-1]["lon"])
+            if last_key not in seen:
+                deduped.append(geometry[-1])
+            geometry = deduped
 
     origin_lat = leg.origin.position.lat.degrees if hasattr(leg.origin, "position") else 0
     origin_lon = leg.origin.position.lon.degrees if hasattr(leg.origin, "position") else 0
@@ -123,6 +144,8 @@ def _build_truth_leg(leg: Leg) -> TruthLeg:
             intermediate_stops=stops,
             geometry=geometry,
             leg_type='transfer',
+            origin_platform=getattr(leg, "origin_platform", None),
+            destination_platform=getattr(leg, "destination_platform", None),
         )
 
     return TruthLeg(
@@ -137,10 +160,12 @@ def _build_truth_leg(leg: Leg) -> TruthLeg:
         arrival=str(leg.arrival.time.time())[:5],
         duration_seconds=int(leg.duration.total_seconds()),
         distance_km=round(leg.distance(), 1),
-        max_speed_kmh=round(leg.average_speed(), 1),
+        max_speed_kmh=round(leg.max_speed(), 1),
         tortuosity_pct=round(leg.tortuosity(), 1),
         intermediate_stops=stops,
         geometry=geometry,
+        origin_platform=getattr(leg, "origin_platform", None),
+        destination_platform=getattr(leg, "destination_platform", None),
     )
 
 

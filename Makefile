@@ -19,7 +19,7 @@ ui: travel-post
 
 travel-post:
 	@echo "Starting Sprint Blog Generator UI at http://localhost:8080"
-	@cd $(RAIL_DIR) && python3 -m ui.server &
+	@cd $(RAIL_DIR) && LOGLEVEL=$(LOGLEVEL) python3 -m ui.server &
 	@sleep 2
 	@python3 -c "import webbrowser; webbrowser.open('http://localhost:8080')"
 	@wait
