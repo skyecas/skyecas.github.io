@@ -1,12 +1,11 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from datetime import timedelta
 from typing import Any
 import hashlib
 import json
 from datetime import datetime
 
-from rail_planner import Route, Leg, Stop, TransitClient
+from rail_planner import Route, Leg
 
 
 @dataclass
@@ -28,9 +27,21 @@ class TruthLeg:
     dest_lat: float = 0.0
     dest_lon: float = 0.0
     geometry: list[dict[str, float]] | None = None
-    leg_type: str = 'transit'
+    leg_type: str = "transit"
     origin_platform: str | None = None
     destination_platform: str | None = None
+    emissions_kg: float = 0.0
+    emissions_min_kg: float = 0.0
+    emissions_max_kg: float = 0.0
+    emissions_operational_kg: float = 0.0
+    emissions_lifecycle_kg: float = 0.0
+    emissions_radiative_forcing_kg: float = 0.0
+    emissions_rate_g_per_km: float = 0.0
+    emissions_confidence: str = ""
+    emissions_distance_source: str = ""
+    emissions_traction: str = ""
+    emissions_traction_source: str = ""
+    emissions_assumptions: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -51,6 +62,9 @@ class TruthRoute:
     legs: list[TruthLeg]
     operators: list[str]
     countries: list[str]
+    total_emissions_kg: float = 0.0
+    emissions_min_kg: float = 0.0
+    emissions_max_kg: float = 0.0
 
 
 @dataclass
@@ -92,14 +106,20 @@ class TruthSnapshot:
 def _build_truth_leg(leg: Leg) -> TruthLeg:
     stops = []
     for s in leg.stops:
-        stops.append({
-            "name": s.name,
-            "arrival": str(s.arrival.time.time())[:5] if hasattr(s, "arrival") and s.arrival else None,
-            "departure": str(s.departure.time.time())[:5] if hasattr(s, "departure") and s.departure else None,
-            "lat": s.position.lat.degrees if hasattr(s, "position") else None,
-            "lon": s.position.lon.degrees if hasattr(s, "position") else None,
-            "track": getattr(s, "track", None),
-        })
+        stops.append(
+            {
+                "name": s.name,
+                "arrival": str(s.arrival.time.time())[:5]
+                if hasattr(s, "arrival") and s.arrival
+                else None,
+                "departure": str(s.departure.time.time())[:5]
+                if hasattr(s, "departure") and s.departure
+                else None,
+                "lat": s.position.lat.degrees if hasattr(s, "position") else None,
+                "lon": s.position.lon.degrees if hasattr(s, "position") else None,
+                "track": getattr(s, "track", None),
+            }
+        )
 
     geometry = None
     if leg.geometry:
@@ -121,10 +141,22 @@ def _build_truth_leg(leg: Leg) -> TruthLeg:
                 deduped.append(geometry[-1])
             geometry = deduped
 
-    origin_lat = leg.origin.position.lat.degrees if hasattr(leg.origin, "position") else 0
-    origin_lon = leg.origin.position.lon.degrees if hasattr(leg.origin, "position") else 0
-    dest_lat = leg.destination.position.lat.degrees if hasattr(leg.destination, "position") else 0
-    dest_lon = leg.destination.position.lon.degrees if hasattr(leg.destination, "position") else 0
+    origin_lat = (
+        leg.origin.position.lat.degrees if hasattr(leg.origin, "position") else 0
+    )
+    origin_lon = (
+        leg.origin.position.lon.degrees if hasattr(leg.origin, "position") else 0
+    )
+    dest_lat = (
+        leg.destination.position.lat.degrees
+        if hasattr(leg.destination, "position")
+        else 0
+    )
+    dest_lon = (
+        leg.destination.position.lon.degrees
+        if hasattr(leg.destination, "position")
+        else 0
+    )
 
     if leg.mode == "WALK":
         return TruthLeg(
@@ -133,8 +165,10 @@ def _build_truth_leg(leg: Leg) -> TruthLeg:
             operator="",
             origin_name=leg.origin.name,
             destination_name=leg.destination.name,
-            origin_lat=origin_lat, origin_lon=origin_lon,
-            dest_lat=dest_lat, dest_lon=dest_lon,
+            origin_lat=origin_lat,
+            origin_lon=origin_lon,
+            dest_lat=dest_lat,
+            dest_lon=dest_lon,
             departure=str(leg.departure.time.time())[:5],
             arrival=str(leg.arrival.time.time())[:5],
             duration_seconds=int(leg.duration.total_seconds()),
@@ -143,19 +177,23 @@ def _build_truth_leg(leg: Leg) -> TruthLeg:
             tortuosity_pct=round(leg.tortuosity(), 1),
             intermediate_stops=stops,
             geometry=geometry,
-            leg_type='transfer',
+            leg_type="transfer",
             origin_platform=getattr(leg, "origin_platform", None),
             destination_platform=getattr(leg, "destination_platform", None),
         )
 
     return TruthLeg(
         mode=leg.mode,
-        display_name=leg.display if hasattr(leg, "display") and leg.display else leg.mode_string,
+        display_name=leg.display
+        if hasattr(leg, "display") and leg.display
+        else leg.mode_string,
         operator=getattr(leg, "operator", ""),
         origin_name=leg.origin.name,
         destination_name=leg.destination.name,
-        origin_lat=origin_lat, origin_lon=origin_lon,
-        dest_lat=dest_lat, dest_lon=dest_lon,
+        origin_lat=origin_lat,
+        origin_lon=origin_lon,
+        dest_lat=dest_lat,
+        dest_lon=dest_lon,
         departure=str(leg.departure.time.time())[:5],
         arrival=str(leg.arrival.time.time())[:5],
         duration_seconds=int(leg.duration.total_seconds()),
@@ -188,7 +226,7 @@ def _build_truth_route(route: Route) -> TruthRoute:
         average_speed_kmh=round(route.average_speed(), 1),
         max_speed_kmh=round(max_speed, 1),
         tortuosity_pct=round(route.tortuosity(), 1),
-        legs=[_build_truth_leg(l) for l in route.legs],
+        legs=[_build_truth_leg(leg) for leg in route.legs],
         operators=list(route.operators),
         countries=[],
     )

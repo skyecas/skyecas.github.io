@@ -1,0 +1,5 @@
+pytest
+fastapi[all]
+ruff
+mypy
+yamllint

@@ -4,6 +4,7 @@ import sys
 import logging
 import os
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, Query
 from datetime import timedelta
@@ -22,15 +23,15 @@ for parent in [_script_dir, *_script_dir.parents]:
 sys.path.insert(0, str(_script_dir.parent))
 sys.path.insert(0, str(_script_dir))
 
-from rail_planner import TransitClient, DURATION, TRANSFERS, EMISSIONS
-from emissions import OperatorEmissionsModel
-from post_parser import (
+from rail_planner import TransitClient, DURATION, TRANSFERS, EMISSIONS  # noqa: E402
+from emissions import OperatorEmissionsModel  # noqa: E402
+from post_parser import (  # noqa: E402
     parse_post,
     write_post_cache,
     save_route_cache,
     list_sprint_posts,
 )
-from railway_db import RailwayDB, detect_region
+from railway_db import RailwayDB, detect_region, find_country  # noqa: E402
 
 log = logging.getLogger(__name__)
 if not log.handlers:
@@ -41,8 +42,64 @@ if not log.handlers:
 
 app = FastAPI(title="Sprint Blog Generator")
 
-client = TransitClient(itineraries=5, search_window=7200)
+client = TransitClient(itineraries=8, search_window=7200)
 emissions_model = OperatorEmissionsModel()
+
+
+class _EmissionLeg:
+    def __init__(
+        self,
+        *,
+        mode: str,
+        operator: str = "",
+        distance_km: float = 0.0,
+        has_geometry: bool = False,
+    ):
+        self.mode = mode
+        self.operator = operator
+        self._distance_km = distance_km
+        self.geometry = [object()] if has_geometry else []
+
+    def distance(self) -> float:
+        return self._distance_km
+
+
+def _emissions_detail(
+    *,
+    mode: str,
+    operator: str = "",
+    distance_km: float = 0.0,
+    distance_source: str = "scheduled",
+    countries: list[str] | None = None,
+    traction_hint: str | None = None,
+) -> dict:
+    estimate = emissions_model.estimate_leg_detail(
+        _EmissionLeg(
+            mode=mode,
+            operator=operator,
+            distance_km=distance_km,
+            has_geometry=distance_source in {"osm", "transitous"},
+        ),
+        distance_km=distance_km,
+        distance_source=distance_source,
+        countries=countries or [],
+        traction_hint=traction_hint,
+    ).to_dict()
+    return estimate
+
+
+def _planner_leg_countries(leg) -> list[str]:
+    countries = []
+    points = [leg.origin, *getattr(leg, "stops", []), leg.destination]
+    for point in points:
+        pos = getattr(point, "position", None)
+        if not pos:
+            continue
+        country = find_country(pos.lat.degrees, pos.lon.degrees)
+        if country and country not in countries:
+            countries.append(country)
+    return countries
+
 
 # Legacy CRS→coords map — used only as lat/lon fallback when MOTIS text search
 # fails. Station ID is always sourced from live MOTIS search, never hardcoded.
@@ -95,14 +152,8 @@ async def search_stations(q: str = Query("")):
     loop = asyncio.get_event_loop()
     results = await loop.run_in_executor(None, client.search_stations, q)
 
-    # Filter out Underground (940), DLR (930), Bus/Coach (700)
-    def _keep(r) -> bool:
-        rid = r.id or ""
-        prefix = rid.split("_").pop()[:3] if "_" in rid else ""
-        return prefix not in ("940", "930", "700")
-
-    filtered = [r for r in results if _keep(r)]
-    # Sort: exact name match first, then National Rail (910-912), then others
+    # Sort: exact name match first, then National Rail (910-912), then others.
+    # Keep Underground/DLR/etc visible because they are valid interchange targets.
     q_lower = q.strip().lower()
 
     def _sort_key(r):
@@ -112,7 +163,7 @@ async def search_stations(q: str = Query("")):
         nr = 0 if code in ("910", "911", "912") else 1
         return (exact, nr, r.name)
 
-    filtered.sort(key=_sort_key)
+    results.sort(key=_sort_key)
     return [
         {
             "id": r.id,
@@ -120,8 +171,82 @@ async def search_stations(q: str = Query("")):
             "lat": r.position.lat.degrees,
             "lon": r.position.lon.degrees,
         }
-        for r in filtered
+        for r in results
     ]
+
+
+_STATION_ALIAS_CACHE: dict[str, dict] = {}
+
+
+def _station_alias_key(name: str) -> str:
+    return " ".join(name.lower().strip().split())
+
+
+def _station_alias_fallback(name: str) -> str:
+    key = _station_alias_key(name)
+    for old, new in (
+        ("bruxelles-zuid", "bruxelles midi"),
+        ("bruxelles zuid", "bruxelles midi"),
+        ("brussel zuid", "bruxelles midi"),
+        ("brussels south", "bruxelles midi"),
+        ("s+u berlin hauptbahnhof", "berlin hauptbahnhof"),
+        ("st pancras international", "st pancras"),
+        ("london st pancras international", "st pancras"),
+    ):
+        if key == old:
+            return new
+    return key
+
+
+def _resolve_station_alias_sync(name: str) -> dict:
+    cache_key = _station_alias_key(name)
+    if cache_key in _STATION_ALIAS_CACHE:
+        return _STATION_ALIAS_CACHE[cache_key]
+    fallback = _station_alias_fallback(name)
+    try:
+        results = client.search_stations(name)
+    except Exception:
+        results = []
+    if results:
+        q = cache_key
+
+        def _sort_key(r):
+            exact = 0 if r.name.lower() == q else 1
+            return (exact, r.name)
+
+        results.sort(key=_sort_key)
+        best = results[0]
+        # Prefer stable Transitous/MOTIS IDs; nearby aliases are clustered client-side.
+        resolved = {
+            "input": name,
+            "key": best.id or fallback,
+            "name": best.name,
+            "lat": best.position.lat.degrees,
+            "lon": best.position.lon.degrees,
+        }
+    else:
+        resolved = {
+            "input": name,
+            "key": fallback,
+            "name": name,
+            "lat": None,
+            "lon": None,
+        }
+    _STATION_ALIAS_CACHE[cache_key] = resolved
+    return resolved
+
+
+@app.post("/api/resolve-station-aliases")
+async def resolve_station_aliases(body: dict):
+    import asyncio
+
+    names = [str(n).strip() for n in body.get("names", []) if str(n).strip()]
+    names = sorted(set(names))
+    loop = asyncio.get_event_loop()
+    results = await loop.run_in_executor(
+        None, lambda: [_resolve_station_alias_sync(n) for n in names]
+    )
+    return {"stations": results}
 
 
 @app.get("/api/sprint-dirs")
@@ -173,13 +298,12 @@ async def find_routes(body: dict):
     via = body.get("via", [])
     dep_date = body.get("date", "")
     dep_time = body.get("time", "08:00")
-    leg_type = body.get("leg_type", "transit")
     mode = body.get("mode", "")
 
     from datetime import datetime
     from zoneinfo import ZoneInfo
 
-    def _best_station(name: str) -> Location | None:
+    def _best_station(name: str) -> Any | None:
         """Search MOTIS, filter out non-rail, return best National Rail result."""
         from rail_planner import Location
 
@@ -280,7 +404,7 @@ async def find_routes(body: dict):
 
     if dep_date:
         depart_after = datetime.strptime(f"{dep_date} {dep_time}", "%Y-%m-%d %H:%M")
-        depart_after -= timedelta(minutes=15)  # search a bit before so routes show up
+        depart_after -= timedelta(hours=1)
         # Auto-adjust dates more than 3 months old to current week (same weekday)
         now = datetime.now()
         if (now - depart_after).days > 90:
@@ -332,7 +456,7 @@ async def find_routes(body: dict):
         if days_ahead <= 0:
             days_ahead += 7
         first_match = today + timedelta(days=days_ahead)
-        for week_offset in range(0, 5):
+        for week_offset in (-2, -1, 0, 1, 2, 3, 4):
             alt_date = first_match + timedelta(weeks=week_offset)
             alt_dt = alt_date.replace(hour=user_dt.hour, minute=user_dt.minute)
             user_min = user_dt.hour * 60 + user_dt.minute
@@ -427,27 +551,27 @@ def _route_response(routes, query_body, offset_minutes=None, fallback_date=None)
                 "operators": r.operators,
                 "legs": [
                     {
-                        "mode": l.mode,
-                        "display_name": l.display_name,
-                        "operator": l.operator,
-                        "origin": l.origin_name,
-                        "destination": l.destination_name,
-                        "origin_lat": l.origin_lat,
-                        "origin_lon": l.origin_lon,
-                        "dest_lat": l.dest_lat,
-                        "dest_lon": l.dest_lon,
-                        "departure": l.departure,
-                        "arrival": l.arrival,
-                        "duration_seconds": l.duration_seconds,
-                        "distance_km": l.distance_km,
-                        "max_speed_kmh": l.max_speed_kmh,
-                        "stops": l.intermediate_stops,
-                        "geometry": l.geometry,
-                        "leg_type": l.leg_type,
-                        "origin_platform": l.origin_platform,
-                        "destination_platform": l.destination_platform,
+                        "mode": leg.mode,
+                        "display_name": leg.display_name,
+                        "operator": leg.operator,
+                        "origin": leg.origin_name,
+                        "destination": leg.destination_name,
+                        "origin_lat": leg.origin_lat,
+                        "origin_lon": leg.origin_lon,
+                        "dest_lat": leg.dest_lat,
+                        "dest_lon": leg.dest_lon,
+                        "departure": leg.departure,
+                        "arrival": leg.arrival,
+                        "duration_seconds": leg.duration_seconds,
+                        "distance_km": leg.distance_km,
+                        "max_speed_kmh": leg.max_speed_kmh,
+                        "stops": leg.intermediate_stops,
+                        "geometry": leg.geometry,
+                        "leg_type": leg.leg_type,
+                        "origin_platform": leg.origin_platform,
+                        "destination_platform": leg.destination_platform,
                     }
-                    for l in r.legs
+                    for leg in r.legs
                 ],
             }
             for r in snapshot.routes
@@ -458,11 +582,42 @@ def _route_response(routes, query_body, offset_minutes=None, fallback_date=None)
         rt = resp["routes"][route_idx]
         total_kg = 0.0
         for leg_idx, leg in enumerate(route.legs):
-            em_g = emissions_model.estimate_leg(leg)
-            em_kg = round(em_g / 1000.0, 4)
-            rate = round(emissions_model.leg_rate(leg), 1)
+            detail = emissions_model.estimate_leg_detail(
+                leg,
+                countries=_planner_leg_countries(leg),
+            )
+            em_kg = detail.kg
+            rate = round(detail.rate_g_per_km, 1)
             rt["legs"][leg_idx]["emissions_kg"] = em_kg
             rt["legs"][leg_idx]["emissions_rate_g_per_km"] = rate
+            rt["legs"][leg_idx]["emissions_min_kg"] = detail.min_kg
+            rt["legs"][leg_idx]["emissions_max_kg"] = detail.max_kg
+            rt["legs"][leg_idx]["emissions_operational_kg"] = detail.operational_kg
+            rt["legs"][leg_idx]["emissions_lifecycle_kg"] = detail.lifecycle_kg
+            rt["legs"][leg_idx]["emissions_radiative_forcing_kg"] = (
+                detail.radiative_forcing_kg
+            )
+            rt["legs"][leg_idx]["emissions_rate_min_g_per_km"] = (
+                detail.rate_min_g_per_km
+            )
+            rt["legs"][leg_idx]["emissions_rate_max_g_per_km"] = (
+                detail.rate_max_g_per_km
+            )
+            rt["legs"][leg_idx]["emissions_confidence"] = detail.confidence
+            rt["legs"][leg_idx]["emissions_distance_source"] = detail.distance_source
+            rt["legs"][leg_idx]["emissions_traction"] = detail.traction
+            rt["legs"][leg_idx]["emissions_traction_source"] = detail.traction_source
+            rt["legs"][leg_idx]["emissions_countries"] = detail.countries
+            rt["legs"][leg_idx]["emissions_grid_intensity_g_per_kwh"] = (
+                detail.grid_intensity_g_per_kwh
+            )
+            rt["legs"][leg_idx]["emissions_lifecycle_uplift_pct"] = (
+                detail.lifecycle_uplift_pct
+            )
+            rt["legs"][leg_idx]["emissions_radiative_forcing_multiplier"] = (
+                detail.radiative_forcing_multiplier
+            )
+            rt["legs"][leg_idx]["emissions_assumptions"] = detail.assumptions
             total_kg += em_kg
         rt["total_emissions_kg"] = round(total_kg, 3)
 
@@ -472,47 +627,9 @@ def _route_response(routes, query_body, offset_minutes=None, fallback_date=None)
     return resp
 
 
-# ---- Geometry enrichment (local OSM railway DB + arc interpolation fallback) ----
+# ---- Geometry enrichment (local OSM railway DB) ----
 
 _ENRICH_CACHE: dict[str, tuple[list[dict[str, float]] | None, str | None]] = {}
-
-
-def _arc_points(
-    lat1: float, lon1: float, lat2: float, lon2: float, n: int = 32
-) -> list[tuple[float, float]]:
-    import math
-
-    dx = lon2 - lon1
-    dy = lat2 - lat1
-    dist = math.sqrt(dx * dx + dy * dy)
-    if dist < 1e-8:
-        return [(lat1, lon1)]
-    px, py = -dy / dist, dx / dist
-    bulge = min(dist * 0.05, 0.02)
-    pts = [
-        (
-            lat1 + dy * (i / n) + math.sin((i / n) * math.pi) * bulge * px,
-            lon1 + dx * (i / n) + math.sin((i / n) * math.pi) * bulge * py,
-        )
-        for i in range(n + 1)
-    ]
-    return pts
-
-
-def _subdivide(lat1, lon1, lat2, lon2, max_deg=0.5):
-    dx, dy = abs(lat2 - lat1), abs(lon2 - lon1)
-    if dx + dy <= max_deg:
-        return [(lat1, lon1, lat2, lon2)]
-    n = int((dx + dy) / max_deg) + 1
-    return [
-        (
-            lat1 + (lat2 - lat1) * i / n,
-            lon1 + (lon2 - lon1) * i / n,
-            lat1 + (lat2 - lat1) * (i + 1) / n,
-            lon1 + (lon2 - lon1) * (i + 1) / n,
-        )
-        for i in range(n)
-    ]
 
 
 def _enrich_leg_geometry(
@@ -527,9 +644,20 @@ def _enrich_leg_geometry(
 ) -> tuple[list[dict[str, float]] | None, str | None]:
     import hashlib
 
-    rnd = lambda x: round(x, 4)
+    def rnd(x):
+        return round(x, 4)
+
+    geo_sig = ""
+    if geometry and len(geometry) >= 2:
+        sample_idxs = sorted({0, len(geometry) // 2, len(geometry) - 1})
+        geo_sig = ";".join(
+            f"{rnd(geometry[i]['lat'])},{rnd(geometry[i]['lon'])}" for i in sample_idxs
+        )
     cache_key = hashlib.sha256(
-        f"{rnd(origin_lat)},{rnd(origin_lon)}-{rnd(dest_lat)},{rnd(dest_lon)}".encode()
+        (
+            f"{rnd(origin_lat)},{rnd(origin_lon)}-{rnd(dest_lat)},{rnd(dest_lon)}"
+            f"|{origin_platform or ''}|{dest_platform or ''}|{geo_sig}"
+        ).encode()
     ).hexdigest()[:16]
     if cache_key in _ENRICH_CACHE:
         cached_result, cached_source = _ENRICH_CACHE[cache_key]
@@ -606,19 +734,128 @@ def _enrich_leg_geometry(
         if dest_platform:
             anchor_points[-1]["platform"] = dest_platform
 
+    def _project_anchor_to_geometry(ap: dict, raw_geo: list[dict[str, float]]) -> None:
+        if not raw_geo or len(raw_geo) < 2:
+            return
+        best = None
+        for i in range(len(raw_geo) - 1):
+            p0 = raw_geo[i]
+            p1 = raw_geo[i + 1]
+            vx = p1["lat"] - p0["lat"]
+            vy = p1["lon"] - p0["lon"]
+            seg2 = vx * vx + vy * vy
+            if seg2 == 0:
+                t = 0.0
+            else:
+                t = ((ap["lat"] - p0["lat"]) * vx + (ap["lon"] - p0["lon"]) * vy) / seg2
+                t = max(0.0, min(1.0, t))
+            lat = p0["lat"] + vx * t
+            lon = p0["lon"] + vy * t
+            d2 = (lat - ap["lat"]) ** 2 + (lon - ap["lon"]) ** 2
+            if best is None or d2 < best[0]:
+                best = (d2, lat, lon)
+        if best and best[0] < 0.0001:
+            ap["station_lat"] = ap["lat"]
+            ap["station_lon"] = ap["lon"]
+            ap["lat"] = best[1]
+            ap["lon"] = best[2]
+
+    if geometry and len(geometry) >= 2:
+        for ap in anchor_points:
+            _project_anchor_to_geometry(ap, geometry)
+
+    if geometry and len(geometry) >= 3:
+
+        def _geo_index(pt: dict) -> int:
+            return min(
+                range(len(geometry)),
+                key=lambda i: (
+                    (geometry[i]["lat"] - pt["lat"]) ** 2
+                    + (geometry[i]["lon"] - pt["lon"]) ** 2
+                ),
+            )
+
+        split_anchors = []
+        last_region = detect_region(geometry[0]["lat"], geometry[0]["lon"])
+        for gi, gp in enumerate(geometry[1:-1], start=1):
+            region = detect_region(gp["lat"], gp["lon"])
+            if region and last_region and region != last_region:
+                prev = geometry[gi - 1]
+                split_anchors.append(
+                    {
+                        "idx": gi,
+                        "lat": (prev["lat"] + gp["lat"]) / 2,
+                        "lon": (prev["lon"] + gp["lon"]) / 2,
+                        "name": f"region:{last_region}->{region}",
+                    }
+                )
+            if region:
+                last_region = region
+
+        if split_anchors:
+            new_anchors = []
+            inserted = 0
+            for ai in range(len(anchor_points) - 1):
+                a = anchor_points[ai]
+                b = anchor_points[ai + 1]
+                new_anchors.append(a)
+                ia = _geo_index(a)
+                ib = _geo_index(b)
+                lo, hi = sorted((ia, ib))
+                candidates = [s for s in split_anchors if lo < s["idx"] <= hi]
+                candidates.sort(key=lambda s: s["idx"], reverse=ia > ib)
+                for split in candidates:
+                    if (
+                        abs(split["lat"] - a["lat"]) < 0.0001
+                        and abs(split["lon"] - a["lon"]) < 0.0001
+                    ) or (
+                        abs(split["lat"] - b["lat"]) < 0.0001
+                        and abs(split["lon"] - b["lon"]) < 0.0001
+                    ):
+                        continue
+                    new_anchors.append(
+                        {
+                            "lat": split["lat"],
+                            "lon": split["lon"],
+                            "name": split["name"],
+                        }
+                    )
+                    inserted += 1
+            new_anchors.append(anchor_points[-1])
+            anchor_points = new_anchors
+            log.info(
+                "  inserted %d region split anchors for cross-border enrichment",
+                inserted,
+            )
+
     # Phase 1: local railway database corridor query
     db = RailwayDB.get_instance()
-    region = detect_region(origin_lat, origin_lon)
-    source = None
-    if region:
-        db.ensure_region(region)
-    if region:
-        if db._region_loading.get(region):
-            log.debug("_enrich_leg_geometry: region %s loading, returning None", region)
+
+    # Detect all regions from all anchor points for cross-border support
+    regions_needed: set[str] = set()
+    for ap in anchor_points:
+        r = detect_region(ap["lat"], ap["lon"])
+        if r:
+            regions_needed.add(r)
+    if not regions_needed:
+        regions_needed.add(detect_region(origin_lat, origin_lon) or "")
+    regions_needed.discard("")
+
+    if regions_needed:
+        for r in list(regions_needed):
+            db.ensure_region(r)
+
+        loading_regions = [r for r in regions_needed if db._region_loading.get(r)]
+        if loading_regions:
+            log.debug(
+                "_enrich_leg_geometry: regions %s loading, returning None",
+                loading_regions,
+            )
             return None, "loading"
-        if db.is_ready(region):
-            # Extract per-segment Transitous sub-geometries for route ranking,
-            # clipped precisely between each pair of anchor points.
+
+        ready_regions = [r for r in regions_needed if db.is_ready(r)]
+        if ready_regions:
+
             def _clip_ref_geo(
                 raw: list[dict], a: dict, b: dict
             ) -> list[tuple[float, float]]:
@@ -664,20 +901,19 @@ def _enrich_leg_geometry(
                 else:
                     ref_geos.append(None)
 
-            all_coords = db.query_corridor(anchor_points, ref_geos=ref_geos)
+            all_coords = db.query_corridor(
+                anchor_points, ref_geos=ref_geos, regions=ready_regions
+            )
             if all_coords:
                 if len(all_coords) >= 2:
-                    orig_name = anchor_points[0].get("name", "origin").replace(
-                        " ", "_"
+                    orig_name = anchor_points[0].get("name", "origin").replace(" ", "_")
+                    dest_name = (
+                        anchor_points[-1].get("name", "destination").replace(" ", "_")
                     )
-                    dest_name = anchor_points[-1].get(
-                        "name", "destination"
-                    ).replace(" ", "_")
                     lats = [c[0] for c in all_coords]
                     lons = [c[1] for c in all_coords]
                     log.info(
-                        "  enriched %s->%s: %d coords, "
-                        "bbox=(%.4f-%.4f, %.4f-%.4f)",
+                        "  enriched %s->%s: %d coords, bbox=(%.4f-%.4f, %.4f-%.4f)",
                         orig_name,
                         dest_name,
                         len(all_coords),
@@ -693,7 +929,7 @@ def _enrich_leg_geometry(
                         frac = frac_int / 100.0
                         si = min(int(frac * (n - 1)), n - 1)
                         osm_samps.append(
-                            f"{frac_int:3d}% ({all_coords[si][0]:.4f},{all_coords[si][1]:.4f})"
+                            f"{frac_int}%={all_coords[si][0]:.4f},{all_coords[si][1]:.4f}"
                         )
                     if geometry and len(geometry) >= 2:
                         gn = len(geometry)
@@ -702,21 +938,21 @@ def _enrich_leg_geometry(
                             si = min(int(frac * (gn - 1)), gn - 1)
                             gp = geometry[si]
                             ref_samps.append(
-                                f"{frac_int:3d}% ({gp['lat']:.4f},{gp['lon']:.4f})"
+                                f"{frac_int}%={gp['lat']:.4f},{gp['lon']:.4f}"
                             )
                         log.info(
-                            "  enriched %s->%s OSM:\n    %s\n  Transitous REF:\n    %s",
+                            "  enriched %s->%s OSM: %s | REF: %s",
                             orig_name,
                             dest_name,
-                            "\n    ".join(osm_samps),
-                            "\n    ".join(ref_samps),
+                            " ; ".join(osm_samps),
+                            " ; ".join(ref_samps),
                         )
                     else:
                         log.info(
-                            "  enriched %s->%s OSM:\n    %s",
+                            "  enriched %s->%s OSM: %s",
                             orig_name,
                             dest_name,
-                            "\n    ".join(osm_samps),
+                            " ; ".join(osm_samps),
                         )
                 result = [{"lat": c[0], "lon": c[1]} for c in all_coords]
                 _ENRICH_CACHE[cache_key] = (result, "railway_db")
@@ -724,25 +960,15 @@ def _enrich_leg_geometry(
             else:
                 log.debug("  query_corridor returned None")
 
-    # Phase 2: straight-line fallback
-    all_coords = []
-    for i in range(len(anchor_points) - 1):
-        a, b = anchor_points[i], anchor_points[i + 1]
-        for sa_lat, sa_lon, sb_lat, sb_lon in _subdivide(
-            a["lat"], a["lon"], b["lat"], b["lon"], max_deg=0.15
-        ):
-            seg = [(sa_lat, sa_lon), (sb_lat, sb_lon)]
-            if all_coords:
-                gap = abs(all_coords[-1][0] - seg[0][0]) + abs(
-                    all_coords[-1][1] - seg[0][1]
-                )
-                all_coords.extend(seg[1 if gap < 0.0002 else 0 :])
-            else:
-                all_coords.extend(seg)
-    result = [{"lat": c[0], "lon": c[1]} for c in all_coords] if all_coords else None
-    source = "arc" if result else None
-    _ENRICH_CACHE[cache_key] = (result, source)
-    return result, source
+    log.warning(
+        "OSM enrichment failed: %.5f,%.5f -> %.5f,%.5f via %d anchors",
+        origin_lat,
+        origin_lon,
+        dest_lat,
+        dest_lon,
+        len(anchor_points),
+    )
+    return None, "osm_failed"
 
 
 @app.get("/api/railway-status")
@@ -763,8 +989,25 @@ async def enrich_geometry(body: dict):
     return {"legs": results}
 
 
+@app.post("/api/estimate-emissions")
+async def estimate_emissions(body: dict):
+    legs = []
+    for i, leg in enumerate(body.get("legs", [])):
+        detail = _emissions_detail(
+            mode=leg.get("mode", "RAIL"),
+            operator=leg.get("operator", ""),
+            distance_km=float(leg.get("distance_km") or 0),
+            distance_source=leg.get("distance_source", "scheduled"),
+            countries=leg.get("countries") or [],
+            traction_hint=leg.get("traction_hint"),
+        )
+        detail["index"] = leg.get("index", i)
+        legs.append(detail)
+    return {"legs": legs}
+
+
 def _enrich_one_leg(leg_in: dict) -> dict:
-    if leg_in.get("leg_type") == "transfer":
+    if leg_in.get("leg_type", "transit") not in {"transit", "unincluded"}:
         return {"index": leg_in.get("index"), "geometry": None, "source": None}
     geom, source = _enrich_leg_geometry(
         leg_in.get("origin_lat", 0),
@@ -776,7 +1019,18 @@ def _enrich_one_leg(leg_in: dict) -> dict:
         leg_in.get("origin_platform"),
         leg_in.get("dest_platform"),
     )
-    return {"index": leg_in.get("index"), "geometry": geom, "source": source}
+    traction_hint = None
+    if geom and source == "railway_db":
+        try:
+            traction_hint = RailwayDB.get_instance().traction_hint_for_geometry(geom)
+        except Exception:
+            traction_hint = None
+    return {
+        "index": leg_in.get("index"),
+        "geometry": geom,
+        "source": source,
+        "traction_hint": traction_hint,
+    }
 
 
 @app.post("/api/generate-blog")
@@ -801,31 +1055,45 @@ async def generate_blog(body: dict):
     return {"post": post}
 
 
-def _build_snapshot(route_data: dict) -> TruthSnapshot:
+def _build_snapshot(route_data: dict) -> Any:
     from truth.snapshot import TruthSnapshot, TruthRoute, TruthLeg
 
     legs = [
         TruthLeg(
-            mode=l.get("mode", "REGIONAL_RAIL"),
-            display_name=l.get("display_name", ""),
-            operator=l.get("operator", ""),
-            origin_name=l.get("origin", ""),
-            destination_name=l.get("destination", ""),
-            departure=l.get("departure", ""),
-            arrival=l.get("arrival", ""),
-            duration_seconds=l.get("duration_seconds", 0),
-            distance_km=l.get("distance_km", 0),
-            max_speed_kmh=l.get("max_speed_kmh", 0),
-            tortuosity_pct=l.get("tortuosity_pct", 100),
-            intermediate_stops=l.get("stops", []),
-            origin_lat=l.get("origin_lat", 0.0),
-            origin_lon=l.get("origin_lon", 0.0),
-            dest_lat=l.get("dest_lat", 0.0),
-            dest_lon=l.get("dest_lon", 0.0),
-            geometry=l.get("geometry"),
-            leg_type=l.get("leg_type", "transit"),
+            mode=leg.get("mode", "REGIONAL_RAIL"),
+            display_name=leg.get("display_name", ""),
+            operator=leg.get("operator", ""),
+            origin_name=leg.get("origin", ""),
+            destination_name=leg.get("destination", ""),
+            departure=leg.get("departure", ""),
+            arrival=leg.get("arrival", ""),
+            duration_seconds=leg.get("duration_seconds", 0),
+            distance_km=leg.get("distance_km", 0),
+            max_speed_kmh=leg.get("max_speed_kmh", 0),
+            tortuosity_pct=leg.get("tortuosity_pct", 100),
+            intermediate_stops=leg.get("stops", []),
+            origin_lat=leg.get("origin_lat", 0.0),
+            origin_lon=leg.get("origin_lon", 0.0),
+            dest_lat=leg.get("dest_lat", 0.0),
+            dest_lon=leg.get("dest_lon", 0.0),
+            geometry=leg.get("geometry"),
+            leg_type=leg.get("leg_type", "transit"),
+            emissions_kg=leg.get("emissions_kg", 0.0),
+            emissions_min_kg=leg.get("emissions_min_kg", 0.0),
+            emissions_max_kg=leg.get("emissions_max_kg", 0.0),
+            emissions_operational_kg=leg.get("emissions_operational_kg", 0.0),
+            emissions_lifecycle_kg=leg.get("emissions_lifecycle_kg", 0.0),
+            emissions_radiative_forcing_kg=leg.get(
+                "emissions_radiative_forcing_kg", 0.0
+            ),
+            emissions_rate_g_per_km=leg.get("emissions_rate_g_per_km", 0.0),
+            emissions_confidence=leg.get("emissions_confidence", ""),
+            emissions_distance_source=leg.get("emissions_distance_source", ""),
+            emissions_traction=leg.get("emissions_traction", ""),
+            emissions_traction_source=leg.get("emissions_traction_source", ""),
+            emissions_assumptions=leg.get("emissions_assumptions", []),
         )
-        for l in route_data.get("legs", [])
+        for leg in route_data.get("legs", [])
     ]
     route = TruthRoute(
         route_id=route_data.get("route_id", ""),
@@ -844,6 +1112,9 @@ def _build_snapshot(route_data: dict) -> TruthSnapshot:
         legs=legs,
         operators=route_data.get("operators", []),
         countries=[],
+        total_emissions_kg=route_data.get("total_emissions_kg", 0.0),
+        emissions_min_kg=route_data.get("emissions_min_kg", 0.0),
+        emissions_max_kg=route_data.get("emissions_max_kg", 0.0),
     )
     return TruthSnapshot(
         snapshot_id="manual",
@@ -853,7 +1124,7 @@ def _build_snapshot(route_data: dict) -> TruthSnapshot:
     )
 
 
-def _build_curation(curation_data: dict, route_data: dict) -> CurationState:
+def _build_curation(curation_data: dict, route_data: dict) -> Any:
     from curation.state import CurationState, LegCuration
 
     curation = CurationState(
