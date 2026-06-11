@@ -6,7 +6,12 @@ Usage:
   python3 scripts/sync-asterisms.py --all         # rebuild all known
   python3 scripts/sync-asterisms.py --list        # list IAU constellations
 """
-import json, re, os, sys, urllib.request, math
+import json
+import re
+import os
+import sys
+import urllib.request
+import math
 from html import unescape
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -283,17 +288,17 @@ def build_entry(name):
     js = [
         f'  {{ /* {ck} */',
         f'    name: "{name}", {tag},',
-        f'    stars: [',
+        '    stars: [',
     ]
     for s in ordered:
         ra = fmt_pos(s.get("ra")); dec = fmt_pos(s.get("dec"))
         spec = json.dumps(s["spec"]) if s.get("spec") else "null"
         nm = s["best_name"]
         js.append(f'      {{ name:{json.dumps(nm)}, ra:{ra}, dec:{dec}, mag:{s["mag"]:.2f}, spec:{spec} }},')
-    js.append(f'    ],')
+    js.append('    ],')
     js.append(f'    connections: {json.dumps(conns)},')
     js.append(f'    mainIndices: {json.dumps(list(range(len(main_hips))))},')
-    js.append(f'  }},')
+    js.append('  },')
     print(f"  Main stars: {main_names}")
     print_ascii_constellation(main_hips, hip_stars, conns, main_names)
     return "\n".join(js), ordered

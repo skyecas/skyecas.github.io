@@ -1,5 +1,5 @@
 from __future__ import annotations
-from requests import get
+from requests import get, HTTPError
 from urllib.parse import urlencode
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -322,17 +322,22 @@ class Leg:
         stops = self.all_stops
         if len(stops) < 2:
             return 0.0
+        geo = self.geometry or []
         max_sp = 0.0
         for i in range(len(stops) - 1):
             a, b = stops[i], stops[i + 1]
-            d = a.distance(b)
+            seg_dist = (
+                Route._geo_seg_dist(geo, a.position, b.position)
+                if len(geo) >= 2
+                else a.distance(b)
+            )
             dep = getattr(a, 'departure', None) or getattr(a, 'arrival', None)
             arr = getattr(b, 'arrival', None) or getattr(b, 'departure', None)
             if dep is None or arr is None:
                 continue
             dt = (arr - dep).total_seconds()
             if dt > 0:
-                sp = 3600 * d / dt
+                sp = 3600 * seg_dist / dt
                 if sp > max_sp:
                     max_sp = sp
         return max_sp
@@ -549,20 +554,41 @@ class Route:
             return 0.0
         return 3600 * self.distance() / self.duration.total_seconds()
 
+    @staticmethod
+    def _geo_seg_dist(geometry: list[Position], a: Position, b: Position) -> float:
+        """Sum geometry sub-segment distance between the points nearest to a and b."""
+        if not geometry or len(geometry) < 2:
+            return a.distance(b)
+        best_i = min(range(len(geometry)), key=lambda i: geometry[i].distance(a))
+        best_j = min(range(len(geometry)), key=lambda i: geometry[i].distance(b))
+        lo, hi = (best_i, best_j) if best_i <= best_j else (best_j, best_i)
+        if hi - lo < 2:
+            return a.distance(b)
+        return sum(
+            geometry[k].distance(geometry[k + 1])
+            for k in range(lo, hi)
+        )
+
     def segment_speeds(self) -> list[tuple[Any]]:
         segments = []
         for leg in self.legs:
             if leg.mode == "WALK":
                 continue
+            geo = leg.geometry or []
             for a, b in zip(leg.all_stops[:-1], leg.all_stops[1:]):
                 duration = a.time_to(b)
                 if duration.total_seconds() == 0:
                     continue
-                speed = 3600 * a.distance(b) / duration.total_seconds()
+                seg_dist = (
+                    self._geo_seg_dist(geo, a.position, b.position)
+                    if len(geo) >= 2
+                    else a.distance(b)
+                )
+                speed = 3600 * seg_dist / duration.total_seconds()
                 segments.append({
                     "from": a.name,
                     "to": b.name,
-                    "distance": a.distance(b),
+                    "distance": seg_dist,
                     "duration": duration,
                     "speed": speed,
                     "leg": leg
@@ -750,7 +776,12 @@ class TransitClient:
         if response.status_code == 404:
             raise ValueError(f"Nothing found for {url}")
         elif response.status_code != 200:
-            response.raise_for_status()
+            try:
+                detail = response.json()
+            except Exception:
+                detail = response.text[:500]
+            msg = f"Transitous {response.status_code}: {detail}"
+            raise HTTPError(msg, response=response)
 
         data = response.json()
         cache_file.write_text(json.dumps(data))
@@ -919,12 +950,20 @@ class TransitClient:
 
         if len(methods) > 1:
             routes = []
+            last_err = None
             for mthd in methods:
-                routes.extend(self._find_routes(
-                    start=start, end=end, depart_after=depart_after, arrive_before=arrive_before,
-                    via=via, avoid=avoid, modes=modes, model=model, sort=None, adjust_time=adjust_time, method=mthd
-                ))
-            return self._sort_routes(routes, sort, model)
+                try:
+                    routes.extend(self._find_routes(
+                        start=start, end=end, depart_after=depart_after, arrive_before=arrive_before,
+                        via=via, avoid=avoid, modes=modes, model=model, sort=None, adjust_time=adjust_time, method=mthd
+                    ))
+                except Exception as ex:
+                    last_err = ex
+            if routes:
+                return self._sort_routes(routes, sort, model)
+            if last_err:
+                raise last_err
+            # Both returned empty but no error; fall through to return empty list
 
         params = {
             "fromPlace":start.search,

@@ -348,9 +348,31 @@ button:hover { opacity: .85; }
 .alias-debug table { width: 100%; border-collapse: collapse; margin-top: 4px; }
 .alias-debug th, .alias-debug td { border-bottom: 1px solid var(--border); padding: 3px 4px; text-align: left; vertical-align: top; }
 .alias-debug code { color: var(--accent2); }
+
+/* Loading spinner overlay */
+#loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; z-index: 9999; align-items: center; justify-content: center; flex-direction: column; gap: 20px; pointer-events: all; }
+#loading-overlay.show { display: flex; }
+.spinner { width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { color: var(--text); font-size: 0.9rem; text-align: center; }
+
+/* Error message panel */
+#error-panel { position: fixed; top: 10px; right: 10px; max-width: 400px; background: #8B0000; border: 2px solid #ff6b6b; border-radius: 6px; padding: 12px 16px; color: #fff; font-size: 0.85rem; z-index: 9998; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
+#error-panel.show { display: flex; }
+#error-panel .error-close { align-self: flex-end; cursor: pointer; font-weight: bold; color: #ffcccc; }
+#error-panel .error-message { word-wrap: break-word; white-space: pre-wrap; font-family: monospace; font-size: 0.8rem; }
+
 </style>
 </head>
 <body>
+<div id="loading-overlay">
+	<div class="spinner"></div>
+	<div class="loading-text">Loading backend...</div>
+</div>
+<div id="error-panel">
+	<span class="error-close" onclick="hideError()">✕</span>
+	<div class="error-message" id="error-message"></div>
+</div>
 <div class="container">
 <div class="app-layout three-col">
 
@@ -401,7 +423,7 @@ button:hover { opacity: .85; }
       <button class="btn-primary btn-full" onclick="openGenerateModal()">Generate Blog</button>
       <button class="btn-danger btn-full" onclick="confirmDeleteEntry()">Delete Entry</button>
       <button class="btn-outline btn-full" onclick="deleteCache()">Delete Post Cache</button>
-      <button class="btn-outline btn-full" onclick="deleteRailwayCache()">Delete Railway DB</button>
+      <button class="btn-outline btn-full" onclick="deleteLocalCache()">Delete Cached Data</button>
       <button class="btn-outline btn-full" onclick="shutdownServer()" style="margin-top:8px;border-color:#666;color:#666">Shut Down Server</button>
       <div id="new-sprint-btn" class="hidden" style="margin-top:8px">
         <button class="btn-primary btn-full" onclick="createFromUnmatchedSprint()">+ Create New</button>
@@ -473,18 +495,6 @@ button:hover { opacity: .85; }
       <button class="btn-primary" onclick="generateBlog(true)">Write to File</button>
     </div>
     <div class="preview" id="preview-content">Generate a post to see a preview here.</div>
-  </div>
-</div>
-
-<!-- Loading overlay -->
-<div id="loading-overlay" class="modal-overlay hidden">
-  <div class="modal-content" style="max-width:360px;text-align:center">
-    <div class="modal-header"><h3>Searching...</h3></div>
-    <div style="padding:24px 0">
-      <div class="spinner"></div>
-      <p id="loading-msg" style="font-size:0.9rem;color:var(--muted);margin-top:16px">Looking up services...</p>
-      <p id="loading-detail" style="font-size:0.75rem;color:var(--muted);margin-top:4px">&nbsp;</p>
-    </div>
   </div>
 </div>
 
@@ -566,6 +576,68 @@ const state = {
   _collapsedRoutes: new Set(),
   tripCountries: [],
 };
+
+// ---- Loading spinner helpers ----
+function showLoadingSpinner(message = 'Loading backend...') {
+	console.log('showLoadingSpinner:', message);
+	const overlay = document.getElementById('loading-overlay');
+	if (!overlay) {
+		console.error('loading-overlay element not found!');
+		return;
+	}
+	const text = overlay.querySelector('.loading-text');
+	if (!text) {
+		console.error('.loading-text element not found!');
+		return;
+	}
+	text.textContent = message;
+	overlay.classList.add('show');
+	console.log('overlay classList:', overlay.className);
+}
+
+function hideLoadingSpinner() {
+	const overlay = document.getElementById('loading-overlay');
+	overlay.classList.remove('show');
+}
+
+// ---- Error message helpers ----
+function showError(message) {
+	hideLoadingSpinner();
+	const panel = document.getElementById('error-panel');
+	const msgDiv = document.getElementById('error-message');
+	msgDiv.textContent = message;
+	panel.classList.add('show');
+	console.error('Error:', message);
+	// Auto-hide after 10 seconds
+	setTimeout(hideError, 10000);
+}
+
+function hideError() {
+	const panel = document.getElementById('error-panel');
+	panel.classList.remove('show');
+}
+
+// ---- API helper with error handling ----
+async function apiCall(url, options = {}) {
+	try {
+		const res = await fetch(url, options);
+		if (!res.ok) {
+			const text = await res.text().catch(() => res.statusText);
+			showError(`API error (${res.status}): ${text}`);
+			throw new Error(`HTTP ${res.status}: ${text}`);
+		}
+		const data = await res.json();
+		if (data.error) {
+			showError(`Error: ${data.error}`);
+			throw new Error(data.error);
+		}
+		return data;
+	} catch(e) {
+		if (e.message.includes('HTTP')) throw e;
+		showError(`API call failed: ${e.message || e}`);
+		throw e;
+	}
+}
 
 // ---- Leg type/mode helpers ----
 function normalizeLeg(leg) {
@@ -680,20 +752,21 @@ function modeIcon(type, mode) {
   const t = type || 'transit';
   const m = mode || 'train';
   if (t === 'unincluded') return '⊘';
-  if (m === 'bus' || m === 'coach') return '🚌';
-  if (m === 'plane') return '✈️';
+  if (m === ':road' || m === 'bus' || m === 'coach') return '🚌';
+  if (m === ':other' || m === 'plane') return '✈️';
   if (m === 'ferry') return '⛴️';
   if (m === 'walking') return '🚶';
   if (m === 'tram' || m === 'light_rail') return '🚊';
   if (m === 'subway') return '🚇';
-  if (m === 'high_speed') return '🚄';
+  if (m === 'high_speed' || m === ':train' || m === 'train') return '🚄';
   if (m === 'regional') return '🚃';
   if (m === 'car') return '🚗';
   return '🚄';
 }
 
 function modeLabel(mode) {
-  const labels = { high_speed: 'High Speed', train: 'Train', regional: 'Regional',
+  const labels = { ':train': 'Train', ':road': 'Road', ':other': 'Other',
+    high_speed: 'High Speed', train: 'Train', regional: 'Regional',
     subway: 'Underground', tram: 'Tram', light_rail: 'Light Rail',
     bus: 'Bus', coach: 'Coach', car: 'Car', ferry: 'Ferry',
     plane: 'Plane', walking: 'Walking', other: 'Other' };
@@ -705,12 +778,12 @@ function modeColor(type, mode) {
   if (t === 'unincluded') return '#666';
   const m = mode || 'train';
   if (m === 'walking') return '#6D4C41';
-  if (m === 'bus' || m === 'coach') return '#795548';
-  if (m === 'plane') return '#1a237e';
+  if (m === ':road' || m === 'bus' || m === 'coach') return '#795548';
+  if (m === ':other' || m === 'plane') return '#1a237e';
   if (m === 'ferry') return '#00897B';
   if (m === 'tram' || m === 'light_rail') return '#00838F';
   if (m === 'subway') return '#4E342E';
-  if (m === 'high_speed') return '#1E88E5';
+  if (m === 'high_speed' || m === ':train' || m === 'train') return '#1E88E5';
   if (m === 'regional') return '#43A047';
   if (m === 'car') return '#424242';
   return '#66D9EE';
@@ -1008,8 +1081,9 @@ function debounceJourneySearch(inputId, field) {
   journeySearchTimers[inputId] = setTimeout(() => searchJourneyStation(inputId, field), 300);
 }
 
-function _stationType(id) {
+function _stationType(id, cc) {
   if (!id) return '';
+  if (id.startsWith('airport_')) return '✈️ Airport';
   const code = (id.split('_').pop() || '').replace(/[^0-9]/g, '');
   const prefix = code.substring(0, 3);
   const known = {
@@ -1017,13 +1091,14 @@ function _stationType(id) {
     '940': '🚇 Underground', '930': '🚊 DLR', '700': '🚌 Bus/Coach',
   };
   if (known[prefix]) return known[prefix];
-  // Try to extract country from ID prefix for non-UK stations
-  const country = (id || '').split('-')[0];
   const countryNames = { de: '🇩🇪 DE', fr: '🇫🇷 FR', nl: '🇳🇱 NL', be: '🇧🇪 BE',
     ch: '🇨🇭 CH', at: '🇦🇹 AT', it: '🇮🇹 IT', es: '🇪🇸 ES', dk: '🇩🇰 DK',
     se: '🇸🇪 SE', no: '🇳🇴 NO', pl: '🇵🇱 PL', lu: '🇱🇺 LU',
   };
-  return countryNames[country] ? `🚄 ${countryNames[country]}` : '';
+  if (cc && countryNames[cc]) return `🚄 ${countryNames[cc]}`;
+  // Fallback: extract country from ID prefix (agency-based, may be wrong)
+  const fallback = (id || '').split('-')[0];
+  return countryNames[fallback] ? `🚄 ${countryNames[fallback]}` : '';
 }
 
 async function searchJourneyStation(inputId, field) {
@@ -1033,15 +1108,43 @@ async function searchJourneyStation(inputId, field) {
   const q = input.value.trim();
   if (q.length < 2) { if (drop) drop.classList.remove('open'); return; }
 
-  const res = await fetch(`/api/search-stations?q=${encodeURIComponent(q)}`);
-  const data = await res.json();
-  if (!drop) return;
-  drop.innerHTML = data.map(s =>
-    `<div class="dropdown-item" data-station-name="${s.name.replace(/"/g, '&quot;')}" data-station-id="${s.id}" data-station-lat="${s.lat ?? 0}" data-station-lon="${s.lon ?? 0}" onmousedown="selectJourneyStation('${inputId}', '${field}', '${s.name.replace(/'/g, "\\'")}')" onmouseenter="previewStation(${s.lat ?? 0}, ${s.lon ?? 0}, '${s.name.replace(/'/g, "\\'")}')" onmouseleave="clearPreviewStation()">
-      ${s.name} <span class="text-muted">${_stationType(s.id)}</span>
-    </div>`
-  ).join('');
-  drop.classList.add('open');
+  try {
+    const res = await fetch(`/api/search-stations?q=${encodeURIComponent(q)}`);
+    if (!res.ok) {
+      showError(`Search failed (${res.status}): ${res.statusText}`);
+      return;
+    }
+    const data = await res.json();
+    if (data.error) {
+      showError(`Search error: ${data.error}`);
+      return;
+    }
+    if (!drop) return;
+    drop.innerHTML = data.map(s =>
+      `<div class="dropdown-item" data-station-name="${s.name.replace(/"/g, '&quot;')}" data-station-id="${s.id}" data-station-lat="${s.lat ?? 0}" data-station-lon="${s.lon ?? 0}" onmousedown="selectJourneyStation('${inputId}', '${field}', '${s.name.replace(/'/g, "\\'")}', '${(s.id || '').replace(/'/g, "\\'")}', ${s.lat ?? 0}, ${s.lon ?? 0})" onmouseenter="previewStation(${s.lat ?? 0}, ${s.lon ?? 0}, '${s.name.replace(/'/g, "\\'")}')" onmouseleave="clearPreviewStation()">
+        ${s.name} <span class="text-muted">${_stationType(s.id, s.country)}</span>
+      </div>`
+    ).join('');
+    drop.classList.add('open');
+  } catch(e) {
+    showError(`Search error: ${e.message || e}`);
+  }
+}
+
+function _autoDetectJourneyMode() {
+  const dir = state.currentDir;
+  const jOriginId = state[dir].journeyOriginId || '';
+  const jDestId = state[dir].journeyDestId || '';
+  if (!jOriginId || !jDestId) return;
+  // Find the first transit leg across all routes in current direction
+  for (const route of state[dir].routes) {
+    for (const leg of route.legs) {
+      if (leg.type === 'transit' || !leg.type) {
+        _autoDetectLegMode(leg);
+        return;
+      }
+    }
+  }
 }
 
 function selectJourneyStation(inputId, field, name, id, lat, lon) {
@@ -1052,6 +1155,7 @@ function selectJourneyStation(inputId, field, name, id, lat, lon) {
   if (id) saveJourneyField(field + 'Id', id);
   if (lat && lat !== 0) saveJourneyField(field + 'Lat', lat);
   if (lon && lon !== 0) saveJourneyField(field + 'Lon', lon);
+  _autoDetectJourneyMode();
 }
 
 // Close dropdowns on outside click
@@ -1084,6 +1188,50 @@ function moveLeg(legId, dir) {
 }
 
 // ---- Leg management (flat list, routes auto-managed) ----
+function _fillFromPrevLeg(leg) {
+  const routes = dirRoutes();
+  // Find last leg across all routes (for new-route auto-fill)
+  for (let ri = routes.length - 1; ri >= 0; ri--) {
+    const r = routes[ri];
+    if (r.legs.length) {
+      const prev = r.legs[r.legs.length - 1];
+      leg.origin = prev.dest || '';
+      leg.originId = prev.destId || '';
+      leg.originLat = prev.destLat;
+      leg.originLon = prev.destLon;
+      leg.departure = prev.arrival || '';
+      return;
+    }
+  }
+}
+
+function _blankLeg(id) {
+  return {
+    id, type: 'transit', mode: 'train',
+    origin: '', originId: '', dest: '', destId: '',
+    originLat: null, originLon: null, destLat: null, destLon: null,
+    departure: '', arrival: '',
+    services: [], selectedServices: [], stops: [], photos: [], notes: '',
+  };
+}
+
+function addRoute() {
+  const routes = dirRoutes();
+  const route = { id: 'route_' + state.routeIdCounter++, name: '', legs: [], photos: [], notes: '' };
+  routes.push(route);
+  const id = state.legIdCounter++;
+  const leg = _blankLeg(id);
+  _fillFromPrevLeg(leg);
+  route.legs.push(leg);
+  state._expandedLegIds.add(id);
+  autoNameRoute(route);
+  renderRoutes();
+  setTimeout(() => {
+    const inp = document.getElementById(`origin-${route.id}-${id}`);
+    if (inp) { inp.focus(); inp.select(); }
+  }, 50);
+}
+
 function addLeg(routeId) {
   const routes = dirRoutes();
   let route;
@@ -1098,13 +1246,16 @@ function addLeg(routeId) {
     }
   }
   const id = state.legIdCounter++;
-  route.legs.push({
-    id, type: 'transit', mode: 'train',
-    origin: '', originId: '', dest: '', destId: '',
-    originLat: null, originLon: null, destLat: null, destLon: null,
-    departure: '', arrival: '',
-    services: [], selectedServices: [], stops: [], photos: [], notes: '',
-  });
+  const leg = _blankLeg(id);
+  const prevLeg = route.legs[route.legs.length - 1];
+  if (prevLeg) {
+    leg.origin = prevLeg.dest || '';
+    leg.originId = prevLeg.destId || '';
+    leg.originLat = prevLeg.destLat;
+    leg.originLon = prevLeg.destLon;
+    leg.departure = prevLeg.arrival || '';
+  }
+  route.legs.push(leg);
   state._expandedLegIds.add(id);
   autoNameRoute(route);
   renderRoutes();
@@ -1454,7 +1605,7 @@ function renderTimeline() {
     }
   }
 
-  html += '<div class="flex" style="margin-top:12px"><button class="btn-secondary btn-sm" onclick="addLeg()">+ Add Leg</button></div>';
+  html += '<div class="flex" style="margin-top:12px"><button class="btn-secondary btn-sm" onclick="addRoute()">+ Add Route</button></div>';
   container.innerHTML = html;
 
   // Wire up autocomplete for each leg
@@ -1596,12 +1747,19 @@ function deleteCache() {
     .catch(() => alert('Failed to delete cache.'));
 }
 
-function deleteRailwayCache() {
-  if (!confirm('Delete the railway geometry cache? It will be re-downloaded on next use (2GB PBF, ~3min).')) return;
+function deleteLocalCache() {
+  if (!confirm('Delete all cached data (railway geometry, taxiways, etc.)? It will be re-downloaded on next use.')) return;
   fetch('/api/delete-railway-cache', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({region:'gb'}) })
     .then(r => r.json())
-    .then(d => { alert(d.deleted ? `Deleted: ${d.deleted}` : 'No cache found.'); })
-    .catch(() => alert('Failed to delete railway cache.'));
+    .then(d => {
+      if (d.deleted) {
+        const size = (d.size_bytes / (1024**2)).toFixed(1);
+        alert(`Deleted: ${d.deleted}\nFreed ${size} MB`);
+      } else {
+        alert('No cache found.');
+      }
+    })
+    .catch(e => showError(`Failed to delete cache: ${e.message || e}`));
 }
 
 function shutdownServer() {
@@ -1726,43 +1884,39 @@ function renderCompactTimeline() {
 }
 
 function _flightArc(fromLat, fromLon, toLat, toLon) {
-  // Generate a curved great-circle arc between two points
+  // Great-circle slerp on the unit sphere
   const steps = 32;
+  const lat1 = fromLat * Math.PI / 180, lon1 = fromLon * Math.PI / 180;
+  const lat2 = toLat * Math.PI / 180, lon2 = toLon * Math.PI / 180;
+  const x1 = Math.cos(lat1) * Math.cos(lon1);
+  const y1 = Math.cos(lat1) * Math.sin(lon1);
+  const z1 = Math.sin(lat1);
+  const x2 = Math.cos(lat2) * Math.cos(lon2);
+  const y2 = Math.cos(lat2) * Math.sin(lon2);
+  const z2 = Math.sin(lat2);
+  const dot = Math.max(-1, Math.min(1, x1 * x2 + y1 * y2 + z1 * z2));
+  const omega = Math.acos(dot);
+  if (omega === 0) return [[fromLat, fromLon], [toLat, toLon]];
   const pts = [];
-  const R = 6371;
-  const dLat = (toLat - fromLat) * Math.PI / 180;
-  const dLon = (toLon - fromLon) * Math.PI / 180;
-  const lat1 = fromLat * Math.PI / 180;
-  const lat2 = toLat * Math.PI / 180;
-  const lon1 = fromLon * Math.PI / 180;
-  const lon2 = toLon * Math.PI / 180;
-
-  // Central angle
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon/2)**2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const dist = R * c;
-
-  // Midpoint arc bulge: scale by distance, cap at 5 degrees
-  const bulge = Math.min(dist / 200, 5) * Math.PI / 180;
-
   for (let i = 0; i <= steps; i++) {
-    const f = i / steps;
-    const lat = fromLat + (toLat - fromLat) * f;
-    const lon = fromLon + (toLon - fromLon) * f;
-    // Add arc bulge at midpoint
-    const bulgeF = Math.sin(f * Math.PI);
-    pts.push([lat + bulgeF * bulge * 180 / Math.PI, lon]);
+    const t = i / steps;
+    const s1 = Math.sin((1 - t) * omega) / Math.sin(omega);
+    const s2 = Math.sin(t * omega) / Math.sin(omega);
+    const x = s1 * x1 + s2 * x2;
+    const y = s1 * y1 + s2 * y2;
+    const z = s1 * z1 + s2 * z2;
+    pts.push([Math.atan2(z, Math.hypot(x, y)) * 180 / Math.PI, Math.atan2(y, x) * 180 / Math.PI]);
   }
   return pts;
 }
 
 function renderGlobalMap() {
-  const routes = dirRoutes();
   const container = document.getElementById('global-map');
+  if (state._globalMap) { state._globalMap.remove(); state._globalMap = null; }
+
+  const routes = dirRoutes();
   const allLegs = routes.flatMap(r => r.legs);
   if (!allLegs.length) { container.classList.add('hidden'); return; }
-
-  if (state._globalMap) { state._globalMap.remove(); state._globalMap = null; }
 
   console.log(`renderGlobalMap: ${routes.length} routes, ${allLegs.length} legs`);
   for (const r of routes) {
@@ -2075,20 +2229,22 @@ function renderTimelineEntry(l, routeId, idx) {
               <option value="unincluded"${l.type === 'unincluded' ? ' selected' : ''}>Unincluded / omit</option>
             </select>
             <select class="leg-mode-select" onchange="updateLeg('${routeId}',${l.id},'mode',this.value)">
-              <option value="train"${l.mode === 'train' ? ' selected' : ''}>Train (default, all UK/EU rail)</option>
-              <optgroup label="Specialised Rail">
+              <optgroup label="🚄 TRAIN">
+                <option value=":train"${l.mode === ':train' || l.mode === 'train' ? ' selected' : ''}>All rail types</option>
                 <option value="high_speed"${l.mode === 'high_speed' ? ' selected' : ''}>High Speed</option>
                 <option value="regional"${l.mode === 'regional' ? ' selected' : ''}>Regional only</option>
                 <option value="subway"${l.mode === 'subway' ? ' selected' : ''}>Underground</option>
                 <option value="tram"${l.mode === 'tram' ? ' selected' : ''}>Tram</option>
                 <option value="light_rail"${l.mode === 'light_rail' ? ' selected' : ''}>Light Rail</option>
               </optgroup>
-              <optgroup label="Road">
+              <optgroup label="🚌 ROAD">
+                <option value=":road"${l.mode === ':road' ? ' selected' : ''}>All road types</option>
                 <option value="bus"${l.mode === 'bus' ? ' selected' : ''}>Bus</option>
                 <option value="coach"${l.mode === 'coach' ? ' selected' : ''}>Coach</option>
                 <option value="car"${l.mode === 'car' ? ' selected' : ''}>Car</option>
               </optgroup>
-              <optgroup label="Other">
+              <optgroup label="🛩️ OTHER">
+                <option value=":other"${l.mode === ':other' ? ' selected' : ''}>All other types</option>
                 <option value="plane"${l.mode === 'plane' ? ' selected' : ''}>Plane</option>
                 <option value="ferry"${l.mode === 'ferry' ? ' selected' : ''}>Ferry</option>
                 <option value="walking"${l.mode === 'walking' ? ' selected' : ''}>Walking</option>
@@ -2120,10 +2276,25 @@ async function searchStation(inputId, routeId, legId, field) {
   const data = await res.json();
   drop.innerHTML = data.map(s =>
     `<div class="dropdown-item" data-station-name="${s.name.replace(/"/g, '&quot;')}" data-station-id="${s.id}" data-station-lat="${s.lat ?? 0}" data-station-lon="${s.lon ?? 0}" onmousedown="selectStation('${inputId}', '${routeId}', ${legId}, '${field}', '${s.name.replace(/'/g, "\\'")}', '${s.id}', ${s.lat ?? 0}, ${s.lon ?? 0})" onmouseenter="previewStation(${s.lat ?? 0}, ${s.lon ?? 0}, '${s.name.replace(/'/g, "\\'")}')" onmouseleave="clearPreviewStation()">
-      ${s.name} <span class="text-muted">${_stationType(s.id)}</span>
+      ${s.name} <span class="text-muted">${_stationType(s.id, s.country)}</span>
     </div>`
   ).join('');
   drop.classList.add('open');
+}
+
+function _autoDetectLegMode(leg) {
+  if (!leg) return;
+  const oid = leg.originId || '';
+  const did = leg.destId || '';
+  if (!oid || !did) return;
+  const bothAirports = oid.startsWith('airport_') && did.startsWith('airport_');
+  if (bothAirports) {
+    leg.mode = 'plane';
+    leg.type = 'transit';
+  } else {
+    leg.mode = ':train';
+    leg.type = 'transit';
+  }
 }
 
 function selectStation(inputId, routeId, legId, field, name, id, lat, lon) {
@@ -2139,6 +2310,7 @@ function selectStation(inputId, routeId, legId, field, name, id, lat, lon) {
     leg.services = [];
     leg.selectedServices = [];
   }
+  _autoDetectLegMode(leg);
   renderTimeline();
 }
 
@@ -3574,11 +3746,14 @@ async function importPost() {
   state.legIdCounter = 0;
   state.selectedRoute = null;
   state.routeResults = [];
-  state.usedPhotos = new Set();
-  state._expandedLegIds = new Set();
-  closeGenerateModal();
-  const rm = document.getElementById('route-map'); if (rm) rm.classList.add('hidden');
-  if (state._map) { state._map.remove(); state._map = null; }
+   state.usedPhotos = new Set();
+   state._expandedLegIds = new Set();
+   closeGenerateModal();
+   const rm = document.getElementById('route-map'); if (rm) rm.classList.add('hidden');
+   if (state._map) { state._map.remove(); state._map = null; }
+   
+   // Clear global map markers from previous sprint
+   if (state._globalMap) { state._globalMap.remove(); state._globalMap = null; }
 
   if (data.route_data) {
     // Rich reconstruction from cached route+curation data
@@ -3763,116 +3938,127 @@ async function importPost() {
 
 // ---- Routes ----
 async function findRoutes() {
-  const allLegs = [];
-  for (const dir of ['outbound', 'inbound']) {
-    for (const route of state[dir].routes) {
-      for (const l of route.legs) {
-        if (['transit', 'unincluded'].includes(l.type || 'transit') && l.origin && l.dest) {
-          const selIdx = l.selectedServices.length > 0 ? l.selectedServices[0] : 0;
-          const svc = l.services[selIdx];
-          allLegs.push({
-            origin: l.origin, destination: l.dest,
-            service: svc || null,
-            routeName: route.name,
-            departure: l.departure,
-            direction: dir,
-            _leg: l,  // reference back to actual leg in state
-          });
-        }
-      }
-    }
-  }
+	console.log('findRoutes called');
+	showLoadingSpinner('Searching routes...');
+	console.log('findRoutes: spinner shown');
+	try {
+	const allLegs = [];
+	for (const dir of ['outbound', 'inbound']) {
+		for (const route of state[dir].routes) {
+			for (const l of route.legs) {
+				if (['transit', 'unincluded'].includes(l.type || 'transit') && l.origin && l.dest) {
+					const selIdx = l.selectedServices.length > 0 ? l.selectedServices[0] : 0;
+					const svc = l.services[selIdx];
+					allLegs.push({
+						origin: l.origin, destination: l.dest,
+						service: svc || null,
+						routeName: route.name,
+						departure: l.departure,
+						direction: dir,
+						_leg: l,  // reference back to actual leg in state
+					});
+				}
+			}
+		}
+	}
 
-  if (!allLegs.length) return alert('Add at least one leg with origin and destination');
+	if (!allLegs.length) return alert('Add at least one leg with origin and destination');
 
-  const firstLeg = allLegs[0]._leg;
-  const lastLegEntry = allLegs[allLegs.length - 1];
-  const lastLeg = lastLegEntry._leg;
-  const body = {
-    origin: allLegs[0].origin,
-    destination: lastLegEntry.destination,
-    origin_id: firstLeg?.originId || '',
-    dest_id: lastLeg?.destId || '',
-    via: allLegs.slice(1, -1).map(l => l.origin),
-  };
-  const date = document.getElementById('trip-date').value;
-  if (date) body.date = date;
+	const firstLeg = allLegs[0]._leg;
+	const lastLegEntry = allLegs[allLegs.length - 1];
+	const lastLeg = lastLegEntry._leg;
+	const body = {
+		origin: allLegs[0].origin,
+		destination: lastLegEntry.destination,
+		origin_id: firstLeg?.originId || '',
+		dest_id: lastLeg?.destId || '',
+		via: allLegs.slice(1, -1).map(l => l.origin),
+	};
+	const date = document.getElementById('trip-date').value;
+	if (date) body.date = date;
 
-  document.getElementById('preview-content').textContent = 'Searching routes...';
+	document.getElementById('preview-content').textContent = 'Searching routes...';
 
-  // Search leg-by-leg for services — write geometry back to actual legs
-  for (const entry of allLegs) {
-    if (!entry.service) {
-      try {
-        const leg = entry._leg;
-        const fb = { origin: entry.origin, destination: entry.destination, date, origin_id: leg?.originId || '', dest_id: leg?.destId || '' };
-        if (entry.departure) fb.time = entry.departure;
-        const res = await fetch('/api/find-routes', {
-          method: 'POST', headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(fb),
-        });
-        const data = await res.json();
-        if (data.routes && data.routes[0]) {
-          const found = data.routes[0].legs.find(l => l.mode !== 'WALK') || data.routes[0].legs[0];
-          entry.service = found;
-          // Write back to the actual leg in state so map can draw the polyline
-          if (entry._leg && found) {
-            entry._leg.services.push(found);
-            entry._leg.selectedServices = [entry._leg.services.length - 1];
-          }
-        }
-      } catch(e) {}
-    }
-  }
+	// Search leg-by-leg for services — write geometry back to actual legs
+	for (const entry of allLegs) {
+		if (!entry.service) {
+			try {
+				const leg = entry._leg;
+				const fb = { origin: entry.origin, destination: entry.destination, date, origin_id: leg?.originId || '', dest_id: leg?.destId || '' };
+				if (entry.departure) fb.time = entry.departure;
+				const res = await fetch('/api/find-routes', {
+					method: 'POST', headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify(fb),
+				});
+				const data = await res.json();
+				if (data.routes && data.routes[0]) {
+					const found = data.routes[0].legs.find(l => l.mode !== 'WALK') || data.routes[0].legs[0];
+					entry.service = found;
+					// Write back to the actual leg in state so map can draw the polyline
+					if (entry._leg && found) {
+						entry._leg.services.push(found);
+						entry._leg.selectedServices = [entry._leg.services.length - 1];
+					}
+				}
+			} catch(e) {}
+		}
+	}
 
-  // Search overall journey
-  const journeyController = new AbortController();
-  const journeyTimeout = setTimeout(() => journeyController.abort(), 120000);
-  try {
-    const res = await fetch('/api/find-routes', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(body),
-      signal: journeyController.signal,
-    });
-    clearTimeout(journeyTimeout);
-    const data = await res.json();
-    state.routeResults = data.routes || [];
+	// Search overall journey
+	const journeyController = new AbortController();
+	const journeyTimeout = setTimeout(() => journeyController.abort(), 120000);
+	try {
+		const res = await fetch('/api/find-routes', {
+			method: 'POST', headers: {'Content-Type': 'application/json'},
+			body: JSON.stringify(body),
+			signal: journeyController.signal,
+		});
+		clearTimeout(journeyTimeout);
+		const data = await res.json();
+		state.routeResults = data.routes || [];
 
-    if (data.error) {
-      document.getElementById('preview-content').textContent = 'Error: ' + data.error;
-    } else if (data._warning && !data.routes?.length) {
-      document.getElementById('preview-content').textContent = data._warning;
-    }
-  } catch(e) {
-    state.routeResults = [];
-    document.getElementById('preview-content').textContent = e.name === 'AbortError'
-      ? 'Route search timed out — using manual leg data'
-      : 'Route search unavailable — using manual leg data';
-  }
+		if (data.error) {
+			showError(`Error searching routes: ${data.error}`);
+			document.getElementById('preview-content').textContent = 'Error: ' + data.error;
+		} else if (data._warning && !data.routes?.length) {
+			showError(`Route search warning: ${data._warning}`);
+			document.getElementById('preview-content').textContent = data._warning;
+		}
+	} catch(e) {
+		state.routeResults = [];
+		const errorMsg = e.name === 'AbortError'
+			? 'Route search timed out (120s) — using manual leg data'
+			: `Route search failed: ${e.message || e}`;
+		showError(errorMsg);
+		document.getElementById('preview-content').textContent = errorMsg;
+	}
 
-  // Create synthetic route if Transitous returned nothing (e.g. historical date)
-  if (!state.routeResults.length) {
-    const synRoute = {
-      route_id: 'manual',
-      origin: allLegs[0].origin,
-      destination: lastLeg.destination,
-      departure: allLegs[0].departure || '',
-      arrival: lastLeg.departure || '',
-      duration_seconds: 0,
-      total_distance_km: 0,
-      rail_distance_km: 0,
-      walk_distance_km: 0,
-      transfers: 0,
-      average_speed_kmh: 0,
-      max_speed_kmh: 0,
-      tortuosity_pct: 100,
-      operators: [],
-    };
-    state.routeResults = [synRoute];
-  }
+	// Create synthetic route if Transitous returned nothing (e.g. historical date)
+	if (!state.routeResults.length) {
+		const synRoute = {
+			route_id: 'manual',
+			origin: allLegs[0].origin,
+			destination: lastLeg.destination,
+			departure: allLegs[0].departure || '',
+			arrival: lastLeg.departure || '',
+			duration_seconds: 0,
+			total_distance_km: 0,
+			rail_distance_km: 0,
+			walk_distance_km: 0,
+			transfers: 0,
+			average_speed_kmh: 0,
+			max_speed_kmh: 0,
+			tortuosity_pct: 100,
+			operators: [],
+		};
+		state.routeResults = [synRoute];
+	}
 
-  selectRoute(0);
-  setTimeout(() => _enrichLegsGeometry(), 500);
+	selectRoute(0);
+	setTimeout(() => _enrichLegsGeometry(), 500);
+	} finally {
+		hideLoadingSpinner();
+	}
 }
 
 function selectRoute(idx) {
@@ -4205,6 +4391,7 @@ loadPostList();
 detectUnmatchedSprints();
 syncJourneyInputs();
 if (!dirRoutes().length) addLeg();
+hideLoadingSpinner();  // Hide spinner after initialization complete
 </script>
 </body>
 </html>
