@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 from truth.snapshot import TruthSnapshot, TruthRoute, TruthLeg
-from curation.state import CurationState, LegCuration, SectionCuration
+from curation.state import CurationState, SectionCuration
 
 
 def _format_duration(seconds: int) -> str:
@@ -46,13 +46,21 @@ def _format_countries(countries: list[str]) -> str:
 
 
 def _compute_stats(legs: list[TruthLeg]) -> dict:
-    transit_legs = [l for l in legs if l.leg_type == 'transit' and l.mode != "WALK"]
-    walk_legs = [l for l in legs if l.mode == "WALK"]
-    transfer_legs = [l for l in legs if l.leg_type == 'transfer']
-    bus_legs = [l for l in legs if l.leg_type == 'bus']
-    flight_legs = [l for l in legs if l.leg_type == 'flight']
-    longest = max(transit_legs, key=lambda l: l.distance_km) if transit_legs else None
-    longest_time = max(transit_legs, key=lambda l: l.duration_seconds) if transit_legs else None
+    transit_legs = [
+        leg for leg in legs if leg.leg_type == "transit" and leg.mode != "WALK"
+    ]
+    walk_legs = [leg for leg in legs if leg.mode == "WALK"]
+    transfer_legs = [leg for leg in legs if leg.leg_type == "transfer"]
+    bus_legs = [leg for leg in legs if leg.leg_type == "bus"]
+    flight_legs = [leg for leg in legs if leg.leg_type == "flight"]
+    longest = (
+        max(transit_legs, key=lambda leg: leg.distance_km) if transit_legs else None
+    )
+    longest_time = (
+        max(transit_legs, key=lambda leg: leg.duration_seconds)
+        if transit_legs
+        else None
+    )
     return {
         "train_count": len(transit_legs),
         "walk_count": len(walk_legs),
@@ -69,14 +77,16 @@ def generate_blog_post(snapshot: TruthSnapshot, curation: CurationState) -> str:
         return ""
 
     route = snapshot.routes[curation.selected_route_index]
-    legs = route.legs
+    legs = [leg for leg in route.legs if leg.leg_type != "unincluded"]
+    if not legs:
+        return ""
     stats = _compute_stats(legs)
 
     sections = _build_sections(legs, curation)
 
     lines = []
     lines.append("---")
-    lines.append(f"layout: post")
+    lines.append("layout: post")
     lines.append(f"title: {curation.trip_title}")
     lines.append(f"date: {curation.trip_date} 00:00:00-0000")
     lines.append(f"description: {curation.trip_description}")
@@ -117,6 +127,17 @@ def generate_blog_post(snapshot: TruthSnapshot, curation: CurationState) -> str:
         lines.append(f"Average speed: {route.average_speed_kmh:.0f}Km/h")
         lines.append("")
 
+    if route.total_emissions_kg:
+        lines.append(
+            f"Estimated CO2e: {route.total_emissions_kg:.1f}Kg"
+            + (
+                f" ({route.emissions_min_kg:.1f}-{route.emissions_max_kg:.1f}Kg)"
+                if route.emissions_min_kg and route.emissions_max_kg
+                else ""
+            )
+        )
+        lines.append("")
+
     if stats["train_count"]:
         parts = [f"Trains: {stats['train_count']}"]
         if stats["walk_count"]:
@@ -132,11 +153,15 @@ def generate_blog_post(snapshot: TruthSnapshot, curation: CurationState) -> str:
 
     if stats["longest_leg"]:
         ll = stats["longest_leg"]
-        lines.append(f"Longest leg: {ll.origin_name} → {ll.destination_name} ({ll.distance_km:.0f}Km, {_format_duration(ll.duration_seconds)})")
+        lines.append(
+            f"Longest leg: {ll.origin_name} → {ll.destination_name} ({ll.distance_km:.0f}Km, {_format_duration(ll.duration_seconds)})"
+        )
         lines.append("")
     if stats["longest_time_leg"] and stats["longest_time_leg"] != stats["longest_leg"]:
         lt = stats["longest_time_leg"]
-        lines.append(f"Longest time on a train: {lt.origin_name} → {lt.destination_name} ({_format_duration(lt.duration_seconds)}, {lt.distance_km:.0f}Km)")
+        lines.append(
+            f"Longest time on a train: {lt.origin_name} → {lt.destination_name} ({_format_duration(lt.duration_seconds)}, {lt.distance_km:.0f}Km)"
+        )
         lines.append("")
 
     if curation.trains_notes:
@@ -154,9 +179,7 @@ def generate_blog_post(snapshot: TruthSnapshot, curation: CurationState) -> str:
     lines.append("")
     lines.append(f"# {curation.outbound_label}")
     lines.append("")
-    lines.append(
-        f"Planned time: {_format_duration(route.duration_seconds)}"
-    )
+    lines.append(f"Planned time: {_format_duration(route.duration_seconds)}")
     lines.append("")
     lines.append(f"Transfers: {route.transfers}")
     lines.append("")
@@ -181,47 +204,62 @@ def _route_to_geojson(route: TruthRoute) -> dict:
         if key in seen_stops:
             return
         seen_stops[key] = True
-        features.append({
-            "type": "Feature",
-            "properties": {"name": name, "type": stop_type},
-            "geometry": {"type": "Point", "coordinates": [lon, lat]},
-        })
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {"name": name, "type": stop_type},
+                "geometry": {"type": "Point", "coordinates": [lon, lat]},
+            }
+        )
 
-    for i, leg in enumerate(route.legs):
-        if leg.leg_type in ('transfer', 'unincluded'):
+    visible_legs = [leg for leg in route.legs if leg.leg_type != "unincluded"]
+    for i, leg in enumerate(visible_legs):
+        if leg.leg_type == "transfer":
             continue
         if leg.geometry and len(leg.geometry) > 1:
             coords = [[p["lon"], p["lat"]] for p in leg.geometry]
-            features.append({
-                "type": "Feature",
-                "properties": {
-                    "mode": leg.mode,
-                    "name": leg.display_name,
-                    "operator": leg.operator,
-                    "distance_km": leg.distance_km,
-                },
-                "geometry": {"type": "LineString", "coordinates": coords},
-            })
+            features.append(
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "mode": leg.mode,
+                        "name": leg.display_name,
+                        "operator": leg.operator,
+                        "distance_km": leg.distance_km,
+                    },
+                    "geometry": {"type": "LineString", "coordinates": coords},
+                }
+            )
         else:
             coords = [[leg.origin_lon, leg.origin_lat], [leg.dest_lon, leg.dest_lat]]
-            features.append({
-                "type": "Feature",
-                "properties": {
-                    "mode": leg.mode,
-                    "name": leg.display_name,
-                    "operator": leg.operator,
-                    "distance_km": leg.distance_km,
-                },
-                "geometry": {"type": "LineString", "coordinates": coords},
-            })
+            features.append(
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "mode": leg.mode,
+                        "name": leg.display_name,
+                        "operator": leg.operator,
+                        "distance_km": leg.distance_km,
+                    },
+                    "geometry": {"type": "LineString", "coordinates": coords},
+                }
+            )
 
-        leg_type = "transfer" if i > 0 and route.legs[i - 1].mode != "WALK" and leg.mode != "WALK" else "stop"
+        leg_type = (
+            "transfer"
+            if i > 0 and route.legs[i - 1].mode != "WALK" and leg.mode != "WALK"
+            else "stop"
+        )
         if i == 0:
             mark_stop(leg.origin_name, leg.origin_lat, leg.origin_lon, "origin")
         else:
             mark_stop(leg.origin_name, leg.origin_lat, leg.origin_lon, leg_type)
-        mark_stop(leg.destination_name, leg.dest_lat, leg.dest_lon,
-                  "destination" if i == len(route.legs) - 1 else leg_type)
+        mark_stop(
+            leg.destination_name,
+            leg.dest_lat,
+            leg.dest_lon,
+            "destination" if i == len(visible_legs) - 1 else leg_type,
+        )
 
     return {"type": "FeatureCollection", "features": features}
 
@@ -248,21 +286,32 @@ def _mode_colour(mode: str) -> str:
 def _write_map(lines: list[str], route: TruthRoute) -> None:
     geojson = _route_to_geojson(route)
     import json as _json
+
     geojson_str = _json.dumps(geojson)
 
     map_id = f"route-map-{route.route_id}"
 
     lines.append("")
-    lines.append('<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />')
-    lines.append('<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>')
+    lines.append(
+        '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />'
+    )
+    lines.append(
+        '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>'
+    )
     lines.append("")
-    lines.append(f'<div id="{map_id}" style="height: 400px; border-radius: 8px; margin: 16px 0;"></div>')
+    lines.append(
+        f'<div id="{map_id}" style="height: 400px; border-radius: 8px; margin: 16px 0;"></div>'
+    )
     lines.append("<script>")
-    lines.append(f"  (function() {{")
+    lines.append("  (function() {")
     lines.append(f"    var map = L.map('{map_id}', {{ scrollWheelZoom: false }});")
-    lines.append(f"    L.tileLayer('https://{{s}}.basemaps.cartocdn.com/light_nolabels/{{z}}/{{x}}/{{y}}{{r}}.png', {{")
-    lines.append(f"      attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OSM</a> &copy; <a href=\"https://carto.com/\">CARTO</a>', maxZoom: 19")
-    lines.append(f"    }}).addTo(map);")
+    lines.append(
+        "    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {"
+    )
+    lines.append(
+        '      attribution: \'&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>\', maxZoom: 19'
+    )
+    lines.append("    }).addTo(map);")
     lines.append("")
     lines.append(f"    var geojson = {geojson_str};")
     lines.append("")
@@ -279,15 +328,21 @@ def _write_map(lines: list[str], route: TruthRoute) -> None:
     lines.append(r"      style: function(feature) {")
     lines.append(r"        if (feature.geometry.type === 'LineString') {")
     lines.append(r"          return {")
-    lines.append(r"            color: modeColours[feature.properties.mode] || '#2196F3',")
+    lines.append(
+        r"            color: modeColours[feature.properties.mode] || '#2196F3',"
+    )
     lines.append(r"            weight: 4, opacity: 0.8")
     lines.append(r"          };")
     lines.append(r"        }")
     lines.append(r"      },")
     lines.append(r"      pointToLayer: function(feature, latlng) {")
     lines.append(r"        var type = feature.properties.type;")
-    lines.append(r"        var colours = {origin: '#4CAF50', destination: '#f44336', transfer: '#FF9800', stop: '#2196F3'};")
-    lines.append(r"        var sizes = {origin: 12, destination: 12, transfer: 8, stop: 6};")
+    lines.append(
+        r"        var colours = {origin: '#4CAF50', destination: '#f44336', transfer: '#FF9800', stop: '#2196F3'};"
+    )
+    lines.append(
+        r"        var sizes = {origin: 12, destination: 12, transfer: 8, stop: 6};"
+    )
     lines.append(r"        return L.circleMarker(latlng, {")
     lines.append(r"          radius: sizes[type] || 6,")
     lines.append(r"          fillColor: colours[type] || '#2196F3',")
@@ -296,11 +351,17 @@ def _write_map(lines: list[str], route: TruthRoute) -> None:
     lines.append(r"      },")
     lines.append(r"      onEachFeature: function(feature, layer) {")
     lines.append(r"        var p = feature.properties;")
-    lines.append(r"        var tooltip = p.name || (p.mode + ': ' + (p.operator || '') + ' ' + (p.name || ''));")
-    lines.append(r"        if (p.distance_km) tooltip += ' (' + p.distance_km.toFixed(0) + ' km)';")
+    lines.append(
+        r"        var tooltip = p.name || (p.mode + ': ' + (p.operator || '') + ' ' + (p.name || ''));"
+    )
+    lines.append(
+        r"        if (p.distance_km) tooltip += ' (' + p.distance_km.toFixed(0) + ' km)';"
+    )
     lines.append(r"        layer.bindTooltip(tooltip);")
     lines.append(r"        if (feature.geometry.type === 'LineString') {")
-    lines.append(r"          feature.geometry.coordinates.forEach(function(c) { bounds.push(c); });")
+    lines.append(
+        r"          feature.geometry.coordinates.forEach(function(c) { bounds.push(c); });"
+    )
     lines.append(r"        } else {")
     lines.append(r"          bounds.push(feature.geometry.coordinates);")
     lines.append(r"        }")
@@ -321,12 +382,9 @@ def _build_sections(
     section_origin = legs[0].origin_name if legs else ""
 
     for i, leg in enumerate(legs):
-        if leg.leg_type == 'transfer':
+        if leg.leg_type == "transfer":
             if current_legs:
                 current_legs.append(i)
-            continue
-        if leg.leg_type == 'unincluded':
-            current_legs.append(i)
             continue
         if leg.mode == "WALK":
             if current_legs:
@@ -334,21 +392,24 @@ def _build_sections(
             continue
 
         if leg.origin_name != section_origin and current_legs:
-            sections.append(SectionCuration(
-                section_name=section_origin,
-                leg_indices=current_legs,
-            ))
+            sections.append(
+                SectionCuration(
+                    section_name=section_origin,
+                    leg_indices=current_legs,
+                )
+            )
             current_legs = []
             section_origin = leg.origin_name
 
         current_legs.append(i)
 
     if current_legs:
-        final_stop = legs[-1].destination_name if legs else section_origin
-        sections.append(SectionCuration(
-            section_name=section_origin,
-            leg_indices=current_legs,
-        ))
+        sections.append(
+            SectionCuration(
+                section_name=section_origin,
+                leg_indices=current_legs,
+            )
+        )
 
     return sections
 
@@ -357,13 +418,11 @@ def _leg_table_row(leg: TruthLeg) -> str:
     dep = leg.departure
     arr = leg.arrival
     dest = leg.destination_name
-    if leg.leg_type == 'transfer':
+    if leg.leg_type == "transfer":
         return ""
-    if leg.leg_type == 'unincluded':
-        return f"| ~~{dep}~~ | ~~{arr}~~ | ~~{dest} *(unincluded)* ~~ |"
-    if leg.leg_type == 'bus':
+    if leg.leg_type == "bus":
         return f"| {dep} | {arr} | {dest} *({_mode_emoji(leg.mode)} Bus)* |"
-    if leg.leg_type == 'flight':
+    if leg.leg_type == "flight":
         return f"| {dep} | {arr} | {dest} *({_mode_emoji(leg.mode)} Flight)* |"
     if leg.mode == "WALK":
         return f"| {dep} | {arr} | {dest} *(walk)* |"
@@ -386,8 +445,10 @@ def _write_section(
     for idx in section.leg_indices:
         if idx < len(legs):
             leg = legs[idx]
-            if leg.leg_type == 'transfer':
-                transfer_notes.append(f"*Transfer at {leg.origin_name} → {leg.destination_name} ({leg.duration_seconds//60} min)*")
+            if leg.leg_type == "transfer":
+                transfer_notes.append(
+                    f"*Transfer at {leg.origin_name} → {leg.destination_name} ({leg.duration_seconds // 60} min)*"
+                )
             else:
                 if not has_table_rows:
                     lines.append("| Departure | Arrival | Location |")
@@ -417,9 +478,12 @@ def _sprint_dir_from_date(date_str: str) -> str:
         return f"sprint{m[0][2:]}{m[1]}"
     return "sprint"
 
+
 def _write_photos(lines: list[str], photos: list[str], curation: CurationState) -> None:
     sprint = _sprint_dir_from_date(curation.trip_date)
-    lines.append('<swiper-container keyboard="true" navigation="true" pagination="true" pagination-clickable="true" pagination-dynamic-bullets="true" rewind="true">')
+    lines.append(
+        '<swiper-container keyboard="true" navigation="true" pagination="true" pagination-clickable="true" pagination-dynamic-bullets="true" rewind="true">'
+    )
     for photo in photos:
         lines.append(
             f'  <swiper-slide>{{% include figure.liquid loading="eager" '

@@ -318,6 +318,25 @@ class Leg:
             return 0.0
         return 3600 * self.distance() / self.duration.total_seconds()
 
+    def max_speed(self) -> float:
+        stops = self.all_stops
+        if len(stops) < 2:
+            return 0.0
+        max_sp = 0.0
+        for i in range(len(stops) - 1):
+            a, b = stops[i], stops[i + 1]
+            d = a.distance(b)
+            dep = getattr(a, 'departure', None) or getattr(a, 'arrival', None)
+            arr = getattr(b, 'arrival', None) or getattr(b, 'departure', None)
+            if dep is None or arr is None:
+                continue
+            dt = (arr - dep).total_seconds()
+            if dt > 0:
+                sp = 3600 * d / dt
+                if sp > max_sp:
+                    max_sp = sp
+        return max_sp
+
     @property
     def display(self) -> str:
         out=[]
@@ -486,7 +505,10 @@ class Route:
 
     def tortuosity(self) -> float:
         """How much longer is the route compared to a straight line between start and end"""
-        return 100 * self.distance() / self.direct_distance()
+        dd = self.direct_distance()
+        if dd == 0:
+            return 0.0
+        return 100 * self.distance() / dd
 
     def via_tortuosity(self) -> float:
         """How much longer is the route compared to a straight line between each intermediate"""
@@ -724,7 +746,7 @@ class TransitClient:
         if cache_file.exists():
             return json.loads(cache_file.read_text())
 
-        response = get(full_url)
+        response = get(full_url, timeout=25)
         if response.status_code == 404:
             raise ValueError(f"Nothing found for {url}")
         elif response.status_code != 200:
@@ -936,7 +958,16 @@ class TransitClient:
         else:
             params["time"] = original_time.format
 
-        data = self.get("v5/plan", params)
+        try:
+            data = self.get("v5/plan", params)
+        except Exception as e:
+            if hasattr(e, 'response') and getattr(e.response, 'status_code', None) == 400 and start.id:
+                print(f"Transitous 400 with station IDs; retrying with coordinates")
+                params["fromPlace"] = start.latlon
+                params["toPlace"] = end.latlon if end.id else end.latlon
+                data = self.get("v5/plan", params)
+            else:
+                raise
         routes = self._filter_avoid(
             routes=[Route.from_json(start, end, route) for route in data["itineraries"]],
             avoid=avoid or [],

@@ -13,18 +13,20 @@
   --border: #333; --good: #4caf50; --warn: #ff9800;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 16px; }
 h1 { color: var(--accent); margin-bottom: 8px; font-size: 1.15rem; }
 h2 { color: var(--accent2); margin: 12px 0 6px; font-size: 1rem; }
 h3 { margin: 6px 0; font-size: 0.9rem; }
-.container { max-width: 1400px; margin: 0 auto; }
+.container { width: 100%; max-width: none; margin: 0 auto; }
 
 /* Three-column layout */
-.app-layout { display: flex; gap: 16px; align-items: flex-start; }
-.left-sidebar { width: 240px; flex-shrink: 0; position: sticky; top: 16px; max-height: calc(100vh - 40px); overflow-y: auto; }
-.main-content { flex: 1; min-width: 0; }
-.photo-sidebar { width: 240px; flex-shrink: 0; position: sticky; top: 16px; max-height: calc(100vh - 40px); overflow-y: auto; }
-@media (max-width: 1100px) { .app-layout { flex-direction: column; } .left-sidebar, .photo-sidebar { width: 100%; position: static; max-height: none; } }
+.app-layout { display: grid; grid-template-columns: minmax(280px, 340px) minmax(640px, 1fr) minmax(280px, 340px); gap: 16px; align-items: flex-start; }
+.left-sidebar { width: auto; min-width: 0; position: sticky; top: 16px; max-height: none; overflow: visible; }
+.main-content { flex: 1; min-width: 0; display: flex; flex-direction: column; height: calc(100vh - 40px); overflow: hidden; }
+.main-content > .map-area { flex-shrink: 0; }
+.main-content > #route-list { overflow-y: auto; flex: 1; min-height: 0; }
+.photo-sidebar { width: auto; min-width: 0; position: sticky; top: 16px; max-height: none; overflow: visible; }
+@media (max-width: 1100px) { .app-layout { display: flex; flex-direction: column; } .left-sidebar, .photo-sidebar { width: 100%; position: static; max-height: none; } .main-content { height: auto; overflow: visible; } .main-content > #route-list { overflow: visible; } }
 @media (max-width: 900px) { .photo-sidebar { width: 100%; position: static; max-height: none; } }
 
 .sidebar-section { margin-bottom: 12px; }
@@ -73,8 +75,27 @@ button:hover { opacity: .85; }
 
 .service-list { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0; }
 .service-chip { padding: 3px 9px; border-radius: 14px; font-size: 0.77rem;
-  background: var(--border); cursor: pointer; border: 1px solid transparent; }
+  background: var(--border); border: 1px solid transparent; }
 .service-chip.selected { border-color: var(--accent2); background: #1a3a5e; }
+
+/* Service finder popup */
+.sf-row { display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 6px; border-bottom: 1px solid var(--border); }
+.sf-row:last-child { border-bottom: none; }
+.sf-row:hover { background: rgba(255,255,255,0.02); }
+.sf-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.sf-time { font-family: monospace; font-size: 0.85rem; }
+.sf-name { font-size: 0.8rem; color: var(--text); }
+.sf-op { font-size: 0.68rem; color: var(--muted); }
+.sf-actions { display: flex; gap: 4px; flex-shrink: 0; justify-content: flex-end; }
+.sf-actions .btn-sm { font-size: 0.72rem; padding: 3px 10px; }
+.sf-offset-note { font-size: 0.65rem; color: var(--muted); align-self: center; white-space: nowrap; margin-right: 4px; }
+.sf-stops { font-size: 0.68rem; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+.sf-changes { font-size: 0.72rem; color: var(--warn); font-weight: 600; margin-top: 2px; }
+.sf-via-row { display: flex; gap: 6px; align-items: center; margin: 8px 0; }
+.sf-via-row input { flex: 1; font-size: 0.8rem; padding: 6px 10px; background: #1a1a2e; border: 1px solid var(--border); border-radius: 6px; color: var(--text); }
+.sf-header-big { font-size: 1.2rem; font-weight: 700; margin-bottom: 2px; }
+.sf-header-sub { font-size: 0.82rem; color: var(--muted); }
+.btn-disabled { opacity: 0.4; cursor: default; pointer-events: none; }
 
 .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; margin: 6px 0; }
 .photo-item { position: relative; border-radius: 5px; overflow: hidden; cursor: pointer;
@@ -120,7 +141,12 @@ button:hover { opacity: .85; }
 .journey-label { color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
 
 /* Global map */
-#global-map { height: 200px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; z-index: 1; }
+#global-map { height: 40vh; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; z-index: 1; transition: height .3s; }
+#global-map.collapsed { height: 200px; }
+#route-map { height: 40vh; transition: height .3s; }
+#route-map.collapsed { height: 200px; }
+.map-toggle { position: absolute; top: 4px; right: 4px; z-index: 10; background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; opacity: 0.6; }
+.map-toggle:hover { opacity: 1; }
 
 /* Timeline entries */
 .timeline-entry { margin-bottom: 4px; position: relative; padding-left: 20px; }
@@ -141,6 +167,10 @@ button:hover { opacity: .85; }
 .timeline-summary .meta { font-size: 0.72rem; color: var(--muted); white-space: nowrap; display: flex; gap: 4px; align-items: center; }
 .timeline-summary .expand-icon { color: var(--muted); font-size: 0.65rem; transition: transform .2s; }
 .timeline-summary .fixme { color: var(--warn); font-size: 0.62rem; font-weight: 700; cursor: help; }
+.timeline-summary .geo-badge { font-size: 0.6rem; font-weight: 700; padding: 1px 4px; border-radius: 3px; cursor: help; }
+.timeline-summary .geo-badge.solved { color: #fff; background: #2a7a2a; }
+.timeline-summary .geo-badge.pending { color: #fff; background: #b8860b; }
+.timeline-summary .geo-badge.arc { color: #fff; background: #b8860b; }
 .timeline-summary.expanded .expand-icon { transform: rotate(180deg); }
 
 .timeline-details { display: none; padding: 8px 10px 6px; margin: 3px 0 0; background: rgba(255,255,255,0.015); border: 1px solid var(--border); border-radius: 6px; }
@@ -159,11 +189,7 @@ button:hover { opacity: .85; }
 .move-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; padding: 0 5px; border-radius: 4px; font-size: 0.65rem; line-height: 1.5; }
 .move-btn:hover { border-color: var(--accent2); color: var(--text); }
 
-.offset-indicator { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; padding: 4px 8px; background: rgba(255,193,7,0.08); border: 1px solid rgba(255,193,7,0.25); border-radius: 6px; font-size: 0.75rem; }
-.offset-info { color: var(--muted); flex: 1; }
-.offset-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; }
-.offset-btn.active { background: var(--accent2); color: #111; border-color: var(--accent2); }
-.offset-btn:hover:not(.active) { border-color: var(--accent2); }
+.offset-indicator { margin: 6px 0 0; padding: 4px 8px; background: rgba(255,193,7,0.08); border: 1px solid rgba(255,193,7,0.25); border-radius: 6px; font-size: 0.75rem; color: var(--muted); }
 
 .leg-photos { display: flex; flex-wrap: wrap; gap: 3px; margin: 4px 0; }
 .leg-photo-thumb { width: 50px; height: 38px; border-radius: 3px; object-fit: cover; cursor: pointer; border: 2px solid transparent; }
@@ -243,11 +269,18 @@ button:hover { opacity: .85; }
 .timeline-summary.inbound { border-left: 3px solid var(--accent); }
 
 /* Collapse children when route is collapsed */
-.route-section.collapsed .route-photo-grid,
-.route-section.collapsed .route-notes-area,
-.route-section.collapsed .route-footer {
-  display: none;
+.route-section.collapsed { display: flex; flex-wrap: wrap; }
+.route-section.collapsed .route-header { flex: 0 0 100%; border-bottom: none; }
+.route-section.collapsed .route-legs { display: none; }
+.route-section.collapsed .route-photo-grid {
+  flex: 0 0 auto; max-width: 40%; border-bottom: none; padding: 6px 4px 6px 12px;
+  opacity: 0.5; pointer-events: none; overflow-x: visible; flex-wrap: wrap;
 }
+.route-section.collapsed .route-notes-area {
+  flex: 1 1 0; min-width: 80px; border-bottom: none; opacity: 0.5;
+}
+.route-section.collapsed .route-notes-area textarea { pointer-events: none; resize: none; }
+.route-section.collapsed .route-footer { display: none; }
 
 /* Vertical timeline */
 #timeline-bar {
@@ -311,6 +344,10 @@ button:hover { opacity: .85; }
 /* Two-axis leg controls */
 .leg-type-mode { display: flex; gap: 4px; align-items: center; }
 .leg-type-select, .leg-mode-select { font-size: 10px; padding: 1px 6px; border-radius: 4px; border: 1px solid #555; background: var(--bg); color: var(--text); }
+.alias-debug { margin-top: 8px; font-size: 0.72rem; color: var(--muted); }
+.alias-debug table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.alias-debug th, .alias-debug td { border-bottom: 1px solid var(--border); padding: 3px 4px; text-align: left; vertical-align: top; }
+.alias-debug code { color: var(--accent2); }
 </style>
 </head>
 <body>
@@ -363,7 +400,8 @@ button:hover { opacity: .85; }
     <div class="sidebar-section action-buttons">
       <button class="btn-primary btn-full" onclick="openGenerateModal()">Generate Blog</button>
       <button class="btn-danger btn-full" onclick="confirmDeleteEntry()">Delete Entry</button>
-      <button class="btn-outline btn-full" onclick="deleteCache()">Delete Cache</button>
+      <button class="btn-outline btn-full" onclick="deleteCache()">Delete Post Cache</button>
+      <button class="btn-outline btn-full" onclick="deleteRailwayCache()">Delete Railway DB</button>
       <button class="btn-outline btn-full" onclick="shutdownServer()" style="margin-top:8px;border-color:#666;color:#666">Shut Down Server</button>
       <div id="new-sprint-btn" class="hidden" style="margin-top:8px">
         <button class="btn-primary btn-full" onclick="createFromUnmatchedSprint()">+ Create New</button>
@@ -375,6 +413,10 @@ button:hover { opacity: .85; }
         <summary>Trip Info</summary>
         <div id="journey-bar" class="hidden"></div>
         <div id="timeline-bar" class="hidden"></div>
+        <details class="alias-debug">
+          <summary>Station alias debug</summary>
+          <div id="alias-debug-panel">Aliases are resolved after stations are added.</div>
+        </details>
         <label>Tags</label>
         <input id="trip-tags" value="train travel canonical">
         <label>Destination notes</label>
@@ -391,9 +433,16 @@ button:hover { opacity: .85; }
 
   <!-- Main content: map, route list -->
   <main class="main-content">
-    <div id="global-map" class="hidden"></div>
-    <div id="route-map" class="hidden"></div>
-    <div id="stats-panel" class="stats-panel hidden"></div>
+    <div class="map-area" style="position:relative">
+      <div id="global-map" class="hidden"></div>
+      <div id="route-map" class="hidden"></div>
+      <div id="stats-panel" class="stats-panel hidden"></div>
+      <div id="enrich-badge" class="hidden" style="margin-bottom:10px;padding:6px 12px;border-radius:6px;background:var(--bg);border:1px solid var(--border);font-size:0.82rem;color:var(--text);display:flex;align-items:center;gap:8px">
+        <div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0;flex-shrink:0"></div>
+        <span>Enriching railway geometry...</span>
+      </div>
+      <button class="map-toggle" id="map-toggle-btn" onclick="toggleMapSize()" title="Toggle map size">⛶</button>
+    </div>
     <div id="route-list"></div>
   </main>
 
@@ -434,7 +483,50 @@ button:hover { opacity: .85; }
     <div style="padding:24px 0">
       <div class="spinner"></div>
       <p id="loading-msg" style="font-size:0.9rem;color:var(--muted);margin-top:16px">Looking up services...</p>
+      <p id="loading-detail" style="font-size:0.75rem;color:var(--muted);margin-top:4px">&nbsp;</p>
     </div>
+  </div>
+</div>
+
+<!-- Enrichment progress overlay -->
+<div id="enrich-progress-overlay" class="modal-overlay hidden">
+  <div class="modal-content" style="max-width:460px">
+    <div class="modal-header"><h3>Enriching Railway Geometry</h3></div>
+    <div style="padding:12px 0">
+      <div id="enrich-progress-segments" style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;max-height:160px;overflow-y:auto"></div>
+      <div id="enrich-progress-current" style="font-size:0.88rem;margin-bottom:8px;color:var(--text)"></div>
+      <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden">
+        <div id="enrich-progress-bar" style="height:100%;width:0%;background:var(--accent2);transition:width .3s"></div>
+      </div>
+      <div id="enrich-progress-text" style="font-size:0.75rem;color:var(--muted);margin-top:4px;text-align:right"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Railway DB startup overlay -->
+<div id="railway-startup-overlay" class="modal-overlay">
+  <div class="modal-content" style="max-width:560px;text-align:center">
+    <div class="modal-header"><h3>Loading Railway Data</h3></div>
+    <div style="padding:24px 0">
+      <div class="spinner"></div>
+      <p id="railway-startup-msg" style="font-size:0.9rem;color:var(--muted);margin-top:16px">Initialising railway geometry database...</p>
+      <p id="railway-startup-detail" style="font-size:0.75rem;color:var(--muted);margin-top:4px;white-space:pre-line;text-align:left;line-height:1.45">&nbsp;</p>
+      <div id="railway-startup-bar-bg" style="display:none;margin-top:16px;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+        <div id="railway-startup-bar" style="height:100%;width:0%;background:var(--accent2);transition:width .5s"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Service finder popup -->
+<div id="service-finder-modal" class="modal-overlay hidden">
+  <div class="modal-content" style="max-width:640px">
+    <div class="modal-header">
+      <h3 id="sf-header">Select Service</h3>
+      <button class="btn-sm btn-danger" onclick="closeServiceFinder()">✕</button>
+    </div>
+    <div id="sf-warning" style="display:none;padding:8px 12px;margin-bottom:8px;background:var(--bg);border:1px solid var(--warn);border-radius:6px;font-size:0.82rem;color:var(--text)"></div>
+    <div id="sf-body" style="padding:8px 0"></div>
   </div>
 </div>
 
@@ -481,18 +573,112 @@ function normalizeLeg(leg) {
   const t = leg.type || 'transit';
   if (t === 'bus') { leg.type = 'transit'; leg.mode = 'bus'; }
   else if (t === 'flight') { leg.type = 'transit'; leg.mode = 'plane'; }
-  else if (t === 'transfer') { leg.mode = 'walking'; }
-  else if (t === 'stay') { leg.mode = ''; }
+  else if (t === 'transfer' || t === 'stay' || t === 'layover') { leg.type = 'transit'; leg.mode = leg.mode || 'train'; }
   else if (t === 'unincluded') { leg.mode = 'other'; }
   else { leg.mode = 'train'; }
+}
+
+function _isTimedTravelType(type) {
+  return ['transit', 'unincluded'].includes(type || 'transit');
+}
+
+function _copyEmissionsFields(target, source) {
+  if (!target || !source) return;
+  const fields = [
+    'emissions_kg', 'emissions_min_kg', 'emissions_max_kg',
+    'emissions_operational_kg', 'emissions_lifecycle_kg', 'emissions_radiative_forcing_kg',
+    'emissions_rate_g_per_km', 'emissions_rate_min_g_per_km', 'emissions_rate_max_g_per_km',
+    'emissions_confidence', 'emissions_distance_source', 'emissions_traction', 'emissions_traction_source',
+    'emissions_countries', 'emissions_grid_intensity_g_per_kwh', 'emissions_lifecycle_uplift_pct',
+    'emissions_radiative_forcing_multiplier', 'emissions_assumptions',
+  ];
+  for (const field of fields) {
+    if (source[field] !== undefined) target[field] = source[field];
+  }
+}
+
+function _emissionsFromObj(obj) {
+  if (!obj) return null;
+  const kg = obj.emissions_kg ?? obj._emissionsKg;
+  if (kg == null || kg <= 0) return null;
+  return {
+    kg,
+    minKg: obj.emissions_min_kg ?? obj._emissionsMinKg ?? kg,
+    maxKg: obj.emissions_max_kg ?? obj._emissionsMaxKg ?? kg,
+    rate: obj.emissions_rate_g_per_km ?? obj._emissionsRate ?? 0,
+    rateMin: obj.emissions_rate_min_g_per_km ?? obj._emissionsRateMin ?? 0,
+    rateMax: obj.emissions_rate_max_g_per_km ?? obj._emissionsRateMax ?? 0,
+    confidence: obj.emissions_confidence ?? obj._emissionsConfidence ?? 'unknown',
+    distanceSource: obj.emissions_distance_source ?? obj._emissionsDistanceSource ?? 'unknown',
+    traction: obj.emissions_traction ?? obj._emissionsTraction ?? '',
+    tractionSource: obj.emissions_traction_source ?? obj._emissionsTractionSource ?? '',
+    operationalKg: obj.emissions_operational_kg ?? obj._emissionsOperationalKg ?? 0,
+    lifecycleKg: obj.emissions_lifecycle_kg ?? obj._emissionsLifecycleKg ?? 0,
+    radiativeForcingKg: obj.emissions_radiative_forcing_kg ?? obj._emissionsRadiativeForcingKg ?? 0,
+    lifecyclePct: obj.emissions_lifecycle_uplift_pct ?? obj._emissionsLifecyclePct ?? 0,
+    rfMultiplier: obj.emissions_radiative_forcing_multiplier ?? obj._emissionsRfMultiplier ?? 1,
+    grid: obj.emissions_grid_intensity_g_per_kwh ?? obj._emissionsGridIntensity ?? null,
+    assumptions: obj.emissions_assumptions ?? obj._emissionsAssumptions ?? [],
+  };
+}
+
+function _storeLegEmissions(leg, detail) {
+  if (!leg || !detail) return;
+  leg._emissionsKg = detail.kg;
+  leg._emissionsMinKg = detail.min_kg;
+  leg._emissionsMaxKg = detail.max_kg;
+  leg._emissionsRate = detail.rate_g_per_km;
+  leg._emissionsRateMin = detail.rate_min_g_per_km;
+  leg._emissionsRateMax = detail.rate_max_g_per_km;
+  leg._emissionsConfidence = detail.confidence;
+  leg._emissionsDistanceSource = detail.distance_source;
+  leg._emissionsTraction = detail.traction;
+  leg._emissionsTractionSource = detail.traction_source;
+  leg._emissionsOperationalKg = detail.operational_kg;
+  leg._emissionsLifecycleKg = detail.lifecycle_kg;
+  leg._emissionsRadiativeForcingKg = detail.radiative_forcing_kg;
+  leg._emissionsLifecyclePct = detail.lifecycle_uplift_pct;
+  leg._emissionsRfMultiplier = detail.radiative_forcing_multiplier;
+  leg._emissionsGridIntensity = detail.grid_intensity_g_per_kwh;
+  leg._emissionsAssumptions = detail.assumptions || [];
+}
+
+function _emissionsTitle(em) {
+  if (!em) return '';
+  const parts = [
+    `${em.rate.toFixed(1)} g/km expected`,
+    `range ${em.minKg.toFixed(2)}-${em.maxKg.toFixed(2)} kg`,
+    `${em.confidence} confidence`,
+    `${em.distanceSource} distance`,
+  ];
+  if (em.traction) parts.push(`${em.traction} traction${em.tractionSource ? ' via ' + em.tractionSource : ''}`);
+  if (em.lifecycleKg) parts.push(`${em.lifecycleKg.toFixed(2)} kg lifecycle uplift`);
+  if (em.radiativeForcingKg) parts.push(`${em.radiativeForcingKg.toFixed(2)} kg radiative forcing`);
+  if (em.grid) parts.push(`${em.grid.toFixed(0)} gCO2e/kWh grid`);
+  if (em.assumptions.length) parts.push(...em.assumptions);
+  return parts.join(' | ');
+}
+
+function _emissionsBadge(obj) {
+  const em = _emissionsFromObj(obj);
+  if (!em) return '';
+  const range = em.minKg !== em.maxKg ? ` (${em.minKg.toFixed(1)}-${em.maxKg.toFixed(1)})` : '';
+  const source = em.distanceSource === 'osm' ? 'OSM' : em.distanceSource === 'transitous' ? 'svc' : em.distanceSource;
+  const traction = em.traction && !['not-applicable', 'unknown'].includes(em.traction) ? ` ${em.traction}` : '';
+  return ` <span class="duration-badge" title="${_emissionsTitle(em).replace(/"/g, '&quot;')}">${em.kg.toFixed(2)}kg CO₂${range} · ${source}${traction}</span>`;
+}
+
+function _routeAcceptsCuration(route) {
+  return route.legs.some(l => (l.type || 'transit') === 'transit');
+}
+
+function _firstCuratedLeg(route) {
+  return route.legs.find(l => (l.type || 'transit') === 'transit') || null;
 }
 
 function modeIcon(type, mode) {
   const t = type || 'transit';
   const m = mode || 'train';
-  if (t === 'stay') return '🛌';
-  if (t === 'transfer') return '🚶';
-  if (t === 'layover') return '⏳';
   if (t === 'unincluded') return '⊘';
   if (m === 'bus' || m === 'coach') return '🚌';
   if (m === 'plane') return '✈️';
@@ -509,16 +695,13 @@ function modeIcon(type, mode) {
 function modeLabel(mode) {
   const labels = { high_speed: 'High Speed', train: 'Train', regional: 'Regional',
     subway: 'Underground', tram: 'Tram', light_rail: 'Light Rail',
-    bus: 'Bus', coach: 'Coach', car: 'Car',
-    plane: 'Plane', ferry: 'Ferry', walking: 'Walking', other: 'Other' };
+    bus: 'Bus', coach: 'Coach', car: 'Car', ferry: 'Ferry',
+    plane: 'Plane', walking: 'Walking', other: 'Other' };
   return labels[mode] || mode || '';
 }
 
 function modeColor(type, mode) {
   const t = type || 'transit';
-  if (t === 'stay') return '#FF9800';
-  if (t === 'transfer') return '#9E9E9E';
-  if (t === 'layover') return '#FFC107';
   if (t === 'unincluded') return '#666';
   const m = mode || 'train';
   if (m === 'walking') return '#6D4C41';
@@ -551,57 +734,154 @@ function computeStats() {
   if (!allLegs.length) return null;
 
   let knownDist = 0, guessDist = 0;
-  let totalDurSec = 0;
+  let travelDurSec = 0, foundDurSec = 0;
+  let totalEmissionsKg = 0;
+  let totalEmissionsMinKg = 0;
+  let totalEmissionsMaxKg = 0;
+  let totalEmissionsRateSum = 0;
+  let emissionsRateCount = 0;
+  const emissionsSources = {};
+  const emissionsConfidence = {};
   let maxSpeed = 0;
   let fastestName = '', longestDistName = '', longestTimeName = '';
   let longestDistVal = 0, longestTimeVal = 0;
   const modeCounts = {};
   const typeCounts = {};
+  // Door-to-door time: first departure to last arrival across all legs
+  function _timeToMin(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
+  function _pointDistanceKm(lat1, lon1, lat2, lon2) {
+    if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return 0;
+    const dLat = lat2 - lat1, dLon = lon2 - lon1;
+    const a = Math.sin(dLat * Math.PI / 360) ** 2
+      + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+      * Math.sin(dLon * Math.PI / 360) ** 2;
+    return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+  function _legEstimateDistanceKm(l, svc) {
+    return svc?.distance_km || l.distance_km
+      || _pointDistanceKm(svc?.origin_lat ?? l.originLat, svc?.origin_lon ?? l.originLon, svc?.dest_lat ?? l.destLat, svc?.dest_lon ?? l.destLon);
+  }
+  let d2dFirstMin = null, d2dLastMin = null;
 
-  for (const { leg: l, svc } of allLegs) {
+  for (const { leg: l, svc, dir } of allLegs) {
     const type = l.type || 'transit';
     const mode = l.mode || 'train';
     typeCounts[type] = (typeCounts[type] || 0) + 1;
     modeCounts[mode] = (modeCounts[mode] || 0) + 1;
 
-    const dist = svc?.distance_km || l.distance_km || 0;
-    const hasGeo = svc?.geometry?.length > 0;
-    if (hasGeo) knownDist += dist;
-    else guessDist += dist;
+    // Track door-to-door time across ALL legs using minute values
+    // Convert to minutes; if a time is earlier than the current first by more than
+    // 12 hours, it's likely the next day — add 24h to keep monotonic ordering
+    if (l.departure) {
+      const m = _timeToMin(l.departure);
+      if (d2dFirstMin === null) {
+        d2dFirstMin = m;
+      } else {
+        let adj = m;
+        if (adj < d2dFirstMin - 720) adj += 1440;
+        if (adj < d2dFirstMin) d2dFirstMin = adj;
+      }
+    }
+    if (l.arrival) {
+      const m = _timeToMin(l.arrival);
+      if (d2dLastMin === null) {
+        d2dLastMin = m;
+      } else {
+        let adj = m;
+        if (adj < d2dLastMin - 720) adj += 1440;
+        if (adj > d2dLastMin) d2dLastMin = adj;
+      }
+    }
 
-    if (l.departure && l.arrival && type !== 'stay') {
+    const enrichedGeo = svc?.enrichedGeometry || l._enrichedGeometry || [];
+    const hasEnr = enrichedGeo.length >= 2;
+    let enrichedDistKm = 0;
+    if (hasEnr) {
+      for (let gi = 1; gi < enrichedGeo.length; gi++) {
+        const p1 = enrichedGeo[gi - 1], p2 = enrichedGeo[gi];
+        const dLat = p2.lat - p1.lat, dLon = p2.lon - p1.lon;
+        const a = Math.sin(dLat * Math.PI / 360) ** 2 +
+                  Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) *
+                  Math.sin(dLon * Math.PI / 360) ** 2;
+        enrichedDistKm += 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      }
+      knownDist += enrichedDistKm;
+    } else {
+      const dist = _legEstimateDistanceKm(l, svc);
+      guessDist += dist;
+    }
+
+    // Compute leg duration if available
+    let legDurSec = 0;
+    if (l.departure && l.arrival && _isTimedTravelType(type)) {
       const [dh, dm] = l.departure.split(':').map(Number);
       const [ah, am] = l.arrival.split(':').map(Number);
       let min = (ah * 60 + am) - (dh * 60 + dm);
       if (min < 0) min += 24 * 60;
-      totalDurSec += min * 60;
+      legDurSec = min * 60;
+      travelDurSec += legDurSec;
+      if (hasEnr && type === 'transit') foundDurSec += legDurSec;
     }
 
-    const speed = svc?.max_speed_kmh || 0;
-    if (speed > maxSpeed) { maxSpeed = speed; fastestName = l.origin + '→' + l.dest; }
+    const em = _emissionsFromObj(svc) || _emissionsFromObj(l);
+    const emKg = em?.kg || 0;
+    totalEmissionsKg += emKg;
+    totalEmissionsMinKg += em?.minKg || emKg;
+    totalEmissionsMaxKg += em?.maxKg || emKg;
+    if (em?.distanceSource) emissionsSources[em.distanceSource] = (emissionsSources[em.distanceSource] || 0) + 1;
+    if (em?.confidence) emissionsConfidence[em.confidence] = (emissionsConfidence[em.confidence] || 0) + 1;
+    const rate = em?.rate || 0;
+    if (rate > 0) { totalEmissionsRateSum += rate; emissionsRateCount++; }
+
+    const speed = svc?.max_speed_kmh || l._maxSpeed || 0;
+    if (speed > maxSpeed) { maxSpeed = Math.round(speed); fastestName = l.origin + '→' + l.dest; }
+    const dist = hasEnr ? enrichedDistKm : _legEstimateDistanceKm(l, svc);
     if (dist > longestDistVal) { longestDistVal = dist; longestDistName = l.origin + '→' + l.dest; }
-    if (type !== 'stay') {
-      const dur = l.departure && l.arrival ? (() => {
-        const [dh, dm] = l.departure.split(':').map(Number);
-        const [ah, am] = l.arrival.split(':').map(Number);
-        let min = (ah * 60 + am) - (dh * 60 + dm);
-        if (min < 0) min += 24 * 60;
-        return min * 60;
-      })() : 0;
-      if (dur > longestTimeVal) { longestTimeVal = dur; longestTimeName = l.origin + '→' + l.dest; }
+    if (_isTimedTravelType(type)) {
+      if (legDurSec > longestTimeVal) { longestTimeVal = legDurSec; longestTimeName = l.origin + '→' + l.dest; }
     }
   }
 
   const totalDist = knownDist + guessDist;
-  const avgSpeed = totalDurSec > 0 ? (totalDist / (totalDurSec / 3600)) : 0;
-  const avgOpSpeed = totalDurSec > 0 ? (knownDist / (totalDurSec / 3600)) : 0;
-  const totalHours = totalDurSec / 3600;
-  const h = Math.floor(totalHours);
-  const m = Math.round((totalHours - h) * 60);
+  // Avg speed over enriched legs only ("found" route segments with actual railway distance)
+  const avgSpeed = foundDurSec > 0 ? (knownDist / (foundDurSec / 3600)) : 0;
+  const avgOpSpeed = travelDurSec > 0 ? (knownDist / (travelDurSec / 3600)) : 0;
+
+  // Door-to-door time: first departure to last arrival across all legs
+  let doorToDoorSec = 0;
+  if (d2dFirstMin !== null && d2dLastMin !== null) {
+    let min = d2dLastMin - d2dFirstMin;
+    if (min < 0) min += 1440;
+    doorToDoorSec = min * 60;
+  }
+
+  const _fmtHm = (hrs) => {
+    const fh = Math.floor(hrs), fm = Math.round((hrs - fh) * 60);
+    return fh + 'h' + (fm ? fm + 'm' : '');
+  };
+  const d2dStr = doorToDoorSec > 0 ? _fmtHm(doorToDoorSec / 3600) : null;
+  const travelStr = travelDurSec > 0 ? _fmtHm(travelDurSec / 3600) : null;
+
+  let servicedCount = 0;
+  let enrichedCount = 0;
+  let solvedCount = 0;
+  let pendingCount = 0;
+  for (const { leg: l, svc } of allLegs) {
+    if (l.selectedServices.length > 0) servicedCount++;
+    const enrichedGeo = svc?.enrichedGeometry || l._enrichedGeometry || [];
+    if (enrichedGeo.length > 0) enrichedCount++;
+    if (enrichedGeo.length > 0) {
+      const src = svc?._geometrySource || l._geometrySource;
+      if (src === 'railway_db') solvedCount++;
+      else if (src) pendingCount++;
+    } else if (svc && (svc.origin_lat != null && svc.dest_lat != null)) {
+      pendingCount++;
+    }
+  }
 
   return {
     knownDist, guessDist, totalDist,
-    totalDur: h + 'h' + (m ? m + 'm' : ''),
+    d2dStr, travelStr,
     avgSpeed: avgSpeed.toFixed(0),
     avgOpSpeed: avgOpSpeed.toFixed(0),
     maxSpeed, fastestName,
@@ -609,6 +889,10 @@ function computeStats() {
     longestTimeVal, longestTimeName,
     modeCounts, typeCounts,
     legCount: allLegs.length,
+    servicedCount, enrichedCount, solvedCount, pendingCount,
+    totalEmissionsKg, totalEmissionsMinKg, totalEmissionsMaxKg,
+    emissionsSources, emissionsConfidence,
+    avgEmissionsRate: emissionsRateCount > 0 ? (totalEmissionsRateSum / emissionsRateCount).toFixed(0) : '—',
   };
 }
 
@@ -625,14 +909,19 @@ function renderStatsPanel() {
   container.innerHTML = `<div class="card">
     <div class="stats-grid">
       <div class="stat-item">
-        <span class="stat-label">Total Distance</span>
+        <span class="stat-label">Expected Distance</span>
         <span class="stat-value">${stats.totalDist.toFixed(0)} km</span>
-        <span class="stat-sub">${stats.knownDist.toFixed(0)} km known / ${stats.guessDist.toFixed(0)} km estimated</span>
+        <span class="stat-sub">known: ${stats.knownDist.toFixed(0)} km<br>estimate: ${stats.guessDist.toFixed(0)} km</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Total Time</span>
-        <span class="stat-value">${stats.totalDur}</span>
-        <span class="stat-sub">${stats.legCount} legs</span>
+        <span class="stat-value">${stats.d2dStr || ''}</span>
+        <span class="stat-sub">${stats.travelStr ? 'travel: ' + stats.travelStr : stats.legCount + ' legs'}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Serviced</span>
+        <span class="stat-value">${stats.servicedCount} / ${stats.legCount}</span>
+        <span class="stat-sub">${stats.solvedCount} solved / ${stats.pendingCount} pending</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Avg Speed</span>
@@ -648,6 +937,11 @@ function renderStatsPanel() {
         <span class="stat-label">Longest Distance</span>
         <span class="stat-value">${stats.longestDistVal.toFixed(0)} km</span>
         <span class="stat-sub">${stats.longestDistName}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">CO₂</span>
+        <span class="stat-value">${stats.totalEmissionsKg.toFixed(1)} kg</span>
+        <span class="stat-sub">range: ${stats.totalEmissionsMinKg.toFixed(1)}-${stats.totalEmissionsMaxKg.toFixed(1)} kg<br>${stats.avgEmissionsRate} g/km avg</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Modes</span>
@@ -714,6 +1008,24 @@ function debounceJourneySearch(inputId, field) {
   journeySearchTimers[inputId] = setTimeout(() => searchJourneyStation(inputId, field), 300);
 }
 
+function _stationType(id) {
+  if (!id) return '';
+  const code = (id.split('_').pop() || '').replace(/[^0-9]/g, '');
+  const prefix = code.substring(0, 3);
+  const known = {
+    '910': '🚄 National Rail', '911': '🚄 National Rail', '912': '🚄 National Rail',
+    '940': '🚇 Underground', '930': '🚊 DLR', '700': '🚌 Bus/Coach',
+  };
+  if (known[prefix]) return known[prefix];
+  // Try to extract country from ID prefix for non-UK stations
+  const country = (id || '').split('-')[0];
+  const countryNames = { de: '🇩🇪 DE', fr: '🇫🇷 FR', nl: '🇳🇱 NL', be: '🇧🇪 BE',
+    ch: '🇨🇭 CH', at: '🇦🇹 AT', it: '🇮🇹 IT', es: '🇪🇸 ES', dk: '🇩🇰 DK',
+    se: '🇸🇪 SE', no: '🇳🇴 NO', pl: '🇵🇱 PL', lu: '🇱🇺 LU',
+  };
+  return countryNames[country] ? `🚄 ${countryNames[country]}` : '';
+}
+
 async function searchJourneyStation(inputId, field) {
   const input = document.getElementById(inputId);
   const dropId = inputId + '-drop';
@@ -726,7 +1038,7 @@ async function searchJourneyStation(inputId, field) {
   if (!drop) return;
   drop.innerHTML = data.map(s =>
     `<div class="dropdown-item" data-station-name="${s.name.replace(/"/g, '&quot;')}" data-station-id="${s.id}" data-station-lat="${s.lat ?? 0}" data-station-lon="${s.lon ?? 0}" onmousedown="selectJourneyStation('${inputId}', '${field}', '${s.name.replace(/'/g, "\\'")}')" onmouseenter="previewStation(${s.lat ?? 0}, ${s.lon ?? 0}, '${s.name.replace(/'/g, "\\'")}')" onmouseleave="clearPreviewStation()">
-      ${s.name} <span class="text-muted">${s.id}</span>
+      ${s.name} <span class="text-muted">${_stationType(s.id)}</span>
     </div>`
   ).join('');
   drop.classList.add('open');
@@ -816,10 +1128,30 @@ function removeLeg(legId) {
 }
 
 function updateLeg(routeId, legId, field, value) {
+  const route = dirRoutes().find(r => String(r.id) === String(routeId));
+  if (!route) return;
+  const leg = route.legs.find(l => l.id === legId);
+  if (!leg) return;
+  leg[field] = value;
+  if (field === 'type') {
+    if (value === 'unincluded') leg.mode = 'other';
+    else if (!leg.mode || leg.mode === 'other') leg.mode = 'train';
+    if (!['transit', 'unincluded'].includes(value || 'transit')) {
+      leg.services = [];
+      leg.selectedServices = [];
+      delete leg._enrichedGeometry;
+      delete leg._geometrySource;
+    }
+    renderTimeline();
+  }
+}
+
+function updateLegStops(routeId, legId, csv) {
   const route = dirRoutes().find(r => r.id === routeId);
   if (!route) return;
   const leg = route.legs.find(l => l.id === legId);
-  if (leg) leg[field] = value;
+  if (!leg) return;
+  leg.stops = csv.split(',').map(s => s.trim()).filter(Boolean);
 }
 
 function findLegBy(legId) {
@@ -839,6 +1171,117 @@ function autoNameRoute(route) {
   if (first.origin && last.dest) {
     route.name = `${first.origin} → ${last.dest}`;
   }
+}
+
+function _stationBaseKey(name) {
+  return (name || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/\b(s\+u|u\+s|station|railway station|gare|bahnhof|hbf)\b/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function _stationKey(name) {
+  const key = _stationBaseKey(name);
+  const aliases = {
+    'bruxelles midi': 'brussels midi',
+    'bruxelles zuid': 'brussels midi',
+    'brussel zuid': 'brussels midi',
+    'brussels south': 'brussels midi',
+    'bruxelles south': 'brussels midi',
+    'berlin haupt': 'berlin hauptbahnhof',
+    'berlin hauptbahnhof': 'berlin hauptbahnhof',
+    'st pancras': 'st pancras',
+    'st pancras international': 'st pancras',
+    'london st pancras': 'st pancras',
+    'london st pancras international': 'st pancras',
+  };
+  return state._stationAliasKeys?.[key] || aliases[key] || key;
+}
+
+function _sameStation(a, b) {
+  if (!a || !b) return false;
+  const ka = _stationKey(a), kb = _stationKey(b);
+  if (ka === kb) return true;
+  const ca = state._stationAliasCoords?.[ka];
+  const cb = state._stationAliasCoords?.[kb];
+  if (!ca || !cb) return false;
+  return Math.abs(ca.lat - cb.lat) < 0.003 && Math.abs(ca.lon - cb.lon) < 0.003;
+}
+
+function _escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderAliasDebugPanel() {
+  const panel = document.getElementById('alias-debug-panel');
+  if (!panel) return;
+  const rows = [];
+  const seen = new Set();
+  for (const r of dirRoutes()) {
+    for (const leg of r.legs) {
+      for (const name of [leg.origin, leg.dest]) {
+        if (!name || seen.has(name)) continue;
+        seen.add(name);
+        const base = _stationBaseKey(name);
+        const key = _stationKey(name);
+        const coord = state._stationAliasCoords?.[key];
+        rows.push({ name, base, key, coord });
+      }
+    }
+  }
+  if (!rows.length) {
+    panel.textContent = 'No stations in this direction yet.';
+    return;
+  }
+  panel.innerHTML = `<table><thead><tr><th>Name</th><th>Base</th><th>Canonical</th><th>Coords</th></tr></thead><tbody>${rows.map(row => `
+    <tr><td>${_escapeHtml(row.name)}</td><td><code>${_escapeHtml(row.base)}</code></td><td><code>${_escapeHtml(row.key)}</code></td><td>${row.coord ? row.coord.lat.toFixed(5) + ', ' + row.coord.lon.toFixed(5) : 'unresolved'}</td></tr>`).join('')}</tbody></table>`;
+}
+
+async function refreshStationAliases() {
+  const names = new Set();
+  for (const r of dirRoutes()) {
+    for (const leg of r.legs) {
+      if (leg.origin) names.add(leg.origin);
+      if (leg.dest) names.add(leg.dest);
+    }
+  }
+  if (!names.size) return;
+  state._stationAliasKeys = state._stationAliasKeys || {};
+  state._stationAliasCoords = state._stationAliasCoords || {};
+  const unresolved = [...names].filter(n => !state._stationAliasKeys[_stationBaseKey(n)]);
+  if (!unresolved.length) { renderAliasDebugPanel(); return; }
+  try {
+    const res = await fetch('/api/resolve-station-aliases', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ names: unresolved }),
+    });
+    const data = await res.json();
+    let changed = false;
+    for (const st of data.stations || []) {
+      const local = _stationBaseKey(st.input);
+      let key = st.key || local;
+      if (st.lat != null && st.lon != null) {
+        for (const [existingKey, pt] of Object.entries(state._stationAliasCoords)) {
+          if (Math.abs(pt.lat - st.lat) < 0.003 && Math.abs(pt.lon - st.lon) < 0.003) {
+            key = existingKey;
+            break;
+          }
+        }
+        state._stationAliasCoords[key] = { lat: st.lat, lon: st.lon };
+      }
+      if (state._stationAliasKeys[local] !== key) changed = true;
+      state._stationAliasKeys[local] = key;
+    }
+    if (changed) renderRoutes();
+    else renderAliasDebugPanel();
+  } catch (_) {}
 }
 
 function updateRouteNotes(routeId, value) {
@@ -906,13 +1349,13 @@ function renderTimeline() {
       const isCollapsed = state._collapsedRoutes.has(r.id);
       const legCount = r.legs.length;
       const collapsed = isCollapsed ? ' collapsed' : '';
+      const acceptsCuration = _routeAcceptsCuration(r);
 
       // Route-to-route gap indicator
       if (prevRoute && prevRoute.legs.length && r.legs.length) {
         const prevLast = prevRoute.legs[prevRoute.legs.length - 1];
         const curFirst = r.legs[0];
-        if (prevLast.dest && curFirst.origin &&
-            prevLast.dest.toLowerCase() !== curFirst.origin.toLowerCase()) {
+        if (prevLast.dest && curFirst.origin && !_sameStation(prevLast.dest, curFirst.origin)) {
           html += `<div class="gap-indicator"><span class="gap-icon">⚠</span> <span class="gap-text">Route gap: ${prevLast.dest} → ${curFirst.origin}</span>
             <button class="btn-sm btn-outline" onclick="fillGapByLegs(${prevLast.id}, ${curFirst.id})">+ Connect</button></div>`;
         } else if (prevLast.dest && curFirst.origin) {
@@ -942,25 +1385,42 @@ function renderTimeline() {
           const sc = si >= 0 && leg.services[si] ? leg.services[si] : null;
           return sum + (sc?.distance_km || leg.distance_km || 0);
         }, 0);
+        const routeDurMin = _durationMin(first.departure, last.arrival);
+        let routeMaxSpeed = 0;
+        for (const leg of r.legs) {
+          const si = leg.selectedServices.length > 0 ? leg.selectedServices[0] : -1;
+          const sc = si >= 0 && leg.services[si] ? leg.services[si] : null;
+          routeMaxSpeed = Math.max(routeMaxSpeed, sc?.max_speed_kmh || leg._maxSpeed || 0);
+        }
         if (routeDist > 0) {
           html += `<span class="route-meta route-time">${routeDist.toFixed(0)}km</span>`;
         }
+        if (routeDurMin && routeDist > 0) {
+          html += `<span class="route-meta route-time">avg ${Math.round(routeDist / (routeDurMin / 60))}km/h</span>`;
+        }
+        if (routeMaxSpeed > 0) {
+          html += `<span class="route-meta route-time">max ${Math.round(routeMaxSpeed)}km/h</span>`;
+        }
       }
-      html += '<span class="route-header-actions">';
-      html += `<button class="btn-sm btn-outline" onclick="event.stopPropagation();openRoutePhotos('${r.id}')" title="Assign photos to this route">📷</button>`;
-      html += '</span>';
+      if (acceptsCuration) {
+        html += '<span class="route-header-actions">';
+        html += `<button class="btn-sm btn-outline" onclick="event.stopPropagation();openRoutePhotos('${r.id}')" title="Assign photos to this route">📷</button>`;
+        html += '</span>';
+      }
       html += '</div>';
 
       // Route photo gallery (big images, at top of route)
       const sprint = document.getElementById('photo-sprint')?.value || '';
-      if (r.photos && r.photos.length) {
+      if (acceptsCuration && r.photos && r.photos.length) {
         html += `<div class="route-photo-grid">${r.photos.map(p =>
           `<img src="/assets/img/${sprint}/${p}" title="${p}" onclick="event.stopPropagation();openRoutePhotos('${r.id}')">`
         ).join('')}</div>`;
       }
 
       // Route notes textarea
-      html += `<div class="route-notes-area"><textarea placeholder="Route description (appears in blog)..." oninput="updateRouteNotes('${r.id}', this.value)">${(r.notes || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea></div>`;
+      if (acceptsCuration) {
+        html += `<div class="route-notes-area"><textarea placeholder="Route description (appears in blog)..." oninput="updateRouteNotes('${r.id}', this.value)">${(r.notes || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea></div>`;
+      }
 
       // Route legs container (hidden when collapsed)
       html += `<div class="route-legs${collapsed}">`;
@@ -971,8 +1431,7 @@ function renderTimeline() {
         // Gap before this leg if not connected to previous in same route
         if (li > 0) {
           const prevLeg = legs[li - 1];
-          if (prevLeg.dest && leg.origin &&
-              prevLeg.dest.toLowerCase() !== leg.origin.toLowerCase()) {
+          if (prevLeg.dest && leg.origin && !_sameStation(prevLeg.dest, leg.origin)) {
             html += `<div class="gap-indicator"><span class="gap-icon">⚠</span> <span class="gap-text">Gap: ${prevLeg.dest} → ${leg.origin}</span>
               <button class="btn-sm btn-outline" onclick="fillGapByLegs(${prevLeg.id}, ${leg.id})">+ Connect</button></div>`;
           }
@@ -1009,6 +1468,14 @@ function renderTimeline() {
   renderCompactTimeline();
   renderGlobalMap();
   renderStatsPanel();
+  renderAliasDebugPanel();
+  if (!state._stationAliasRefreshPending) {
+    state._stationAliasRefreshPending = true;
+    setTimeout(async () => {
+      await refreshStationAliases();
+      state._stationAliasRefreshPending = false;
+    }, 0);
+  }
 }
 
 function renderRoutes() { renderTimeline(); }
@@ -1030,41 +1497,63 @@ function toggleLegExpand(legId) {
   }
 }
 function fillGapByLegs(prevLegId, nextLegId) {
-  for (const r of dirRoutes()) {
+  const routes = dirRoutes();
+  const _newRouteId = () => 'route_' + state.routeIdCounter++;
+  // Same-route gap: split the route, insert new route between
+  for (let ri = 0; ri < routes.length; ri++) {
+    const r = routes[ri];
     const pIdx = r.legs.findIndex(l => l.id === prevLegId);
     const nIdx = r.legs.findIndex(l => l.id === nextLegId);
-    if (pIdx >= 0 && nIdx >= 0 && nIdx === pIdx + 1) {
-      const prev = r.legs[pIdx];
-      const next = r.legs[nIdx];
-      const id = state.legIdCounter++;
-      r.legs.splice(pIdx + 1, 0, {
-        id, type: 'transit', mode: 'train',
-        origin: prev.dest, originId: '',
-        dest: next.origin, destId: '',
-        departure: prev.arrival || '', arrival: next.departure || '',
-        services: [], selectedServices: [], stops: [], photos: [],
-      });
-      autoNameRoute(r);
-      renderTimeline();
-      return;
+    if (pIdx < 0 || nIdx < 0 || nIdx !== pIdx + 1) continue;
+    const prev = r.legs[pIdx];
+    const next = r.legs[nIdx];
+    // Remove legs from nIdx onward
+    const r2Legs = r.legs.splice(nIdx);
+    // Trim current route to end at prevLeg
+    r.legs.splice(pIdx + 1);
+    // Create new route with unincluded leg
+    const gapLeg = {
+      id: state.legIdCounter++,
+      type: 'unincluded', mode: 'other',
+      origin: prev.dest || prev.origin, originId: prev.destId || '',
+      dest: next.origin || next.dest, destId: next.originId || '',
+      departure: prev.arrival || '', arrival: next.departure || '',
+      services: [], selectedServices: [], stops: [], photos: [],
+    };
+    const gapRoute = { id: _newRouteId(), legs: [gapLeg], name: '' };
+    autoNameRoute(gapRoute);
+    state._expandedLegIds.add(gapLeg.id);
+    // Insert gapRoute between r and the route that has the remaining legs
+    if (r2Legs.length) {
+      const r2 = { id: _newRouteId(), legs: r2Legs, name: '' };
+      autoNameRoute(r2);
+      const ri2 = routes.indexOf(r);
+      routes.splice(ri2 + 1, 0, gapRoute, r2);
+    } else {
+      const ri2 = routes.indexOf(r);
+      routes.splice(ri2 + 1, 0, gapRoute);
     }
+    renderTimeline();
+    return;
   }
-  // Fallback: try cross-route
-  const routes = dirRoutes();
+  // Cross-route gap: insert new route between
   for (let ri = 0; ri < routes.length - 1; ri++) {
     const cr = routes[ri], nr = routes[ri + 1];
     const lastLeg = cr.legs[cr.legs.length - 1];
     const firstLeg = nr.legs[0];
     if (lastLeg && firstLeg && lastLeg.id === prevLegId && firstLeg.id === nextLegId) {
-      const id = state.legIdCounter++;
-      cr.legs.push({
-        id, type: 'transit', mode: 'train',
-        origin: lastLeg.dest, originId: '',
-        dest: firstLeg.origin, destId: '',
+      const gapLeg = {
+        id: state.legIdCounter++,
+        type: 'unincluded', mode: 'other',
+        origin: lastLeg.dest || lastLeg.origin, originId: lastLeg.destId || '',
+        dest: firstLeg.origin || firstLeg.dest, destId: firstLeg.originId || '',
         departure: lastLeg.arrival || '', arrival: firstLeg.departure || '',
         services: [], selectedServices: [], stops: [], photos: [],
-      });
-      autoNameRoute(cr);
+      };
+      const gapRoute = { id: _newRouteId(), legs: [gapLeg], name: '' };
+      autoNameRoute(gapRoute);
+      state._expandedLegIds.add(gapLeg.id);
+      routes.splice(ri + 1, 0, gapRoute);
       renderTimeline();
       return;
     }
@@ -1095,7 +1584,8 @@ function confirmDeleteEntry() {
 function deleteCache() {
   const sel = document.getElementById('import-post');
   const path = sel.value;
-  if (!path) return;
+  if (!path) return alert('Select a post first, then click Delete Cache.');
+  if (!confirm('Delete cached route/curation data for this post?')) return;
   fetch('/api/delete-cache', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -1106,11 +1596,19 @@ function deleteCache() {
     .catch(() => alert('Failed to delete cache.'));
 }
 
+function deleteRailwayCache() {
+  if (!confirm('Delete the railway geometry cache? It will be re-downloaded on next use (2GB PBF, ~3min).')) return;
+  fetch('/api/delete-railway-cache', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({region:'gb'}) })
+    .then(r => r.json())
+    .then(d => { alert(d.deleted ? `Deleted: ${d.deleted}` : 'No cache found.'); })
+    .catch(() => alert('Failed to delete railway cache.'));
+}
+
 function shutdownServer() {
-  if (!confirm('Shut down the backend server? Any unsaved work will be lost.')) return;
+  if (!confirm('Shut down the server?')) return;
   fetch('/api/shutdown', { method: 'POST' })
-    .then(() => document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:var(--muted);font-size:1.2rem">Server shut down. You may close this tab.</div>')
-    .catch(() => alert('Could not reach server.'));
+    .then(() => { document.body.innerHTML = '<div style="padding:2rem;text-align:center"><h2>Server shutting down</h2><p>You can close this tab.</p></div>'; })
+    .catch(() => alert('Failed to shut down server.'));
 }
 
 // ---- Generate Modal ----
@@ -1148,8 +1646,8 @@ function renderJourneyBar() {
   for (const route of routes) {
     for (let i = 0; i < route.legs.length - 1; i++) {
       if (route.legs[i].dest && route.legs[i + 1].origin &&
-          route.legs[i].dest.toLowerCase() === route.legs[i + 1].origin.toLowerCase()) {
-        connected.add(route.legs[i].dest.toLowerCase());
+          _sameStation(route.legs[i].dest, route.legs[i + 1].origin)) {
+        connected.add(_stationKey(route.legs[i].dest));
       }
     }
   }
@@ -1158,8 +1656,8 @@ function renderJourneyBar() {
     const lastLeg = routes[i].legs[routes[i].legs.length - 1];
     const firstLeg = routes[i + 1].legs[0];
     if (lastLeg && firstLeg && lastLeg.dest && firstLeg.origin &&
-        lastLeg.dest.toLowerCase() === firstLeg.origin.toLowerCase()) {
-      connected.add(lastLeg.dest.toLowerCase());
+        _sameStation(lastLeg.dest, firstLeg.origin)) {
+      connected.add(_stationKey(lastLeg.dest));
     }
   }
 
@@ -1177,13 +1675,23 @@ function renderJourneyBar() {
   }
   for (const [si, s] of stations.entries()) {
     const isEnd = si === 0 || si === stations.length - 1;
-    const status = (isEnd || connected.has(s.toLowerCase())) ? 'connected' : 'gap';
+    const status = (isEnd || connected.has(_stationKey(s))) ? 'connected' : 'gap';
     addStation(s, status);
     if (s !== stations[stations.length - 1]) addArrow();
   }
   if (dirState.journeyDest && dirState.journeyDest !== stations[stations.length - 1]) {
     addArrow();
     addStation(dirState.journeyDest, 'journey-end');
+  }
+  const legs = routes.flatMap(r => r.legs).filter(l => l.origin || l.dest);
+  if (legs.length) {
+    html += '<div class="timeline-bar-inline">';
+    for (const leg of legs) {
+      const icon = modeIcon(leg.type, leg.mode);
+      const dur = leg.departure && leg.arrival ? _durationLabel(_durationMin(leg.departure, leg.arrival)) : '';
+      html += `<div class="timeline-bar-row"><span class="timeline-bar-time">${leg.departure || ''}</span><span class="timeline-bar-stations">${leg.origin || '?'} → ${leg.dest || '?'}</span><span class="timeline-bar-mode">${icon}</span><span class="timeline-bar-meta"><span>${dur}</span></span></div>`;
+    }
+    html += '</div>';
   }
   bar.innerHTML = html;
 }
@@ -1197,7 +1705,6 @@ function computeDays(legs) {
     if (i > 0) {
       const prev = legs[i - 1];
       let newDay = false;
-      if (prev.type === 'stay') newDay = true;
       if (prev.arrival && leg.departure) {
         const [ah, am] = prev.arrival.split(':').map(Number);
         const [dh, dm] = leg.departure.split(':').map(Number);
@@ -1214,38 +1721,8 @@ function computeDays(legs) {
 }
 
 function renderCompactTimeline() {
-  const routes = dirRoutes();
-  const allLegs = routes.flatMap(r => r.legs);
   const bar = document.getElementById('timeline-bar');
-  if (!allLegs.length) { bar.classList.add('hidden'); return; }
-
-  for (const l of allLegs) normalizeLeg(l);
-
-  bar.classList.remove('hidden');
-  let html = '';
-  for (let i = 0; i < allLegs.length; i++) {
-    const l = allLegs[i];
-    const icon = modeIcon(l.type, l.mode);
-    const dotColor = modeColor(l.type, l.mode);
-    const dur = l.departure && l.arrival ? (() => {
-      const [dh, dm] = l.departure.split(':').map(Number);
-      const [ah, am] = l.arrival.split(':').map(Number);
-      let min = (ah * 60 + am) - (dh * 60 + dm);
-      if (min < 0) min += 24 * 60;
-      const h = Math.floor(min / 60);
-      const m = min % 60;
-      return h + 'h' + (m ? m + 'm' : '');
-    })() : '';
-    html += `<div class="timeline-bar-row">
-      <span class="timeline-bar-dot" style="background:${dotColor}"></span>
-      <span class="timeline-bar-line"></span>
-      <span class="timeline-bar-time">${l.departure || ''}</span>
-      <span class="timeline-bar-stations">${l.origin || '?'} → ${l.dest || '?'}</span>
-      <span class="timeline-bar-mode">${icon}</span>
-      <span class="timeline-bar-meta"><span>${dur}</span></span>
-    </div>`;
-  }
-  bar.innerHTML = html;
+  if (bar) bar.classList.add('hidden');
 }
 
 function _flightArc(fromLat, fromLon, toLat, toLon) {
@@ -1286,14 +1763,28 @@ function renderGlobalMap() {
   if (!allLegs.length) { container.classList.add('hidden'); return; }
 
   if (state._globalMap) { state._globalMap.remove(); state._globalMap = null; }
+
+  console.log(`renderGlobalMap: ${routes.length} routes, ${allLegs.length} legs`);
+  for (const r of routes) {
+    for (const l of r.legs) {
+      const svcIdx = l.selectedServices.length > 0 ? l.selectedServices[0] : -1;
+      const svc = svcIdx >= 0 && l.services[svcIdx] ? l.services[svcIdx] : null;
+      const enrichedGeo = (svc && svc.enrichedGeometry) || l._enrichedGeometry;
+      const hasEnriched = enrichedGeo && enrichedGeo.length;
+      const hasGeo = svc && svc.geometry && svc.geometry.length;
+      console.log(`  leg ${l.id}: ${l.origin}->${l.dest}, enriched=${hasEnriched ? enrichedGeo.length : hasEnriched}, geo=${hasGeo}, svcGeoL=${hasGeo ? svc.geometry.length : 0}`);
+    }
+  }
   container.classList.remove('hidden');
 
   const map = L.map('global-map').setView([51.5, -0.1], 5);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>', maxZoom: 19,
   }).addTo(map);
+  map.invalidateSize();
   state._globalMap = map;
 
+  document.getElementById('map-toggle-btn').classList.remove('hidden');
   const colors = ['#66D9EE', '#b509ac', '#4caf50', '#ff9800', '#d32f2f', '#9C27B0'];
   const bounds = [];
   const addedStations = new Set();
@@ -1302,23 +1793,47 @@ function renderGlobalMap() {
     const color = colors[ri % colors.length];
     route.legs.forEach(leg => {
       const coords = [];
+      let placeholderLine = false;
       const svcIdx = leg.selectedServices.length > 0 ? leg.selectedServices[0] : -1;
       const svc = svcIdx >= 0 && leg.services[svcIdx] ? leg.services[svcIdx] : null;
-      if (svc && svc.geometry && svc.geometry.length) {
-        svc.geometry.forEach(pt => coords.push([pt.lat, pt.lon]));
+      const enrichedGeo = (svc && svc.enrichedGeometry) || leg._enrichedGeometry;
+      const geoSource = svc?._geometrySource || leg._geometrySource;
+      if (enrichedGeo && enrichedGeo.length) {
+        const first = enrichedGeo[0], last = enrichedGeo[enrichedGeo.length - 1];
+        console.log(`  map ${leg.origin}->${leg.dest}: enriched[${enrichedGeo.length}] src=${geoSource} 0%(${first.lat.toFixed(4)},${first.lon.toFixed(4)}) 50%(${enrichedGeo[Math.floor(enrichedGeo.length/2)].lat.toFixed(4)},${enrichedGeo[Math.floor(enrichedGeo.length/2)].lon.toFixed(4)}) 100%(${last.lat.toFixed(4)},${last.lon.toFixed(4)})`);
+        // Log 5% samples
+        const eg = enrichedGeo;
+        const egSamps = [];
+        for (let fi = 0; fi <= 20; fi++) {
+          const si = Math.floor((fi / 20) * (eg.length - 1));
+          egSamps.push(`${fi*5}%=${eg[si].lat.toFixed(4)},${eg[si].lon.toFixed(4)}`);
+        }
+        console.log(`  enriched ${leg.origin}->${leg.dest} 5% samples: ${egSamps.join(' ; ')}`);
+        enrichedGeo.forEach(pt => coords.push([pt.lat, pt.lon]));
       } else if ((leg.mode === 'plane' || leg.type === 'flight') && leg.originLat != null && leg.destLat != null) {
         const pts = _flightArc(leg.originLat, leg.originLon, leg.destLat, leg.destLon);
         pts.forEach(p => coords.push(p));
+      } else if (svc && svc.geometry && svc.geometry.length) {
+        svc.geometry.forEach(pt => coords.push([pt.lat, pt.lon]));
+        placeholderLine = true;
       } else if (svc && svc.origin_lat != null && svc.dest_lat != null) {
         coords.push([svc.origin_lat, svc.origin_lon]);
         coords.push([svc.dest_lat, svc.dest_lon]);
+        placeholderLine = true;
       } else if (leg.originLat != null && leg.destLat != null) {
         coords.push([leg.originLat, leg.originLon]);
         coords.push([leg.destLat, leg.destLon]);
+        placeholderLine = true;
       }
       if (coords.length) {
         coords.forEach(c => bounds.push(c));
-        L.polyline(coords, { color, weight: 3, opacity: 0.7 }).addTo(map);
+        const line = L.polyline(coords, {
+          color,
+          weight: placeholderLine ? 2 : 3,
+          opacity: placeholderLine ? 0.35 : 0.7,
+          dashArray: placeholderLine ? '6 8' : null,
+          interactive: false,
+        }).addTo(map);
         L.circleMarker(coords[0], { color, radius: 4, fillColor: color, fillOpacity: 1 }).addTo(map)
           .bindTooltip(leg.origin || '', { permanent: false });
         L.circleMarker(coords[coords.length - 1], { color, radius: 4, fillColor: color, fillOpacity: 1 }).addTo(map)
@@ -1338,23 +1853,52 @@ function renderGlobalMap() {
         L.circleMarker([leg.destLat, leg.destLon], { color: '#888', radius: 5, fillColor: '#888', fillOpacity: 0.6 }).addTo(map)
           .bindTooltip(leg.dest, { permanent: false });
       }
+      // Add intermediate station markers from service stops
+      if (svc && svc.stops) {
+        const stops = Array.isArray(svc.stops) ? svc.stops : [];
+        for (const st of stops) {
+          if (st.lat == null || st.lon == null) continue;
+          const stKey = st.name || `${st.lat},${st.lon}`;
+          if (addedStations.has(stKey)) continue;
+          addedStations.add(stKey);
+          bounds.push([st.lat, st.lon]);
+          L.circleMarker([st.lat, st.lon], { color: '#666', radius: 3, fillColor: '#666', fillOpacity: 0.5 }).addTo(map)
+            .bindTooltip(st.name || '', { permanent: false });
+        }
+      }
     });
   });
 
   if (bounds.length) map.fitBounds(bounds, { padding: [30, 30] });
 }
 
+function toggleMapSize() {
+  const gm = document.getElementById('global-map');
+  const rm = document.getElementById('route-map');
+  const collapsed = gm.classList.toggle('collapsed') || rm.classList.toggle('collapsed');
+  const btn = document.getElementById('map-toggle-btn');
+  btn.textContent = collapsed ? '⛶' : '⛶';
+  if (state._globalMap) setTimeout(() => state._globalMap.invalidateSize(), 100);
+  if (state._map) setTimeout(() => state._map.invalidateSize(), 100);
+}
+
 function _collectRouteCoords(r) {
   const coords = [];
   for (const leg of r.legs) {
-    const svcIdx = leg.selectedServices.length > 0 ? leg.selectedServices[0] : -1;
-    const svc = svcIdx >= 0 && leg.services[svcIdx] ? leg.services[svcIdx] : null;
-    if (svc && svc.geometry && svc.geometry.length) {
-      svc.geometry.forEach(pt => coords.push([pt.lat, pt.lon]));
-      } else if ((leg.mode === 'plane' || leg.type === 'flight') && leg.originLat != null && leg.destLat != null) {
+  const svcIdx = leg.selectedServices.length > 0 ? leg.selectedServices[0] : -1;
+  const svc = svcIdx >= 0 && leg.services[svcIdx] ? leg.services[svcIdx] : null;
+  const enrichedGeo = (svc && svc.enrichedGeometry) || leg._enrichedGeometry;
+  if (enrichedGeo && enrichedGeo.length) {
+    enrichedGeo.forEach(pt => coords.push([pt.lat, pt.lon]));
+  } else if ((leg.mode === 'plane' || leg.type === 'flight') && leg.originLat != null && leg.destLat != null) {
         const pts = _flightArc(leg.originLat, leg.originLon, leg.destLat, leg.destLon);
         pts.forEach(p => coords.push(p));
-      } else if (leg.originLat != null && leg.destLat != null) {
+    } else if (svc && svc.geometry && svc.geometry.length) {
+      svc.geometry.forEach(pt => coords.push([pt.lat, pt.lon]));
+    } else if (svc && svc.origin_lat != null && svc.dest_lat != null) {
+      coords.push([svc.origin_lat, svc.origin_lon]);
+      coords.push([svc.dest_lat, svc.dest_lon]);
+    } else if (leg.originLat != null && leg.destLat != null) {
       coords.push([leg.originLat, leg.originLon]);
       coords.push([leg.destLat, leg.destLon]);
     }
@@ -1378,6 +1922,39 @@ function zoomToAllRoutes() {
   const allCoords = [];
   for (const r of routes) allCoords.push(..._collectRouteCoords(r));
   if (allCoords.length) map.fitBounds(allCoords, { padding: [30, 30] });
+}
+
+function _collectLegCoords(leg) {
+  const svcIdx = leg.selectedServices.length > 0 ? leg.selectedServices[0] : -1;
+  const svc = svcIdx >= 0 && leg.services[svcIdx] ? leg.services[svcIdx] : null;
+  const enrichedGeo = (svc && svc.enrichedGeometry) || leg._enrichedGeometry;
+  if (enrichedGeo && enrichedGeo.length) {
+    return enrichedGeo.map(pt => [pt.lat, pt.lon]);
+  }
+  if ((leg.mode === 'plane' || leg.type === 'flight') && leg.originLat != null && leg.destLat != null) {
+    return _flightArc(leg.originLat, leg.originLon, leg.destLat, leg.destLon);
+  }
+  if (svc && svc.geometry && svc.geometry.length) {
+    return svc.geometry.map(pt => [pt.lat, pt.lon]);
+  }
+  if (svc && svc.origin_lat != null && svc.dest_lat != null) {
+    return [[svc.origin_lat, svc.origin_lon], [svc.dest_lat, svc.dest_lon]];
+  }
+  if (leg.originLat != null && leg.destLat != null) {
+    return [[leg.originLat, leg.originLon], [leg.destLat, leg.destLon]];
+  }
+  return [];
+}
+
+function zoomToLeg(routeId, legId) {
+  const map = state._globalMap;
+  if (!map) return;
+  const r = dirRoutes().find(ro => ro.id === routeId);
+  if (!r) return;
+  const leg = r.legs.find(l => l.id === legId);
+  if (!leg) return;
+  const coords = _collectLegCoords(leg);
+  if (coords.length) map.fitBounds(coords, { padding: [40, 40] });
 }
 
 // ---- Station preview on map from autocomplete hover ----
@@ -1404,19 +1981,13 @@ function clearPreviewStation() {
 function renderTimelineEntry(l, routeId, idx) {
   normalizeLeg(l);
   const isExpanded = state._expandedLegIds && state._expandedLegIds.has(l.id);
+  const legType = l.type || 'transit';
+  const searchable = legType === 'transit' || legType === 'unincluded';
   const dirClass = state.currentDir;
   const icon = modeIcon(l.type, l.mode);
   const dotColor = modeColor(l.type, l.mode);
 
   const durHtml = l.departure && l.arrival ? (() => {
-    if (l.type === 'stay') {
-      const [dh, dm] = l.departure.split(':').map(Number);
-      const [ah, am] = l.arrival.split(':').map(Number);
-      let durMin = (ah * 60 + am) - (dh * 60 + dm);
-      if (durMin < 0) durMin += 24 * 60;
-      const nights = Math.round(durMin / (24 * 60));
-      return `<span class="duration-badge">${nights === 1 ? '1 night' : nights + ' nights'}</span>`;
-    }
     const [dh, dm] = l.departure.split(':').map(Number);
     const [ah, am] = l.arrival.split(':').map(Number);
     let durMin = (ah * 60 + am) - (dh * 60 + dm);
@@ -1431,16 +2002,35 @@ function renderTimelineEntry(l, routeId, idx) {
   const svc = selIdx >= 0 && l.services[selIdx] ? l.services[selIdx] : null;
   const distKm = svc?.distance_km || l.distance_km;
   const distHtml = distKm ? ` <span class="duration-badge">${distKm.toFixed(0)}km</span>` : '';
+  const emHtml = _emissionsBadge(svc) || _emissionsBadge(l);
+  const durMin = _durationMin(l.departure, l.arrival);
+  const avgKmh = durMin && distKm ? distKm / (durMin / 60) : 0;
+  const maxKmh = svc?.max_speed_kmh || l._maxSpeed || 0;
+  const speedHtml = avgKmh || maxKmh
+    ? ` <span class="duration-badge" title="${maxKmh ? 'max ' + Math.round(maxKmh) + ' km/h' : 'average speed'}">${avgKmh ? 'avg ' + Math.round(avgKmh) + 'km/h' : ''}${avgKmh && maxKmh ? ' · ' : ''}${maxKmh ? 'max ' + Math.round(maxKmh) + 'km/h' : ''}</span>`
+    : '';
+
+  const geoSource = svc?._geometrySource || l._geometrySource;
+  const hasPendingEnrich = svc && !geoSource && (
+    (svc.origin_lat != null && svc.dest_lat != null)
+  );
+  const geoBadge = geoSource === 'railway_db'
+    ? ' <span class="geo-badge solved" title="Real OSM rail geometry">OSM</span>'
+    : geoSource === 'osm_failed'
+      ? ' <span class="geo-badge arc" title="OSM geometry failed; inspect server/debug logs">OSM failed</span>'
+      : hasPendingEnrich
+        ? ' <span class="geo-badge pending" title="Awaiting enrichment">Enrich...</span>'
+        : '';
 
   const expandedClass = isExpanded ? ' expanded' : '';
   let html = `
     <div class="timeline-entry${expandedClass}" data-leg-id="${l.id}">
       <div class="timeline-line"></div>
       <div class="timeline-dot ${dirClass}" style="background:${dotColor}"></div>
-      <div class="timeline-summary ${dirClass}${expandedClass}" onclick="event.stopPropagation();toggleLegExpand(${l.id})">
+      <div class="timeline-summary ${dirClass}${expandedClass}" onclick="event.stopPropagation();toggleLegExpand(${l.id})" onmouseenter="zoomToLeg('${routeId}',${l.id})" onmouseleave="zoomToAllRoutes()">
         <span class="time">${l.departure || ''}</span>
         <span class="stations">${l.origin || '?'} → ${l.dest || '?'}</span>
-        <span class="meta">${durHtml}${distHtml} <span style="font-size:0.85rem">${icon}</span>
+        <span class="meta">${durHtml}${distHtml}${speedHtml}${emHtml}${geoBadge} <span style="font-size:0.85rem">${icon}</span>
           ${!l.originLat || !l.destLat ? `<span class="fixme" title="Station coordinates missing — map can't show this leg">⚠ fixme</span>` : ''}
         </span>
         <span class="expand-icon">▼</span>
@@ -1465,36 +2055,30 @@ function renderTimelineEntry(l, routeId, idx) {
           </div>
           <div><label>Dep</label><input type="time" value="${l.departure}" oninput="updateLeg('${routeId}',${l.id},'departure',this.value)"></div>
           <div><label>Arr</label><input type="time" value="${l.arrival}" oninput="updateLeg('${routeId}',${l.id},'arrival',this.value)"></div>
-          <button class="btn-secondary btn-sm" style="align-self:flex-end;margin-bottom:0" onclick="findServices('${routeId}',${l.id})">Find</button>
+          ${searchable ? `<button class="btn-secondary btn-sm" style="align-self:flex-end;margin-bottom:0" onclick="findServices('${routeId}',${l.id})">Find</button>` : ''}
         </div>
-        <div class="service-list">${l.services.map((s, i) => `
-          <span class="service-chip${l.selectedServices.includes(i) ? ' selected' : ''}"
-                onclick="toggleService('${routeId}', ${l.id}, ${i})" title="${s.operator} ${s.display_name}">
-            ${s.departure} ${s.display_name} → ${s.arrival}
-          </span>`).join('')}
-          ${l._offsetMinutes ? `
-          <div class="offset-indicator">
-            <span class="offset-info">${l._fallbackDate} timetable · ${l._offsetMinutes >= 0 ? '+' : ''}${l._offsetMinutes}min offset</span>
-            <button class="btn-sm offset-btn ${l._useExactTimes !== false ? 'active' : ''}" onclick="setTimeOffset('${routeId}',${l.id},true)">Exact</button>
-            <button class="btn-sm offset-btn ${l._useExactTimes === false ? 'active' : ''}" onclick="setTimeOffset('${routeId}',${l.id},false)">Shifted</button>
-          </div>` : ''}
-        </div>
+        
+        ${searchable ? `<div class="service-list">${svc ? `
+          <span class="service-chip selected"
+                title="${svc.operator} ${svc.display_name}">
+            ${svc.departure} ${svc.display_name} → ${svc.arrival}
+          </span>
+          ${l._offsetMinutes ? `<div class="offset-indicator">${l._fallbackDate} timetable · service runs ${Math.abs(l._offsetMinutes)} min ${l._offsetMinutes < 0 ? 'later' : 'earlier'} than your time</div>` : ''}`
+          : `<span class="service-chip" style="border:1px dashed var(--border);background:transparent;color:var(--muted)">No service selected</span>`}
+        </div>` : `<div class="service-list"><span class="service-chip" style="border:1px dashed var(--border);background:transparent;color:var(--muted)">UI-only connector; omitted from generated blog</span></div>`}
         <div class="leg-detail-controls">
           <button class="move-btn" onclick="moveLeg(${l.id}, -1)" title="Move leg up">↑</button>
           <button class="move-btn" onclick="moveLeg(${l.id}, 1)" title="Move leg down">↓</button>
           <div class="leg-type-mode">
             <select class="leg-type-select" onchange="updateLeg('${routeId}',${l.id},'type',this.value)">
-              <option value="transit"${l.type === 'transit' ? ' selected' : ''}>Transit</option>
-              <option value="transfer"${l.type === 'transfer' ? ' selected' : ''}>Transfer</option>
-              <option value="layover"${l.type === 'layover' ? ' selected' : ''}>Layover</option>
-              <option value="stay"${l.type === 'stay' ? ' selected' : ''}>Stay</option>
-              <option value="unincluded"${l.type === 'unincluded' ? ' selected' : ''}>Unincl.</option>
+              <option value="transit"${l.type === 'transit' ? ' selected' : ''}>Transit service</option>
+              <option value="unincluded"${l.type === 'unincluded' ? ' selected' : ''}>Unincluded / omit</option>
             </select>
             <select class="leg-mode-select" onchange="updateLeg('${routeId}',${l.id},'mode',this.value)">
-              <optgroup label="Rail">
+              <option value="train"${l.mode === 'train' ? ' selected' : ''}>Train (default, all UK/EU rail)</option>
+              <optgroup label="Specialised Rail">
                 <option value="high_speed"${l.mode === 'high_speed' ? ' selected' : ''}>High Speed</option>
-                <option value="train"${l.mode === 'train' ? ' selected' : ''}>Train</option>
-                <option value="regional"${l.mode === 'regional' ? ' selected' : ''}>Regional</option>
+                <option value="regional"${l.mode === 'regional' ? ' selected' : ''}>Regional only</option>
                 <option value="subway"${l.mode === 'subway' ? ' selected' : ''}>Underground</option>
                 <option value="tram"${l.mode === 'tram' ? ' selected' : ''}>Tram</option>
                 <option value="light_rail"${l.mode === 'light_rail' ? ' selected' : ''}>Light Rail</option>
@@ -1536,7 +2120,7 @@ async function searchStation(inputId, routeId, legId, field) {
   const data = await res.json();
   drop.innerHTML = data.map(s =>
     `<div class="dropdown-item" data-station-name="${s.name.replace(/"/g, '&quot;')}" data-station-id="${s.id}" data-station-lat="${s.lat ?? 0}" data-station-lon="${s.lon ?? 0}" onmousedown="selectStation('${inputId}', '${routeId}', ${legId}, '${field}', '${s.name.replace(/'/g, "\\'")}', '${s.id}', ${s.lat ?? 0}, ${s.lon ?? 0})" onmouseenter="previewStation(${s.lat ?? 0}, ${s.lon ?? 0}, '${s.name.replace(/'/g, "\\'")}')" onmouseleave="clearPreviewStation()">
-      ${s.name} <span class="text-muted">${s.id}</span>
+      ${s.name} <span class="text-muted">${_stationType(s.id)}</span>
     </div>`
   ).join('');
   drop.classList.add('open');
@@ -1549,6 +2133,12 @@ function selectStation(inputId, routeId, legId, field, name, id, lat, lon) {
   updateLeg(routeId, legId, field + 'Id', id);
   updateLeg(routeId, legId, field + 'Lat', lat && lat !== 0 ? lat : null);
   updateLeg(routeId, legId, field + 'Lon', lon && lon !== 0 ? lon : null);
+  // Clear stale services when station changes
+  const leg = findLeg(routeId, legId);
+  if (leg && leg.services && leg.services.length) {
+    leg.services = [];
+    leg.selectedServices = [];
+  }
   renderTimeline();
 }
 
@@ -1598,19 +2188,130 @@ function autocompleteKeyboard(event, inputId, field, routeId, legId) {
 
 // ---- Service search ----
 function findLeg(routeId, legId) {
-  const route = dirRoutes().find(r => r.id === routeId);
+  const route = dirRoutes().find(r => String(r.id) === String(routeId));
   if (!route) return null;
   return route.legs.find(l => l.id === legId) || null;
+}
+
+function _serviceGroupKey(s) {
+  return [s.operator || '', s.departure || '', s.arrival || '', s.origin || '', s.destination || '', (s.changes || []).join('|')].join('::');
+}
+
+function _routeGroupsFromData(data) {
+  const routeGroups = [];
+  const seen = new Set();
+  for (const r of data.routes || []) {
+    const transitLegs = r.legs.filter(l => l.mode !== 'WALK');
+    if (!transitLegs.length) continue;
+    const first = transitLegs[0];
+    const last = transitLegs[transitLegs.length - 1];
+    const changes = [];
+    for (let i = 0; i < transitLegs.length - 1; i++) {
+      changes.push(transitLegs[i].destination_name || transitLegs[i].destination || '');
+    }
+    const key = (first.operator || '') + (first.departure || '') + (last.arrival || '') + changes.join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const allStops = [];
+    for (const tl of transitLegs) {
+      if (tl.stops) allStops.push(...tl.stops);
+    }
+
+    const distanceKm = transitLegs.reduce((sum, tl) => sum + (tl.distance_km || 0), 0);
+    const totalEmissions = transitLegs.reduce((sum, tl) => sum + (tl.emissions_kg || 0), 0);
+    const minEmissions = transitLegs.reduce((sum, tl) => sum + (tl.emissions_min_kg ?? tl.emissions_kg ?? 0), 0);
+    const maxEmissions = transitLegs.reduce((sum, tl) => sum + (tl.emissions_max_kg ?? tl.emissions_kg ?? 0), 0);
+    const operationalEmissions = transitLegs.reduce((sum, tl) => sum + (tl.emissions_operational_kg || 0), 0);
+    const lifecycleEmissions = transitLegs.reduce((sum, tl) => sum + (tl.emissions_lifecycle_kg || 0), 0);
+    const rfEmissions = transitLegs.reduce((sum, tl) => sum + (tl.emissions_radiative_forcing_kg || 0), 0);
+    const firstRate = distanceKm ? totalEmissions * 1000 / distanceKm : (first.emissions_rate_g_per_km || 0);
+    const durMin = _durationMin(first.departure, last.arrival);
+    const avgSpeed = durMin && distanceKm ? distanceKm / (durMin / 60) : 0;
+    const maxSpeed = transitLegs.reduce((max, tl) => Math.max(max, tl.max_speed_kmh || 0), 0);
+    const geometry = [];
+    for (const tl of transitLegs) {
+      if (!tl.geometry || !tl.geometry.length) continue;
+      if (!geometry.length) geometry.push(...tl.geometry);
+      else geometry.push(...tl.geometry.slice(1));
+    }
+    routeGroups.push({
+      legs: transitLegs,
+      origin: first.origin_name || first.origin || '',
+      destination: last.destination_name || last.destination || '',
+      departure: first.departure || '',
+      arrival: last.arrival || '',
+      operator: first.operator || '',
+      display_name: first.display_name || '',
+      origin_name: first.origin_name || '',
+      destination_name: last.destination_name || '',
+      origin_lat: first.origin_lat,
+      origin_lon: first.origin_lon,
+      dest_lat: last.dest_lat,
+      dest_lon: last.dest_lon,
+      origin_platform: first.origin_platform || null,
+      destination_platform: last.destination_platform || null,
+      stops: allStops,
+      geometry,
+      distance_km: distanceKm,
+      duration_min: durMin,
+      average_speed_kmh: avgSpeed,
+      max_speed_kmh: maxSpeed,
+      emissions_kg: totalEmissions,
+      emissions_min_kg: minEmissions,
+      emissions_max_kg: maxEmissions,
+      emissions_operational_kg: operationalEmissions,
+      emissions_lifecycle_kg: lifecycleEmissions,
+      emissions_radiative_forcing_kg: rfEmissions,
+      emissions_rate_g_per_km: firstRate,
+      emissions_rate_min_g_per_km: distanceKm ? minEmissions * 1000 / distanceKm : (first.emissions_rate_min_g_per_km || 0),
+      emissions_rate_max_g_per_km: distanceKm ? maxEmissions * 1000 / distanceKm : (first.emissions_rate_max_g_per_km || 0),
+      emissions_confidence: transitLegs.some(tl => tl.emissions_confidence === 'low') ? 'low' : transitLegs.some(tl => tl.emissions_confidence === 'medium') ? 'medium' : (first.emissions_confidence || 'unknown'),
+      emissions_distance_source: transitLegs.some(tl => tl.emissions_distance_source !== first.emissions_distance_source) ? 'mixed' : (first.emissions_distance_source || 'scheduled'),
+      emissions_traction: transitLegs.some(tl => tl.emissions_traction !== first.emissions_traction) ? 'mixed' : (first.emissions_traction || ''),
+      emissions_traction_source: transitLegs.some(tl => tl.emissions_traction_source !== first.emissions_traction_source) ? 'mixed' : (first.emissions_traction_source || ''),
+      emissions_countries: [...new Set(transitLegs.flatMap(tl => tl.emissions_countries || []))],
+      emissions_grid_intensity_g_per_kwh: first.emissions_grid_intensity_g_per_kwh || null,
+      emissions_lifecycle_uplift_pct: first.emissions_lifecycle_uplift_pct || 0,
+      emissions_radiative_forcing_multiplier: Math.max(...transitLegs.map(tl => tl.emissions_radiative_forcing_multiplier || 1)),
+      emissions_assumptions: [...new Set(transitLegs.flatMap(tl => tl.emissions_assumptions || []))],
+      changes: changes,
+    });
+  }
+  routeGroups.sort((a, b) => (a.departure || '00:00').localeCompare(b.departure || '00:00'));
+  return routeGroups;
+}
+
+function _sfSetPageClosest() {
+  const leg = findLeg(_sf_routeId, _sf_legId);
+  const depInput = leg?.departure;
+  if (!depInput || !_sf_services.length) { _sf_page = 0; return; }
+  let bestIdx = 0, bestAbs = Infinity;
+  for (let i = 0; i < _sf_services.length; i++) {
+    if (!_sf_services[i].departure) continue;
+    const diff = Math.abs(_timeDiffMin(_sf_services[i].departure, depInput));
+    if (diff < bestAbs) { bestAbs = diff; bestIdx = i; }
+  }
+  _sf_page = Math.max(0, Math.floor(bestIdx / _sf_perPage));
+}
+
+function _mergeServiceGroups(existing, incoming) {
+  const map = new Map();
+  for (const s of existing.concat(incoming)) map.set(_serviceGroupKey(s), s);
+  return [...map.values()].sort((a, b) => (a.departure || '00:00').localeCompare(b.departure || '00:00'));
 }
 
 async function findServices(routeId, legId) {
   const leg = findLeg(routeId, legId);
   if (!leg || !leg.origin || !leg.dest) return alert('Set origin and destination first');
+  if (!['transit', 'unincluded'].includes(leg.type || 'transit')) return alert('Only route legs can search timetables');
 
   // Show loading overlay
   const overlay = document.getElementById('loading-overlay');
   const msg = document.getElementById('loading-msg');
+  const detail = document.getElementById('loading-detail');
   msg.textContent = `Searching ${leg.origin} → ${leg.dest}...`;
+  if (detail) detail.textContent = 'Querying Transitous timetable API';
   overlay.classList.remove('hidden');
 
   const body = { origin: leg.origin, destination: leg.dest, via: leg.stops, leg_type: leg.type || 'transit', mode: leg.mode || 'train', origin_id: leg.originId || '', dest_id: leg.destId || '' };
@@ -1621,39 +2322,876 @@ async function findServices(routeId, legId) {
     body.time = leg.departure;
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000);
+  try {
+    const res = await fetch('/api/find-routes', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    const data = await res.json();
+
+    if (detail) detail.textContent = 'Processing route results...';
+    if (data.error) { alert(data.error); return; }
+
+    const routeGroups = _routeGroupsFromData(data);
+
+    if (!routeGroups.length) {
+      if (data._warning) return alert(data._warning);
+      return alert('No services found');
+    }
+    showServiceFinder(routeId, legId, routeGroups, data._offset_minutes, data._fallback_date, data._warning, body);
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      alert('Route search timed out. Try again or simplify the route.');
+    } else {
+      alert('Route search failed: ' + (e.message || e));
+    }
+  } finally {
+    overlay.classList.add('hidden');
+  }
+}
+
+const SERVICE_SEARCH_STEP_MIN = 120; // Backend searches +/-1h around the requested time.
+let _sf_routeId = null, _sf_legId = null, _sf_services = [], _sf_offsetMin = null, _sf_fallbackDate = null, _sfSearchBody = null, _sfSearchCursor = null;
+let _sf_page = 0, _sf_perPage = 5;
+
+function _sfStopsHtml(stops) {
+  if (!stops || !stops.length) return '';
+  const names = stops.map(s => s.name).filter(Boolean);
+  if (!names.length) return '';
+  return names.join(' · ');
+}
+
+function renderSfPage() {
+  const leg = findLeg(_sf_routeId, _sf_legId);
+  const totalPages = Math.ceil(_sf_services.length / _sf_perPage) || 1;
+  const start = _sf_page * _sf_perPage;
+  const pageSvcs = _sf_services.slice(start, start + _sf_perPage);
+
+  // Header
+  const dateInput = document.getElementById('trip-date');
+  const depInput = leg.departure;
+  let subInfo = '';
+  if (dateInput.value || depInput) {
+    if (dateInput.value) subInfo += dateInput.value;
+    if (depInput) subInfo += (subInfo ? ' at ' : '') + depInput;
+  }
+  if (_sf_fallbackDate) {
+    if (_sf_offsetMin) {
+      const dir = _sf_offsetMin > 0 ? 'earlier' : 'later';
+      subInfo += (subInfo ? '<br>' : '') +
+        `<span style="color:#FFC107">Fallback: ${Math.abs(_sf_offsetMin)} min ${dir} (${_sf_fallbackDate} timetable)</span>`;
+    } else {
+      subInfo += (subInfo ? '<br>' : '') +
+        `<span style="color:#FFC107">Using ${_sf_fallbackDate} timetable</span>`;
+    }
+  }
+  if (_sf_services.length) {
+    const firstSvc = _sf_services[0];
+    const dur = firstSvc.duration_min != null ? _durationLabel(firstSvc.duration_min) : '';
+    const bits = [dur].filter(Boolean).join(' · ');
+    if (bits) subInfo += (subInfo ? '<br>' : '') + bits;
+  }
+
+  let html = `<div class="sf-header-big">${leg.origin} → ${leg.dest}</div>`;
+  if (subInfo) html += `<div class="sf-header-sub">${subInfo}</div>`;
+
+  // Via + recalulate
+  html += `<div class="sf-via-row">
+    <input id="sf-via-input" placeholder="Via stations (comma-separated)..." value="${(leg.stops || []).join(', ')}">
+    <button class="btn-sm btn-outline" onclick="recalculateVia()">Refresh</button>
+  </div>`;
+
+  // Service rows
+  for (const [i, s] of pageSvcs.entries()) {
+    const idx = start + i;
+    const stopsHtml = _sfStopsHtml(s.stops);
+    const depDiff = depInput && s.departure && s.departure !== depInput;
+    const changesHtml = (s.changes && s.changes.length)
+      ? `<span class="sf-changes">Change at ${s.changes.join(', ')}</span>`
+      : '';
+    // Show multiple legs as route path: origin → change1 → ... → destination
+    let routePath = s.origin;
+    if (s.changes && s.changes.length) {
+      routePath += ' → ' + s.changes.join(' → ');
+    }
+    routePath += ' → ' + s.destination;
+    const svcRoute = s.display_name
+      ? `${routePath} &middot; ${s.display_name}`
+      : routePath;
+    const dur = s.duration_min != null ? _durationLabel(s.duration_min) : '';
+    html += `<div class="sf-row">
+      <div class="sf-info">
+        <span class="sf-time">${s.departure || '?'} → ${s.arrival || '?'}${dur ? ' · ' + dur : ''}</span>
+        <span class="sf-name">${svcRoute} <span class="sf-op">${s.operator || ''}</span></span>`;
+    if (changesHtml) html += changesHtml;
+    if (stopsHtml) html += `<span class="sf-stops">${stopsHtml}</span>`;
+    html += `</div>
+      <div class="sf-actions">`;
+    if (depDiff) {
+      const offsetMin = _timeDiffMin(s.departure, depInput);
+      const dirText = offsetMin > 0 ? `${offsetMin}min earlier` : `${-offsetMin}min later`;
+      html += `<div class="sf-offset-note">${dirText}</div>`;
+      html += `<button class="btn-sm btn-outline" onclick="pickService(${idx}, true)">Pick exact route</button>
+        <button class="btn-sm btn-primary" onclick="pickService(${idx}, false)">Pick route offset to ${depInput}</button>`;
+    } else {
+      html += `<button class="btn-sm btn-primary" onclick="pickService(${idx}, true)">Pick</button>`;
+    }
+    html += `</div></div>`;
+  }
+
+  const prevLabel = _sf_page <= 0 ? '← Search earlier' : '← Prev';
+  const nextLabel = _sf_page >= totalPages - 1 ? 'Search later →' : 'Next →';
+  const prevAction = _sf_page <= 0 ? 'expandServiceSearch(-1)' : 'sfPage(-1)';
+  const nextAction = _sf_page >= totalPages - 1 ? 'expandServiceSearch(1)' : 'sfPage(1)';
+  html += `<div style="display:flex;gap:6px;justify-content:center;margin-top:8px">
+    <button class="btn-sm" onclick="${prevAction}">${prevLabel}</button>
+    <span style="font-size:0.75rem;color:var(--muted);align-self:center">${_sf_page + 1} / ${totalPages}</span>
+    <button class="btn-sm" onclick="${nextAction}">${nextLabel}</button>
+  </div>`;
+
+  document.getElementById('sf-body').innerHTML = html;
+}
+
+async function expandServiceSearch(direction) {
+  if (!_sfSearchBody) return;
+  const leg = findLeg(_sf_routeId, _sf_legId);
+  if (!leg) return;
+  const overlay = document.getElementById('loading-overlay');
+  const msg = document.getElementById('loading-msg');
+  const detail = document.getElementById('loading-detail');
+  const beforeCount = _sf_services.length;
+  if (!_sfSearchCursor) _sfSearchCursor = _makeServiceSearchCursor(_sfSearchBody, leg);
+  const cursorKey = direction < 0 ? 'earlier' : 'later';
+  const searchCentre = _sfSearchCursor[cursorKey] + (direction < 0 ? -SERVICE_SEARCH_STEP_MIN : SERVICE_SEARCH_STEP_MIN);
+  _sfSearchCursor[cursorKey] = searchCentre;
+  const body = _searchBodyForCentre(_sfSearchBody, _sfSearchCursor, searchCentre);
+  if (msg) msg.textContent = direction < 0 ? 'Searching earlier services...' : 'Searching later services...';
+  if (detail) detail.textContent = `${leg.origin} → ${leg.dest} around ${body.date ? body.date + ' ' : ''}${body.time}`;
+  if (overlay) overlay.classList.remove('hidden');
   try {
     const res = await fetch('/api/find-routes', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body),
     });
     const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    const incoming = _routeGroupsFromData(data);
+    if (!incoming.length) {
+      alert((direction < 0 ? 'No earlier services found' : 'No later services found') + ` around ${body.date ? body.date + ' ' : ''}${body.time}. Next click will continue ${direction < 0 ? 'earlier' : 'later'}.`);
+      return;
+    }
+    const previousKey = _sf_services[Math.max(0, _sf_page * _sf_perPage)] ? _serviceGroupKey(_sf_services[Math.max(0, _sf_page * _sf_perPage)]) : null;
+    _sf_services = _mergeServiceGroups(_sf_services, incoming);
+    if (direction < 0) {
+      if (beforeCount === _sf_services.length) {
+        alert(`No new earlier services found around ${body.date ? body.date + ' ' : ''}${body.time}. Next click will continue earlier.`);
+        return;
+      }
+      const newIndex = previousKey ? _sf_services.findIndex(s => _serviceGroupKey(s) === previousKey) : 0;
+      _sf_page = Math.max(0, Math.floor(Math.max(0, newIndex) / _sf_perPage));
+    } else if (beforeCount === _sf_services.length) {
+      alert(`No new later services found around ${body.date ? body.date + ' ' : ''}${body.time}. Next click will continue later.`);
+    } else {
+      const oldLast = beforeCount - 1;
+      _sf_page = Math.max(0, Math.floor(Math.min(oldLast + 1, _sf_services.length - 1) / _sf_perPage));
+    }
+    renderSfPage();
+  } catch (e) {
+    alert('Route search failed: ' + (e.message || e));
+  } finally {
+    if (overlay) overlay.classList.add('hidden');
+  }
+}
 
-    if (data.error) return alert(data.error);
+function sfPage(delta) {
+  _sf_page = Math.max(0, Math.min(Math.ceil(_sf_services.length / _sf_perPage) - 1, _sf_page + delta));
+  renderSfPage();
+}
 
-    leg.services = [];
-    const seen = new Set();
-    for (const r of data.routes) {
-      for (const l of r.legs) {
-        const key = l.operator + l.display_name + l.departure;
-        if (!seen.has(key) && l.mode !== 'WALK') {
-          seen.add(key);
-          leg.services.push(l);
+function showServiceFinder(routeId, legId, services, offsetMin, fallbackDate, warning, searchBody) {
+  _sf_routeId = routeId;
+  _sf_legId = legId;
+  _sf_services = services;
+  _sf_offsetMin = offsetMin || null;
+  _sf_fallbackDate = fallbackDate || null;
+  _sfSearchBody = searchBody ? { ...searchBody } : null;
+  _sfSearchCursor = _sfSearchBody ? _makeServiceSearchCursor(_sfSearchBody, findLeg(routeId, legId)) : null;
+  _sfSetPageClosest();
+
+  const warn = document.getElementById('sf-warning');
+  if (warning) {
+    warn.style.display = 'block';
+    warn.textContent = warning;
+  } else {
+    warn.style.display = 'none';
+    warn.textContent = '';
+  }
+
+  const header = document.getElementById('sf-header');
+  header.textContent = 'Select service';
+  renderSfPage();
+  document.getElementById('service-finder-modal').classList.remove('hidden');
+}
+
+function closeServiceFinder() {
+  _sf_routeId = null;
+  _sf_legId = null;
+  _sf_services = [];
+  _sf_offsetMin = null;
+  _sf_fallbackDate = null;
+  _sfSearchBody = null;
+  _sfSearchCursor = null;
+  _sf_page = 0;
+  document.getElementById('service-finder-modal').classList.add('hidden');
+}
+
+function _shiftTime(t, offsetMin) {
+  if (!t || !offsetMin) return t;
+  const [h, m] = t.split(':').map(Number);
+  let total = h * 60 + m + offsetMin;
+  if (total < 0) total += 1440;
+  if (total >= 1440) total -= 1440;
+  return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+}
+
+function _addMinutes(t, offsetMin) {
+  if (!t) return t;
+  const [h, m] = t.split(':').map(Number);
+  let total = (h * 60 + m + offsetMin) % 1440;
+  if (total < 0) total += 1440;
+  return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+}
+
+function _timeToMinutes(t) {
+  const [h, m] = (t || '08:00').split(':').map(Number);
+  return h * 60 + m;
+}
+
+function _dateToDay(dateStr) {
+  if (!dateStr) return 0;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
+}
+
+function _dayToDate(day) {
+  const d = new Date(day * 86400000);
+  return d.toISOString().slice(0, 10);
+}
+
+function _absSearchMinutes(dateStr, timeStr) {
+  return _dateToDay(dateStr) * 1440 + _timeToMinutes(timeStr);
+}
+
+function _timeFromAbsMinutes(absMin) {
+  let min = absMin % 1440;
+  if (min < 0) min += 1440;
+  return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0');
+}
+
+function _makeServiceSearchCursor(body, leg) {
+  const date = body.date || document.getElementById('trip-date').value || '';
+  const time = body.time || leg?.departure || '08:00';
+  const centre = _absSearchMinutes(date, time);
+  return { date, hasDate: !!date, earlier: centre, later: centre };
+}
+
+function _searchBodyForCentre(baseBody, cursor, centre) {
+  const body = { ...baseBody, time: _timeFromAbsMinutes(centre) };
+  if (cursor.hasDate) body.date = _dayToDate(Math.floor(centre / 1440));
+  return body;
+}
+
+function _timeDiffMin(t1, t2) {
+  const [h1, m1] = t1.split(':').map(Number);
+  const [h2, m2] = t2.split(':').map(Number);
+  return (h1 * 60 + m1) - (h2 * 60 + m2);
+}
+
+function _durationMin(dep, arr) {
+  if (!dep || !arr) return null;
+  const [dh, dm] = dep.split(':').map(Number);
+  const [ah, am] = arr.split(':').map(Number);
+  let min = (ah * 60 + am) - (dh * 60 + dm);
+  if (min < 0) min += 24 * 60;
+  return min;
+}
+
+function _durationLabel(min) {
+  if (min == null) return '';
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return h + 'h' + (m ? m + 'm' : '');
+}
+
+function pickService(idx, exact) {
+  const leg = findLeg(_sf_routeId, _sf_legId);
+  if (!leg || idx < 0 || idx >= _sf_services.length) return;
+
+  const routeGroup = _sf_services[idx];
+  const route = dirRoutes().find(r => r.id === _sf_routeId);
+  if (!route) return;
+
+  const legIdx = route.legs.findIndex(l => l.id === _sf_legId);
+  if (legIdx < 0) return;
+
+  const firstLeg = routeGroup.legs[0];
+  leg.services = _sf_services.slice();
+  leg.selectedServices = [idx];
+  if (leg._enrichedGeometry) delete leg._enrichedGeometry;
+
+  if (firstLeg.origin_lat != null) { leg.originLat = firstLeg.origin_lat; leg.originLon = firstLeg.origin_lon; }
+  if (firstLeg.dest_lat != null) { leg.destLat = firstLeg.dest_lat; leg.destLon = firstLeg.dest_lon; }
+  if (firstLeg.emissions_kg != null) { leg._emissionsKg = firstLeg.emissions_kg; }
+  if (firstLeg.emissions_rate_g_per_km != null) { leg._emissionsRate = firstLeg.emissions_rate_g_per_km; }
+  _storeLegEmissions(leg, {
+    kg: firstLeg.emissions_kg,
+    min_kg: firstLeg.emissions_min_kg,
+    max_kg: firstLeg.emissions_max_kg,
+    operational_kg: firstLeg.emissions_operational_kg,
+    lifecycle_kg: firstLeg.emissions_lifecycle_kg,
+    radiative_forcing_kg: firstLeg.emissions_radiative_forcing_kg,
+    rate_g_per_km: firstLeg.emissions_rate_g_per_km,
+    rate_min_g_per_km: firstLeg.emissions_rate_min_g_per_km,
+    rate_max_g_per_km: firstLeg.emissions_rate_max_g_per_km,
+    confidence: firstLeg.emissions_confidence,
+    distance_source: firstLeg.emissions_distance_source,
+    traction: firstLeg.emissions_traction,
+    traction_source: firstLeg.emissions_traction_source,
+    grid_intensity_g_per_kwh: firstLeg.emissions_grid_intensity_g_per_kwh,
+    lifecycle_uplift_pct: firstLeg.emissions_lifecycle_uplift_pct,
+    radiative_forcing_multiplier: firstLeg.emissions_radiative_forcing_multiplier,
+    assumptions: firstLeg.emissions_assumptions,
+  });
+  if (firstLeg.max_speed_kmh != null) { leg._maxSpeed = firstLeg.max_speed_kmh; }
+
+  const enteredDep = leg.departure;
+  let offsetMin = 0;
+  if (!exact && enteredDep && firstLeg.departure && enteredDep !== firstLeg.departure) {
+    offsetMin = _timeDiffMin(enteredDep, firstLeg.departure);
+    leg.departure = enteredDep;
+    leg.arrival = _shiftTime(firstLeg.arrival, offsetMin);
+  } else {
+    leg.departure = firstLeg.departure;
+    leg.arrival = firstLeg.arrival;
+  }
+
+  // Update leg origin/dest to match first transit leg (may differ from searched pair)
+  if (firstLeg.origin_name || firstLeg.origin) {
+    leg.origin = firstLeg.origin_name || firstLeg.origin;
+    leg.originId = firstLeg.origin_id || leg.originId;
+  }
+  if (firstLeg.destination_name || firstLeg.destination) {
+    leg.dest = firstLeg.destination_name || firstLeg.destination;
+    leg.destId = firstLeg.destination_id || leg.destId;
+  }
+
+  // Insert subsequent transit legs after the current leg
+  for (let i = 1; i < routeGroup.legs.length; i++) {
+    const tl = routeGroup.legs[i];
+    const tlDep = offsetMin ? _shiftTime(tl.departure, offsetMin) : tl.departure;
+    const tlArr = offsetMin ? _shiftTime(tl.arrival, offsetMin) : tl.arrival;
+    const newLeg = {
+      id: state.legIdCounter++,
+      type: 'transit',
+      mode: (tl.mode || '').toLowerCase() || 'train',
+      origin: tl.origin_name || tl.origin || '',
+      originId: tl.origin_id || '',
+      dest: tl.destination_name || tl.destination || '',
+      destId: tl.destination_id || '',
+      originLat: tl.origin_lat || null,
+      originLon: tl.origin_lon || null,
+      destLat: tl.dest_lat || null,
+      destLon: tl.dest_lon || null,
+      departure: tlDep || '',
+      arrival: tlArr || '',
+      services: [],
+      selectedServices: [],
+      stops: tl.stops || [],
+      photos: [],
+      notes: '',
+      _emissionsKg: tl.emissions_kg || 0,
+      _emissionsRate: tl.emissions_rate_g_per_km || 0,
+      _maxSpeed: tl.max_speed_kmh || 0,
+    };
+    _storeLegEmissions(newLeg, {
+      kg: tl.emissions_kg,
+      min_kg: tl.emissions_min_kg,
+      max_kg: tl.emissions_max_kg,
+      operational_kg: tl.emissions_operational_kg,
+      lifecycle_kg: tl.emissions_lifecycle_kg,
+      radiative_forcing_kg: tl.emissions_radiative_forcing_kg,
+      rate_g_per_km: tl.emissions_rate_g_per_km,
+      rate_min_g_per_km: tl.emissions_rate_min_g_per_km,
+      rate_max_g_per_km: tl.emissions_rate_max_g_per_km,
+      confidence: tl.emissions_confidence,
+      distance_source: tl.emissions_distance_source,
+      traction: tl.emissions_traction,
+      traction_source: tl.emissions_traction_source,
+      grid_intensity_g_per_kwh: tl.emissions_grid_intensity_g_per_kwh,
+      lifecycle_uplift_pct: tl.emissions_lifecycle_uplift_pct,
+      radiative_forcing_multiplier: tl.emissions_radiative_forcing_multiplier,
+      assumptions: tl.emissions_assumptions,
+    });
+    route.legs.splice(legIdx + i, 0, newLeg);
+    state._expandedLegIds.add(newLeg.id);
+  }
+
+  renderRoutes();
+  closeServiceFinder();
+  setTimeout(() => _enrichLegsGeometry(), 100);
+}
+
+async function recalculateVia() {
+  const viaInput = document.getElementById('sf-via-input');
+  const via = viaInput.value.split(',').map(s => s.trim()).filter(Boolean);
+  const routeId = _sf_routeId;
+  const legId = _sf_legId;
+  const leg = findLeg(_sf_routeId, _sf_legId);
+  leg.stops = via;
+  closeServiceFinder();
+  await findServices(routeId, legId);
+}
+
+function _railwayFmtSeconds(sec) {
+  sec = Math.max(0, Math.round(sec || 0));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h) return h + 'h ' + m + 'm ' + s + 's';
+  if (m) return m + 'm ' + s + 's';
+  return s + 's';
+}
+
+function _railwayFmtBytes(bytes) {
+  bytes = bytes || 0;
+  if (bytes >= 1e9) return (bytes / 1e9).toFixed(2) + ' GB';
+  if (bytes >= 1e6) return (bytes / 1e6).toFixed(1) + ' MB';
+  if (bytes >= 1e3) return (bytes / 1e3).toFixed(1) + ' KB';
+  return bytes + ' B';
+}
+
+function _railwayRegionStatusLine(name, r) {
+  const phase = r.phase || 'queued';
+  const phaseLabel = phase.replace(/_/g, ' ');
+  const lines = [name.toUpperCase() + ': ' + phaseLabel];
+  if (r.phase_detail) lines.push('  ' + r.phase_detail);
+  lines.push('  elapsed ' + _railwayFmtSeconds(r.elapsed_sec) + ', phase ' + _railwayFmtSeconds(r.phase_elapsed_sec));
+  if (phase === 'downloading' || r.dl_downloaded || r.dl_total) {
+    const pct = r.dl_total ? (r.dl_downloaded / r.dl_total * 100).toFixed(1) : 'unknown';
+    const speed = r.dl_rate_bps ? _railwayFmtBytes(r.dl_rate_bps) + '/s' : 'waiting for bytes';
+    const eta = r.dl_eta_sec ? ', ETA ' + _railwayFmtSeconds(r.dl_eta_sec) : '';
+    lines.push('  download ' + pct + '% (' + _railwayFmtBytes(r.dl_downloaded) + ' / ' + _railwayFmtBytes(r.dl_total) + ', ' + speed + eta + ')');
+  }
+  const parse = [];
+  if (r.parse_ways_seen != null) parse.push(Number(r.parse_ways_seen).toLocaleString() + ' ways scanned');
+  if (r.parse_relations_seen != null) parse.push(Number(r.parse_relations_seen).toLocaleString() + ' relations scanned');
+  if (r.parse_railway_ways != null) parse.push(Number(r.parse_railway_ways).toLocaleString() + ' railway ways');
+  if (r.parse_platforms != null) parse.push(Number(r.parse_platforms).toLocaleString() + ' platforms');
+  if (r.parse_route_relations != null) parse.push(Number(r.parse_route_relations).toLocaleString() + ' route relations');
+  if (parse.length) lines.push('  parse counters ' + parse.join(', '));
+  if (phase === 'parsing' && !parse.length) lines.push('  parse counters waiting for osmium callbacks (PBF parsing is a blocking step)');
+  if (r.ready) lines.push('  ready ' + Number(r.ways || 0).toLocaleString() + ' ways, ' + Number(r.platforms || 0).toLocaleString() + ' platforms');
+  return lines.join('\n');
+}
+
+function _railwayStatusProgress(entries) {
+  if (!entries.length) return 0;
+  if (entries.every(([, r]) => r.ready)) return 100;
+  const downloading = entries.find(([, r]) => r.phase === 'downloading' && r.dl_total);
+  if (downloading) {
+    const [, r] = downloading;
+    return Math.min(100, Math.max(0, r.dl_downloaded / r.dl_total * 100));
+  }
+  const active = entries.find(([, r]) => r.loading || !r.ready);
+  const phase = active ? active[1].phase : 'queued';
+  const phasePct = {
+    queued: 2,
+    loading_cache: 12,
+    downloading: 5,
+    parsing: 65,
+    saving_cache: 82,
+    building_index: 92,
+    ready: 100,
+    failed: 100,
+  };
+  return phasePct[phase] || 5;
+}
+
+function _resetRailwayStartupOverlay(message) {
+  const overlay = document.getElementById('railway-startup-overlay');
+  const msg = document.getElementById('railway-startup-msg');
+  const detail = document.getElementById('railway-startup-detail');
+  const barBg = document.getElementById('railway-startup-bar-bg');
+  const bar = document.getElementById('railway-startup-bar');
+  if (msg) msg.textContent = message || 'Loading railway geometry data...';
+  if (detail) {
+    detail.textContent = 'Waiting for first railway status update...';
+    detail._last = '';
+  }
+  if (barBg) barBg.style.display = 'block';
+  if (bar) {
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
+    bar.offsetWidth;
+    bar.style.transition = 'width .5s';
+  }
+  if (overlay) overlay.classList.remove('hidden');
+}
+
+function _renderRailwayStartupStatus(data, message) {
+  const msg = document.getElementById('railway-startup-msg');
+  const detail = document.getElementById('railway-startup-detail');
+  const barBg = document.getElementById('railway-startup-bar-bg');
+  const bar = document.getElementById('railway-startup-bar');
+  const entries = Object.entries((data && data.regions) || {});
+  const active = entries.filter(([, r]) => r.loading || !r.ready);
+  const visible = active.length ? active : entries;
+  if (msg) msg.textContent = message || 'Loading railway geometry data...';
+  if (detail) {
+    const lines = visible.length
+      ? visible.map(([n, r]) => _railwayRegionStatusLine(n, r)).join('\n\n')
+      : 'No railway regions are loading yet.';
+    const pct = _railwayStatusProgress(visible).toFixed(1);
+    const text = 'Overall progress: ' + pct + '%\n\n' + lines;
+    if (text !== (detail._last || '')) {
+      detail.textContent = text;
+      detail._last = text;
+    }
+  }
+  if (barBg) barBg.style.display = 'block';
+  if (bar) bar.style.width = _railwayStatusProgress(visible).toFixed(1) + '%';
+  return entries;
+}
+
+function _resetEnrichProgress(total, segments) {
+  const progOverlay = document.getElementById('enrich-progress-overlay');
+  const progSegments = document.getElementById('enrich-progress-segments');
+  const progCurrent = document.getElementById('enrich-progress-current');
+  const progBar = document.getElementById('enrich-progress-bar');
+  const progText = document.getElementById('enrich-progress-text');
+  if (progSegments) progSegments.innerHTML = segments || '';
+  if (progCurrent) progCurrent.textContent = total ? 'Queued: ' + total + ' segment' + (total === 1 ? '' : 's') : '';
+  if (progText) progText.textContent = '0 / ' + total;
+  if (progBar) {
+    progBar.style.transition = 'none';
+    progBar.style.width = '0%';
+    progBar.offsetWidth;
+    progBar.style.transition = 'width .3s';
+  }
+  if (progOverlay) progOverlay.classList.remove('hidden');
+}
+
+function _fitMapToBounds(coords, padding = [45, 45]) {
+  const map = state._globalMap;
+  if (!map || !coords || !coords.length) return;
+  try {
+    map.fitBounds(coords, { padding });
+  } catch (_) {}
+}
+
+function _geometryDistanceKm(geometry) {
+  if (!geometry || geometry.length < 2) return 0;
+  let dist = 0;
+  for (let i = 1; i < geometry.length; i++) {
+    const p1 = geometry[i - 1], p2 = geometry[i];
+    const dLat = p2.lat - p1.lat, dLon = p2.lon - p1.lon;
+    const a = Math.sin(dLat * Math.PI / 360) ** 2
+      + Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180)
+      * Math.sin(dLon * Math.PI / 360) ** 2;
+    dist += 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+  return dist;
+}
+
+async function _refreshEmissionsForItem(item, geometry, source, tractionHint) {
+  if (!item || !geometry || geometry.length < 2) return;
+  const target = item.svc || item.leg;
+  const distanceKm = _geometryDistanceKm(geometry);
+  if (!distanceKm) return;
+  const res = await fetch('/api/estimate-emissions', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ legs: [{
+      index: 0,
+      mode: item.svc?.mode || item.leg?.mode || 'RAIL',
+      operator: item.svc?.operator || '',
+      distance_km: distanceKm,
+      distance_source: source,
+      traction_hint: tractionHint || null,
+      countries: state.tripCountries || [],
+    }] }),
+  });
+  const data = await res.json();
+  const detail = data.legs && data.legs[0];
+  if (!detail) return;
+  if (target) {
+    _copyEmissionsFields(target, {
+      emissions_kg: detail.kg,
+      emissions_min_kg: detail.min_kg,
+      emissions_max_kg: detail.max_kg,
+      emissions_operational_kg: detail.operational_kg,
+      emissions_lifecycle_kg: detail.lifecycle_kg,
+      emissions_radiative_forcing_kg: detail.radiative_forcing_kg,
+      emissions_rate_g_per_km: detail.rate_g_per_km,
+      emissions_rate_min_g_per_km: detail.rate_min_g_per_km,
+      emissions_rate_max_g_per_km: detail.rate_max_g_per_km,
+      emissions_confidence: detail.confidence,
+      emissions_distance_source: detail.distance_source,
+      emissions_traction: detail.traction,
+      emissions_traction_source: detail.traction_source,
+      emissions_countries: detail.countries,
+      emissions_grid_intensity_g_per_kwh: detail.grid_intensity_g_per_kwh,
+      emissions_lifecycle_uplift_pct: detail.lifecycle_uplift_pct,
+      emissions_radiative_forcing_multiplier: detail.radiative_forcing_multiplier,
+      emissions_assumptions: detail.assumptions,
+    });
+  }
+  _storeLegEmissions(item.leg, detail);
+}
+
+async function _enrichLegsGeometry() {
+  const detail = document.getElementById('loading-detail');
+  if (detail) detail.textContent = 'Enriching track geometry from OpenStreetMap...';
+
+  // Show enrichment spinner
+  const enrichBadge = document.getElementById('enrich-badge');
+  if (enrichBadge) enrichBadge.classList.remove('hidden');
+
+  // Build per-anchor-pair todo items from route legs for granular progress
+  const todo = [];
+  for (const dir of ['outbound', 'inbound']) {
+    for (const r of state[dir].routes) {
+      for (const leg of r.legs) {
+        if (!['transit', 'unincluded'].includes(leg.type || 'transit')) continue;
+        const svcIdx = leg.selectedServices.length > 0 ? leg.selectedServices[0] : -1;
+        const svc = svcIdx >= 0 && leg.services[svcIdx] ? leg.services[svcIdx] : null;
+        if (!svc) continue;
+        if (svc.enrichedGeometry && svc._geometrySource === 'railway_db') continue;
+        if (svc._geometrySource && svc._geometrySource !== 'railway_db') delete svc._geometrySource;
+        if (svc.enrichedGeometry) { delete svc.enrichedGeometry; delete svc._geometrySource; }
+        const oLat = svc.origin_lat, oLon = svc.origin_lon;
+        const dLat = svc.dest_lat, dLon = svc.dest_lon;
+        if (oLat == null || oLon == null || dLat == null || dLon == null) continue;
+
+        // Build anchor stations: origin + intermediate stops + dest
+        const originName = leg.origin || svc.origin_name || '?';
+        const destName = leg.dest || svc.destination_name || '?';
+        const anchors = [{ lat: oLat, lon: oLon, name: originName, platform: svc.origin_platform || null }];
+        for (const st of (svc && svc.stops) || []) {
+          if (st.lat == null || st.lon == null) continue;
+          const sameAsPrev = anchors.length > 0
+            && Math.abs(anchors[anchors.length - 1].lat - st.lat) < 0.0001
+            && Math.abs(anchors[anchors.length - 1].lon - st.lon) < 0.0001;
+          if (!sameAsPrev) anchors.push({ lat: st.lat, lon: st.lon, name: st.name || '?', platform: st.track || null });
+        }
+        if (anchors.length === 0
+          || Math.abs(anchors[anchors.length - 1].lat - dLat) > 0.0001
+          || Math.abs(anchors[anchors.length - 1].lon - dLon) > 0.0001) {
+          anchors.push({ lat: dLat, lon: dLon, name: destName, platform: svc.destination_platform || null });
+        } else if (svc.destination_platform) {
+          anchors[anchors.length - 1].platform = svc.destination_platform;
+        }
+
+        // Per-pair todo items — each will be a separate fetch for real progress
+        for (let ai = 0; ai < anchors.length - 1; ai++) {
+          const a = anchors[ai], b = anchors[ai + 1];
+          todo.push({
+            leg, svc,
+            oLat: a.lat, oLon: a.lon,
+            dLat: b.lat, dLon: b.lon,
+            originPlatform: a.platform || null,
+            destPlatform: b.platform || null,
+            _segName: a.name + ' \u2192 ' + b.name,
+          });
         }
       }
     }
+  }
+  if (!todo.length) {
+    if (enrichBadge) enrichBadge.classList.add('hidden');
+    return;
+  }
 
-    // Store offset metadata if fallback date was used
-    if (data._offset_minutes) {
-      leg._offsetMinutes = data._offset_minutes;
-      leg._fallbackDate = data._fallback_date;
-    } else {
-      delete leg._offsetMinutes;
-      delete leg._fallbackDate;
+  // Show enrichment progress modal with per-pair segment names
+  const progOverlay = document.getElementById('enrich-progress-overlay');
+  const progSegments = document.getElementById('enrich-progress-segments');
+  const progCurrent = document.getElementById('enrich-progress-current');
+  const progBar = document.getElementById('enrich-progress-bar');
+  const progText = document.getElementById('enrich-progress-text');
+  const segmentHtml = todo.map((t, i) => '<div>' + (i + 1) + '. ' + t._segName + '</div>').join('');
+  _resetEnrichProgress(todo.length, segmentHtml);
+  await new Promise(r => setTimeout(r, 50));
+
+  // Per-pair request data: empty stops (we split them), full Transitous geometry for ref clipping
+  const legsData = todo.map(({ leg, svc, oLat, oLon, dLat, dLon, originPlatform, destPlatform }, i) => ({
+    index: i,
+    origin_lat: oLat, origin_lon: oLon,
+    dest_lat: dLat, dest_lon: dLon,
+    origin_platform: originPlatform,
+    dest_platform: destPlatform,
+    stops: [],
+    geometry: svc ? svc.geometry || [] : [],
+    leg_type: leg.type || 'transit',
+  }));
+
+  const enrichController = new AbortController();
+  const enrichTimeout = setTimeout(() => enrichController.abort(), 240000);
+  let enrichedCount = 0;
+  let loadingCount = 0;
+  let firstLoading = true;
+  const legGeoMap = new Map();
+
+  try {
+    for (let i = 0; i < todo.length; i++) {
+      const item = todo[i];
+      progCurrent.textContent = 'Enriching: ' + item._segName;
+      _fitMapToBounds([[item.oLat, item.oLon], [item.dLat, item.dLon]]);
+
+      const singleLegReq = [legsData[i]];
+      const res = await fetch('/api/enrich-geometry', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ legs: singleLegReq }),
+        signal: enrichController.signal,
+      });
+      const data = await res.json();
+      const result = data.legs && data.legs.length > 0 ? data.legs[0] : null;
+
+      if (!result) {
+        console.log('enrichGeometry: empty response for ' + item._segName);
+      } else if (result.source === 'loading') {
+        loadingCount++;
+        if (firstLoading) {
+          firstLoading = false;
+          progOverlay.classList.add('hidden');
+          const overlay = document.getElementById('railway-startup-overlay');
+          _resetRailwayStartupOverlay('Loading railway geometry data for this route...');
+          const pollInterval = setInterval(async () => {
+            try {
+              const res2 = await fetch('/api/railway-status');
+              const d = await res2.json();
+              const entries = _renderRailwayStartupStatus(d, 'Loading railway geometry data for this route...');
+              const loaders = entries.filter(([, r]) => !r.ready);
+              if (loaders.length === 0) {
+                clearInterval(pollInterval);
+                overlay.classList.add('hidden');
+                _enrichLegsGeometry();
+              }
+            } catch (_) {}
+          }, 2000);
+          break;
+        }
+      } else if (result.source === 'osm_failed') {
+        if (item.svc) item.svc._geometrySource = 'osm_failed';
+        else item.leg._geometrySource = 'osm_failed';
+        console.warn('OSM geometry failed for ' + item._segName);
+      } else if (result.geometry) {
+        // Accumulate per-pair geometry under the leg's svc/leg key
+        const svcKey = item.svc || item.leg;
+        if (!legGeoMap.has(svcKey)) legGeoMap.set(svcKey, []);
+        legGeoMap.get(svcKey).push(result.geometry);
+
+        // Check if this is the last pair for this svc/leg
+        const nextItem = todo[i + 1];
+        const isLastForLeg = !nextItem || nextItem.svc !== item.svc || nextItem.leg !== item.leg;
+        if (isLastForLeg) {
+          const geos = legGeoMap.get(svcKey);
+          if (geos.length > 0) {
+            const combined = geos.length === 1
+              ? geos[0]
+              : geos[0].concat(...geos.slice(1).map(g => g.slice(1)));
+
+            if (item.svc) {
+              item.svc.enrichedGeometry = combined;
+              item.svc._geometrySource = 'railway_db';
+            } else {
+              item.leg._enrichedGeometry = combined;
+              item.leg._geometrySource = 'railway_db';
+            }
+            enrichedCount++;
+
+            if (combined.length >= 2) {
+              const enrichedDistKm = _geometryDistanceKm(combined);
+              if (item.svc) item.svc.distance_km = enrichedDistKm;
+              else item.leg.distance_km = enrichedDistKm;
+              const rate = item.svc ? item.svc.emissions_rate_g_per_km : (item.leg._emissionsRate || 0);
+              if (rate > 0) {
+                const newEmKg = rate * enrichedDistKm / 1000;
+                if (item.svc) { item.svc.emissions_kg = newEmKg; }
+                else { item.leg._emissionsKg = newEmKg; }
+              }
+              await _refreshEmissionsForItem(item, combined, 'osm', result.traction_hint).catch(() => {});
+            }
+            console.log('enrichGeometry: ' + item._segName + ' combined ' + combined.length + ' coords');
+          }
+        }
+      } else {
+        console.log('enrichGeometry: leg ' + item._segName + ' returned null geometry');
+      }
+
+      // Update progress bar per pair
+      const pct = (Math.min(i + 1, todo.length) / todo.length * 100);
+      progBar.style.width = pct + '%';
+      progText.textContent = (i + 1) + ' / ' + todo.length;
     }
 
-    renderRoutes();
-  } finally {
-    overlay.classList.add('hidden');
+    if (loadingCount === 0) {
+      clearTimeout(enrichTimeout);
+      progOverlay.classList.add('hidden');
+      if (enrichedCount > 0) {
+        renderGlobalMap();
+        renderStatsPanel();
+        renderAliasDebugPanel();
+        _updateGeoBadges();
+      }
+      const overlay = document.getElementById('railway-startup-overlay');
+      if (!overlay.classList.contains('hidden')) overlay.classList.add('hidden');
+      if (enrichBadge) enrichBadge.classList.add('hidden');
+    }
+  } catch (_) {
+    clearTimeout(enrichTimeout);
+    console.log('enrichGeometry: ' + (_.name === 'AbortError' ? 'timed out' : 'fetch failed'));
+    progOverlay.classList.add('hidden');
+    if (enrichBadge) enrichBadge.classList.add('hidden');
+  }
+}
+
+function _updateGeoBadges() {
+  // Update geo badges without full timeline redraw (preserves input focus)
+  for (const dir of ['outbound', 'inbound']) {
+    for (const r of state[dir].routes) {
+      for (const leg of r.legs) {
+        const entry = document.querySelector(`[data-leg-id="${leg.id}"]`);
+        if (!entry) continue;
+        const svc = leg.selectedServices.length > 0 && leg.services[leg.selectedServices[0]] || null;
+        const geoSource = svc?._geometrySource || leg._geometrySource;
+        const badgeEl = entry.querySelector('.geo-badge');
+        const hasPending = svc && !geoSource && (svc.origin_lat != null && svc.dest_lat != null);
+        let badgeText = '';
+        let badgeClass = '';
+        if (geoSource === 'railway_db') { badgeText = 'OSM'; badgeClass = 'solved'; }
+        else if (geoSource === 'osm_failed') { badgeText = 'OSM failed'; badgeClass = 'arc'; }
+        else if (hasPending) { badgeText = 'Enrich...'; badgeClass = 'pending'; }
+        if (badgeEl) {
+          if (badgeText) {
+            badgeEl.textContent = badgeText;
+            badgeEl.className = 'geo-badge ' + badgeClass;
+          } else if (badgeEl.parentNode) {
+            badgeEl.remove();
+          }
+        } else if (badgeText) {
+          const meta = entry.querySelector('.meta');
+          if (meta) {
+            const span = document.createElement('span');
+            span.className = 'geo-badge ' + badgeClass;
+            span.textContent = badgeText;
+            meta.appendChild(span);
+          }
+        }
+      }
+    }
   }
 }
 
@@ -1694,7 +3232,10 @@ async function fillLegGeometries() {
           leg.services.push(svc);
         }
       }
-      if (leg.services.length) leg.selectedServices = [0];
+      if (leg.services.length) {
+        leg.selectedServices = [0];
+        if (leg._enrichedGeometry) delete leg._enrichedGeometry;
+      }
       // Also update coordinates from the service data if better
       const s = leg.services[0];
       if (s) {
@@ -1707,50 +3248,14 @@ async function fillLegGeometries() {
   }));
   if (status) status.remove();
   renderGlobalMap();
-}
-
-function setTimeOffset(routeId, legId, useExact) {
-  const leg = findLeg(routeId, legId);
-  if (!leg) return;
-  leg._useExactTimes = useExact;
-  // Re-apply the selected service times with the new offset mode
-  const selIdx = leg.selectedServices.length > 0 ? leg.selectedServices[0] : -1;
-  if (selIdx >= 0 && leg.services[selIdx]) {
-    applyServiceTimes(leg, leg.services[selIdx]);
-  }
-  renderRoutes();
+  renderStatsPanel();
+  renderAliasDebugPanel();
+  _updateGeoBadges();
 }
 
 function applyServiceTimes(leg, svc) {
   leg.departure = svc.departure;
   leg.arrival = svc.arrival;
-  if (leg._useExactTimes === false && leg._offsetMinutes) {
-    // Shift times by offset to match the user's original input
-    const shiftMin = -leg._offsetMinutes;
-    const adjust = (t) => {
-      if (!t) return t;
-      const [h, m] = t.split(':').map(Number);
-      let total = h * 60 + m + shiftMin;
-      if (total < 0) total += 1440;
-      if (total >= 1440) total -= 1440;
-      return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
-    };
-    leg.departure = adjust(svc.departure);
-    leg.arrival = adjust(svc.arrival);
-  }
-}
-
-function toggleService(routeId, legId, idx) {
-  const leg = findLeg(routeId, legId);
-  if (!leg) return;
-  const i = leg.selectedServices.indexOf(idx);
-  if (i >= 0) {
-    leg.selectedServices.splice(i, 1);
-  } else {
-    leg.selectedServices = [idx];
-    applyServiceTimes(leg, leg.services[idx]);
-  }
-  renderRoutes();
 }
 
 // ---- Create new from sprint ----
@@ -1847,6 +3352,7 @@ function renderPhotos() {
   const currRoutes = dirRoutes();
   const assigned = new Set();
   for (const r of currRoutes) {
+    if (!_routeAcceptsCuration(r)) continue;
     (r.photos || []).forEach(p => assigned.add(p));
   }
   grid.innerHTML = state.allPhotos.map(p => {
@@ -1861,9 +3367,8 @@ function renderPhotos() {
 
 function toggleRoutePhoto(filename) {
   const routes = dirRoutes();
-  if (!routes.length) return;
-  // Assign to first route in current direction
-  const r = routes[0];
+  const r = routes.find(_routeAcceptsCuration);
+  if (!r) return;
   if (!r.photos) r.photos = [];
   const idx = r.photos.indexOf(filename);
   if (idx >= 0) r.photos.splice(idx, 1);
@@ -1886,6 +3391,7 @@ async function openRoutePhotos(routeId) {
   _photoTargetLegId = null;
   const routes = dirRoutes();
   const r = routes.find(ro => ro.id === routeId);
+  if (!r || !_routeAcceptsCuration(r)) return;
   state._photoModalUsed = new Set(r?.photos || []);
   const title = (r?.name || 'Route') + ' — Select Photos';
   document.getElementById('photo-modal-title').textContent = title;
@@ -2120,6 +3626,26 @@ async function importPost() {
           photos: lc.photos || [],
           notes: lc.notes || '',
         });
+        _copyEmissionsFields(rl, rl);
+        _storeLegEmissions(newRoute.legs[newRoute.legs.length - 1], {
+          kg: rl.emissions_kg,
+          min_kg: rl.emissions_min_kg,
+          max_kg: rl.emissions_max_kg,
+          operational_kg: rl.emissions_operational_kg,
+          lifecycle_kg: rl.emissions_lifecycle_kg,
+          radiative_forcing_kg: rl.emissions_radiative_forcing_kg,
+          rate_g_per_km: rl.emissions_rate_g_per_km,
+          rate_min_g_per_km: rl.emissions_rate_min_g_per_km,
+          rate_max_g_per_km: rl.emissions_rate_max_g_per_km,
+          confidence: rl.emissions_confidence,
+          distance_source: rl.emissions_distance_source,
+          traction: rl.emissions_traction,
+          traction_source: rl.emissions_traction_source,
+          grid_intensity_g_per_kwh: rl.emissions_grid_intensity_g_per_kwh,
+          lifecycle_uplift_pct: rl.emissions_lifecycle_uplift_pct,
+          radiative_forcing_multiplier: rl.emissions_radiative_forcing_multiplier,
+          assumptions: rl.emissions_assumptions,
+        });
         state._expandedLegIds.add(id);
         (lc.photos || []).forEach(p => state.usedPhotos.add(p));
         if (lc.notes && !newRoute.notes) newRoute.notes = lc.notes;
@@ -2241,7 +3767,7 @@ async function findRoutes() {
   for (const dir of ['outbound', 'inbound']) {
     for (const route of state[dir].routes) {
       for (const l of route.legs) {
-        if (l.origin && l.dest) {
+        if (['transit', 'unincluded'].includes(l.type || 'transit') && l.origin && l.dest) {
           const selIdx = l.selectedServices.length > 0 ? l.selectedServices[0] : 0;
           const svc = l.services[selIdx];
           allLegs.push({
@@ -2300,21 +3826,28 @@ async function findRoutes() {
   }
 
   // Search overall journey
+  const journeyController = new AbortController();
+  const journeyTimeout = setTimeout(() => journeyController.abort(), 120000);
   try {
     const res = await fetch('/api/find-routes', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body),
+      signal: journeyController.signal,
     });
+    clearTimeout(journeyTimeout);
     const data = await res.json();
     state.routeResults = data.routes || [];
 
     if (data.error) {
       document.getElementById('preview-content').textContent = 'Error: ' + data.error;
-      // Still allow generation with synthetic route
+    } else if (data._warning && !data.routes?.length) {
+      document.getElementById('preview-content').textContent = data._warning;
     }
   } catch(e) {
     state.routeResults = [];
-    document.getElementById('preview-content').textContent = 'Route search unavailable — using manual leg data';
+    document.getElementById('preview-content').textContent = e.name === 'AbortError'
+      ? 'Route search timed out — using manual leg data'
+      : 'Route search unavailable — using manual leg data';
   }
 
   // Create synthetic route if Transitous returned nothing (e.g. historical date)
@@ -2339,6 +3872,7 @@ async function findRoutes() {
   }
 
   selectRoute(0);
+  setTimeout(() => _enrichLegsGeometry(), 500);
 }
 
 function selectRoute(idx) {
@@ -2374,6 +3908,7 @@ function renderRouteMap(idx) {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
     maxZoom: 19,
   }).addTo(map);
+  map.invalidateSize();
   state._map = map;
 
   const bounds = [];
@@ -2381,22 +3916,38 @@ function renderRouteMap(idx) {
 
   route.legs.forEach((leg, i) => {
     const coords = [];
-    if (leg.geometry?.length) {
-      leg.geometry.forEach(pt => coords.push([pt.lat, pt.lon]));
-    } else {
+    if (leg.geometry?.length) leg.geometry.forEach(pt => coords.push([pt.lat, pt.lon]));
+    else {
       if (leg.origin_lat != null) coords.push([leg.origin_lat, leg.origin_lon]);
       if (leg.dest_lat != null) coords.push([leg.dest_lat, leg.dest_lon]);
     }
     if (coords.length < 1) return;
     coords.forEach(c => bounds.push(c));
     const color = colors[i % colors.length];
-    L.polyline(coords, { color, weight: 4, opacity: 0.8 }).addTo(map);
+    L.polyline(coords, { color, weight: 3, opacity: 0.35, dashArray: '6 8', interactive: false }).addTo(map);
 
     const mid = coords[Math.floor(coords.length / 2)];
     if (mid) {
       L.marker(mid, {
         icon: L.divIcon({ className: '', html: `<div style="background:${color};color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;white-space:nowrap">${leg.display_name || leg.mode}</div>`, iconSize: [0,0] })
       }).addTo(map);
+    }
+
+    // Station markers for route map
+    if (leg.origin_lat != null && leg.origin_lon != null) {
+      L.circleMarker([leg.origin_lat, leg.origin_lon], { color: color, radius: 5, fillColor: color, fillOpacity: 0.8 }).addTo(map)
+        .bindTooltip(leg.origin || leg.origin_name || '', { permanent: false });
+    }
+    if (leg.dest_lat != null && leg.dest_lon != null) {
+      L.circleMarker([leg.dest_lat, leg.dest_lon], { color: color, radius: 5, fillColor: color, fillOpacity: 0.8 }).addTo(map)
+        .bindTooltip(leg.destination || leg.dest_name || '', { permanent: false });
+    }
+    if (leg.stops) {
+      for (const st of leg.stops) {
+        if (st.lat == null || st.lon == null) continue;
+        L.circleMarker([st.lat, st.lon], { color: '#666', radius: 3, fillColor: '#666', fillOpacity: 0.5 }).addTo(map)
+          .bindTooltip(st.name || st.station || '', { permanent: false });
+      }
     }
   });
 
@@ -2438,9 +3989,12 @@ async function generateBlog(writeFile) {
 
   for (const dir of ['outbound', 'inbound']) {
     for (const r of state[dir].routes) {
+      const routeCurationLeg = _firstCuratedLeg(r);
       for (const l of r.legs) {
+        if ((l.type || 'transit') !== 'transit') continue;
         const selIdx = l.selectedServices.length > 0 ? l.selectedServices[0] : 0;
         const svc = l.services[selIdx];
+        const osmGeometry = svc?.enrichedGeometry || l._enrichedGeometry || null;
 
         legs.push({
           leg_index: legIdx,
@@ -2461,11 +4015,29 @@ async function generateBlog(writeFile) {
       duration_seconds: svc?.duration_seconds || 0,
       distance_km: svc?.distance_km || 0,
       max_speed_kmh: svc?.max_speed_kmh || 0,
+      emissions_kg: (svc?.emissions_kg ?? l._emissionsKg ?? 0),
+      emissions_min_kg: (svc?.emissions_min_kg ?? l._emissionsMinKg ?? 0),
+      emissions_max_kg: (svc?.emissions_max_kg ?? l._emissionsMaxKg ?? 0),
+      emissions_operational_kg: (svc?.emissions_operational_kg ?? l._emissionsOperationalKg ?? 0),
+      emissions_lifecycle_kg: (svc?.emissions_lifecycle_kg ?? l._emissionsLifecycleKg ?? 0),
+      emissions_radiative_forcing_kg: (svc?.emissions_radiative_forcing_kg ?? l._emissionsRadiativeForcingKg ?? 0),
+      emissions_rate_g_per_km: (svc?.emissions_rate_g_per_km ?? l._emissionsRate ?? 0),
+      emissions_rate_min_g_per_km: (svc?.emissions_rate_min_g_per_km ?? l._emissionsRateMin ?? 0),
+      emissions_rate_max_g_per_km: (svc?.emissions_rate_max_g_per_km ?? l._emissionsRateMax ?? 0),
+      emissions_confidence: (svc?.emissions_confidence ?? l._emissionsConfidence ?? ''),
+      emissions_distance_source: (svc?.emissions_distance_source ?? l._emissionsDistanceSource ?? ''),
+      emissions_traction: (svc?.emissions_traction ?? l._emissionsTraction ?? ''),
+      emissions_traction_source: (svc?.emissions_traction_source ?? l._emissionsTractionSource ?? ''),
+      emissions_countries: (svc?.emissions_countries ?? []),
+      emissions_grid_intensity_g_per_kwh: (svc?.emissions_grid_intensity_g_per_kwh ?? l._emissionsGridIntensity ?? null),
+      emissions_lifecycle_uplift_pct: (svc?.emissions_lifecycle_uplift_pct ?? l._emissionsLifecyclePct ?? 0),
+      emissions_radiative_forcing_multiplier: (svc?.emissions_radiative_forcing_multiplier ?? l._emissionsRfMultiplier ?? 1),
+      emissions_assumptions: (svc?.emissions_assumptions ?? l._emissionsAssumptions ?? []),
       tortuosity_pct: svc?.tortuosity_pct || 100,
       stops: l.stops,
-      geometry: svc?.geometry || null,
-      notes: r.legs[0] === l ? (r.notes || '') : (l.notes || ''),  // route notes → section description
-      photos: r.legs[0] === l ? (r.photos || []) : [],
+      geometry: osmGeometry,
+      notes: routeCurationLeg === l ? (r.notes || '') : (l.notes || ''),
+      photos: routeCurationLeg === l ? (r.photos || []) : [],
       highlighted: false,
       omit: false,
         });
@@ -2481,6 +4053,9 @@ async function generateBlog(writeFile) {
   const lastLeg = legs[legs.length - 1];
   const totalDur = legs.reduce((s, l) => s + (l.duration_seconds || 0), 0);
   const totalDist = legs.reduce((s, l) => s + (l.distance_km || 0), 0);
+  const totalEmissions = legs.reduce((s, l) => s + (l.emissions_kg || 0), 0);
+  const minEmissions = legs.reduce((s, l) => s + (l.emissions_min_kg || l.emissions_kg || 0), 0);
+  const maxEmissions = legs.reduce((s, l) => s + (l.emissions_max_kg || l.emissions_kg || 0), 0);
   const transitLegs = legs.filter(l => l.leg_type === 'transit' && l.mode !== 'WALK');
   const operators = [...new Set(legs.map(l => l.operator).filter(Boolean))];
 
@@ -2495,7 +4070,10 @@ async function generateBlog(writeFile) {
       total_distance_km: route?.total_distance_km || totalDist,
       rail_distance_km: route?.rail_distance_km || totalDist,
       walk_distance_km: route?.walk_distance_km || 0,
-      transfers: route?.transfers || legs.filter(l => l.leg_type === 'transfer').length,
+      total_emissions_kg: totalEmissions,
+      emissions_min_kg: minEmissions,
+      emissions_max_kg: maxEmissions,
+      transfers: route?.transfers || 0,
       average_speed_kmh: route?.average_speed_kmh || 0,
       max_speed_kmh: route?.max_speed_kmh || Math.max(...legs.map(l => l.max_speed_kmh).filter(Boolean), 0),
       tortuosity_pct: route?.tortuosity_pct || 100,
@@ -2560,6 +4138,68 @@ async function generateBlog(writeFile) {
 }
 
 // ---- Init ----
+(async function startup() {
+  const overlay = document.getElementById('railway-startup-overlay');
+  _resetRailwayStartupOverlay('Checking railway geometry database...');
+  let maxAttempts = 180;
+  const poll = async () => {
+    try {
+      const res = await fetch('/api/railway-status');
+      const data = await res.json();
+      const entries = _renderRailwayStartupStatus(data, 'Checking railway geometry database...');
+      if (entries.length === 0) {
+        // No regions configured or loading needed; hide overlay immediately
+        overlay.classList.add('hidden');
+        return;
+      }
+      const allReady = entries.every(([, r]) => r.ready);
+      const anyLoading = entries.some(([, r]) => r.loading);
+      const totalWays = entries.reduce((s, [, r]) => s + r.ways, 0);
+      const totalPlatforms = entries.reduce((s, [, r]) => s + r.platforms, 0);
+      if (anyLoading) {
+        _renderRailwayStartupStatus(data, 'Building railway geometry database...');
+      } else if (allReady && totalWays > 0) {
+        const detail = document.getElementById('railway-startup-detail');
+        const bar = document.getElementById('railway-startup-bar');
+        detail.textContent = `Loaded ${totalWays} railway ways + ${totalPlatforms} platforms across ${entries.length} region(s)`;
+        bar.style.width = '100%';
+        await new Promise(r => setTimeout(r, 600));
+        overlay.classList.add('hidden');
+        return;
+      } else {
+        // Idle with regions configured but not yet loaded
+        const msg = document.getElementById('railway-startup-msg');
+        const detail = document.getElementById('railway-startup-detail');
+        msg.textContent = 'Railway database ready';
+        detail.textContent = `${entries.length} region(s) configured — will load on demand`;
+        overlay.classList.add('hidden');
+        return;
+      }
+    } catch (_) {
+      const detail = document.getElementById('railway-startup-detail');
+      detail.textContent = 'Waiting for server...';
+    }
+    if (maxAttempts > 0) maxAttempts--;
+    if (maxAttempts > 0) {
+      setTimeout(poll, 2000);
+    } else {
+      try {
+        const res = await fetch('/api/railway-status');
+        const data = await res.json();
+        const entries = Object.entries(data.regions || {});
+        if (entries.some(([, r]) => r.loading)) {
+          maxAttempts = 30;
+          setTimeout(poll, 2000);
+        } else {
+          overlay.classList.add('hidden');
+        }
+      } catch (_) {
+        overlay.classList.add('hidden');
+      }
+    }
+  };
+  poll();
+})();
 loadSprintDirs();
 loadPostList();
 detectUnmatchedSprints();
