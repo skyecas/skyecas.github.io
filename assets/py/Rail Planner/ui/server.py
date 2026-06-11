@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+import re
 import sys
 import logging
 import os
+import warnings
 from pathlib import Path
 from typing import Any
+
+# Suppress asyncio.iscoroutinefunction deprecation warning from FastAPI/starlette
+warnings.filterwarnings("ignore", message=".*asyncio.iscoroutinefunction.*")
 
 from fastapi import FastAPI, Query
 from datetime import timedelta
@@ -14,6 +19,18 @@ import uvicorn
 
 
 _script_dir = Path(__file__).parent.resolve()
+
+# Load .env file from same directory
+_env_path = _script_dir / ".env"
+if _env_path.exists():
+    for _line in _env_path.read_text().splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _k, _v = _line.split("=", 1)
+            _v = _v.strip('"').strip("'")
+            if not os.environ.get(_k):
+                os.environ[_k] = _v
+
 _project_root = _script_dir
 for parent in [_script_dir, *_script_dir.parents]:
     if (parent / "_posts").is_dir():
@@ -32,6 +49,7 @@ from post_parser import (  # noqa: E402
     list_sprint_posts,
 )
 from railway_db import RailwayDB, detect_region, find_country  # noqa: E402
+from flight_db import FlightDB  # noqa: E402
 
 log = logging.getLogger(__name__)
 if not log.handlers:
@@ -141,38 +159,120 @@ STATION_COORDS: dict[str, tuple[float, float]] = {
 async def search_stations(q: str = Query("")):
     if not q or len(q) < 2:
         return []
-    # Check legacy CRS codes (lat/lon fallback)
     code = q.strip().upper()
+
+    # Also search FlightDB for airports
+    from flight_db import FlightDB
+    fdb = FlightDB.get_instance()
+    airport_results = []
+    seen_ids = set()
+    ap = fdb.find_airport(code)
+    if ap:
+        aid = f"airport_{code}"
+        airport_results.append({
+            "id": aid, "name": f"{ap['name']} ({code})",
+            "lat": ap["lat"], "lon": ap["lon"],
+        })
+        seen_ids.add(aid)
+    for a in fdb.search_airports(q):
+        iata = a.get("iata", "")
+        if not iata:
+            continue
+        aid = f"airport_{iata}"
+        if aid not in seen_ids:
+            seen_ids.add(aid)
+            label = f"{a['name']} ({iata})"
+            airport_results.append({
+                "id": aid, "name": label,
+                "lat": a["lat"], "lon": a["lon"],
+            })
+
+    # Check legacy CRS codes (lat/lon fallback) — place after Transitous results
     if code in STATION_COORDS:
         lat, lon = STATION_COORDS[code]
-        return [{"id": code, "name": code, "lat": lat, "lon": lon}]
+        return [{"id": code, "name": code, "lat": lat, "lon": lon}] + airport_results
+
     # Fall back to Transitous search
     import asyncio
 
     loop = asyncio.get_event_loop()
     results = await loop.run_in_executor(None, client.search_stations, q)
 
-    # Sort: exact name match first, then National Rail (910-912), then others.
-    # Keep Underground/DLR/etc visible because they are valid interchange targets.
+    # Sort: exact name match first, then UK stations, then by type priority
+    # (National Rail > Underground > DLR > Coach/Bus > other), then alphabetically.
     q_lower = q.strip().lower()
+
+    def _type_priority(code):
+        return {"910": 0, "911": 0, "912": 0, "940": 1, "930": 2, "700": 3}.get(code, 4)
 
     def _sort_key(r):
         rid = r.id or ""
+        country = rid.split("_")[0] if "_" in rid else ""
         code = rid.split("_").pop()[:3] if "_" in rid else ""
         exact = 0 if r.name.lower() == q_lower else 1
-        nr = 0 if code in ("910", "911", "912") else 1
-        return (exact, nr, r.name)
+        uk = 0 if country in ("uk", "gb") else 1
+        return (exact, uk, _type_priority(code), r.name.lower())
 
     results.sort(key=_sort_key)
-    return [
-        {
-            "id": r.id,
+    seen_ids = set(seen_ids)
+    transit_results = []
+    for r in results:
+        rid = r.id or ""
+        if rid in seen_ids:
+            continue
+        seen_ids.add(rid)
+        transit_results.append({
+            "id": rid,
             "name": r.name,
             "lat": r.position.lat.degrees,
             "lon": r.position.lon.degrees,
-        }
-        for r in results
-    ]
+        })
+    
+    # Better matching: score by how much of the query is present in the name
+    def _match_score(name, query):
+        """Return a score tuple (lower is better): (words_matched, word_order, name_length, name_lower)"""
+        name_lower = name.lower()
+        query_lower = query.lower()
+        query_words = query_lower.split()
+        
+        # Check how many query words appear in the name
+        matched_words = sum(1 for w in query_words if w in name_lower)
+        
+        # Check if query words appear in order
+        in_order = 0
+        pos = 0
+        for word in query_words:
+            new_pos = name_lower.find(word, pos)
+            if new_pos >= 0:
+                pos = new_pos + len(word)
+            else:
+                in_order += 1
+        
+        return (-matched_words, in_order, len(name_lower), name_lower)  # Negative matched_words for descending sort
+    
+    # Sort airports by relevance
+    airport_results_sorted = sorted(airport_results, key=lambda a: _match_score(a["name"], q))
+    
+    # Sort transit by relevance
+    transit_results_sorted = sorted(transit_results, key=lambda t: _match_score(t["name"], q))
+    
+    # Merge: exact matches first, then all inexact sorted by match quality
+    # (airport can rank above weak transit when it matches more query words)
+    q_lower = q.strip().lower()
+    exact_transit = [r for r in transit_results_sorted if r["name"].lower() == q_lower]
+    exact_airports = [a for a in airport_results_sorted if a["name"].lower() == q_lower]
+    
+    # Combine all inexact results, sort by match score, with transit tiebreaker
+    inexact = []
+    for r in transit_results_sorted:
+        if r["name"].lower() != q_lower:
+            inexact.append((_match_score(r["name"], q), False, r["name"].lower(), r))
+    for a in airport_results_sorted:
+        if a["name"].lower() != q_lower:
+            inexact.append((_match_score(a["name"], q), True, a["name"].lower(), a))
+    inexact.sort(key=lambda x: (x[0], x[1], x[2]))
+    
+    return exact_transit + exact_airports + [x[3] for x in inexact]
 
 
 _STATION_ALIAS_CACHE: dict[str, dict] = {}
@@ -202,6 +302,24 @@ def _resolve_station_alias_sync(name: str) -> dict:
     cache_key = _station_alias_key(name)
     if cache_key in _STATION_ALIAS_CACHE:
         return _STATION_ALIAS_CACHE[cache_key]
+
+    # Check for airport names with IATA code in parentheses
+    import re as _re
+    _iata_match = _re.search(r'\(([A-Z]{3})\)', name)
+    if _iata_match:
+        from flight_db import FlightDB
+        ap = FlightDB.get_instance().find_airport(_iata_match.group(1))
+        if ap:
+            resolved = {
+                "input": name,
+                "key": f"airport_{ap['iata']}",
+                "name": ap["name"],
+                "lat": ap["lat"],
+                "lon": ap["lon"],
+            }
+            _STATION_ALIAS_CACHE[cache_key] = resolved
+            return resolved
+
     fallback = _station_alias_fallback(name)
     try:
         results = client.search_stations(name)
@@ -346,6 +464,19 @@ async def find_routes(body: dict):
             from geo import Position
             from rail_planner import Location
 
+            # Airport prefix: resolve via FlightDB
+            if station_id.startswith("airport_"):
+                iata = station_id.split("_", 1)[1]
+                ap = FlightDB.get_instance().find_airport(iata)
+                if ap:
+                    return Location(
+                        position=Position(ap["lat"], ap["lon"]),
+                        timezone=ZoneInfo("Europe/London"),
+                        id=iata,
+                        name=ap["name"],
+                        address=f"{ap.get('city', '')}, {ap.get('country', '')}",
+                    )
+
             if station_lat is not None and station_lon is not None:
                 pos = Position(station_lat, station_lon)
             else:
@@ -387,20 +518,47 @@ async def find_routes(body: dict):
             return match
         raise ValueError(f"Could not find station: {name}")
 
+    def _resolve_airport(name):
+        from flight_db import FlightDB
+        _d = FlightDB.get_instance()
+        ap = _d.find_airport(name.strip().upper())
+        if not ap:
+            matches = [a for a in _d.search_airports(name) if a.get("lat") and a.get("lon")]
+            ap = matches[0] if matches else None
+        if ap:
+            from geo import Position
+            from rail_planner import Location
+            return Location(
+                position=Position(ap["lat"], ap["lon"]),
+                timezone=ZoneInfo("Europe/London"),
+                id=ap.get("iata", name),
+                name=ap["name"],
+                address=f"{ap.get('city', '')}, {ap.get('country', '')}",
+            )
+        return None
+
     try:
         origin = resolve_station(origin_name, origin_id)
         dest = resolve_station(dest_name, dest_id)
-    except (IndexError, ValueError):
-        return JSONResponse({"error": "Could not find station"}, status_code=400)
-
-    via_locs = []
-    for v in via:
-        try:
-            match = _best_station(v)
-            if match:
-                via_locs.append(match)
-        except (IndexError, ValueError):
-            pass
+    except (IndexError, ValueError) as e:
+        if mode != "plane":
+            return JSONResponse(
+                {"error": f"Could not find station for '{origin_name}' or '{dest_name}': {str(e)}"}, 
+                status_code=400
+            )
+        # Plane mode: try FlightDB airport lookup
+        origin = _resolve_airport(origin_name)
+        dest = _resolve_airport(dest_name)
+        if not origin:
+            return JSONResponse(
+                {"error": f"Could not find airport for '{origin_name}' (expected IATA code like BCN, LGW, etc.)"}, 
+                status_code=400
+            )
+        if not dest:
+            return JSONResponse(
+                {"error": f"Could not find airport for '{dest_name}' (expected IATA code like BCN, LGW, etc.)"}, 
+                status_code=400
+            )
 
     if dep_date:
         depart_after = datetime.strptime(f"{dep_date} {dep_time}", "%Y-%m-%d %H:%M")
@@ -423,26 +581,65 @@ async def find_routes(body: dict):
     else:
         depart_after = datetime.now() + timedelta(hours=1)
 
+    # Plane mode: skip Transitous entirely, use FlightDB + OpenSky
+    if mode == "plane":
+        # Check credentials first
+        username = os.environ.get("OSKY_USER", "")
+        password = os.environ.get("OSKY_PASS", "")
+        if not username or not password:
+            resp = _route_response([], body)
+            resp["_warning"] = "OpenSky credentials not configured (OSKY_USER/OSKY_PASS). Set in .env file to enable flight search."
+            return resp
+        
+        opensky_routes = _opensky_search_flights(
+            origin_name, dest_name, depart_after,
+            origin, dest, origin_id, dest_id,
+        )
+        if opensky_routes:
+            return _route_response(opensky_routes, body)
+        resp = _route_response([], body)
+        resp["_warning"] = f"No flights found for {origin_name} ({origin_id}) → {dest_name} ({dest_id}). Check OpenSky API credentials and ensure both airports are in the database."
+        return resp
+
+    via_locs = []
+    for v in via:
+        try:
+            match = _best_station(v)
+            if match:
+                via_locs.append(match)
+        except (IndexError, ValueError):
+            pass
+
     # Default: all UK/EU rail (train, regional, high speed, subway, tram, light rail, ferry, walk)
     # This is the recommended mode — includes everything a rail journey might use.
     ALL_RAIL = TransitClient.TRAVEL_SKYE  # "RAIL,REGIONAL_RAIL,...,WALK"
 
-    if mode == "walking":
+    if mode == ":train" or mode == "train" or not mode:
+        modes = "RAIL,REGIONAL_RAIL,REGIONAL_FAST_RAIL,HIGHSPEED_RAIL,NIGHT_RAIL,SUBURBAN,SUBWAY,TRAM,METRO"
+    elif mode == ":road":
+        modes = "BUS,COACH,CAR,RIDE_SHARING"
+    elif mode == ":other":
+        modes = "AIRPLANE,FERRY,WALK"
+    elif mode == "walking":
         modes = "WALK"
-    elif mode in ("bus", "plane", "coach"):
-        modes = TransitClient.TRAVEL_SKYE_BUSINESS
+    elif mode == "bus":
+        modes = "BUS"
+    elif mode == "coach":
+        modes = "COACH"
+    elif mode == "plane":
+        modes = "AIRPLANE"
     elif mode == "ferry":
-        modes = ALL_RAIL + ",FERRY"
+        modes = "FERRY"
     elif mode == "car":
         modes = "CAR,RIDE_SHARING"
     elif mode == "high_speed":
         modes = "HIGHSPEED_RAIL,REGIONAL_FAST_RAIL,NIGHT_RAIL"
     elif mode == "regional":
         modes = "REGIONAL_RAIL,SUBURBAN"
+    elif mode == "subway":
+        modes = "SUBWAY,METRO"
     elif mode == "light_rail":
         modes = "TRAM,SUBWAY,METRO,SUBURBAN"
-    elif mode == "train" or not mode:
-        modes = ALL_RAIL
     else:
         modes = ALL_RAIL
 
@@ -513,6 +710,14 @@ async def find_routes(body: dict):
             if err and warning is None:
                 warning = err
 
+    # OSRM fallback: try driving/walking when Transitous returns nothing
+    _osrm_routes = _try_osrm_fallback(
+        origin, dest, origin_name, dest_name,
+        origin_id, dest_id, mode, body,
+    )
+    if _osrm_routes:
+        return _route_response(_osrm_routes, body)
+
     resp = _route_response([], body)
     mode_label = body.get("mode", "train")
     resp["_warning"] = (
@@ -520,6 +725,248 @@ async def find_routes(body: dict):
         or f"No routes found for {origin_name} → {dest_name} using mode={mode_label}"
     )
     return resp
+
+
+def _try_osrm_fallback(
+    origin, dest,
+    origin_name, dest_name,
+    origin_id, dest_id,
+    mode, body,
+) -> list:
+    """Query OSRM when Transitous returns no results for driving/walking/airport-connections."""
+    from geo import Position
+    from rail_planner import Route, Leg, Stop
+    from time_util import Time
+    import requests as _requests
+
+    # Determine if OSRM is appropriate
+    is_airport_origin = "airport_" in origin_id
+    is_airport_dest = "airport_" in dest_id
+    any_airport = is_airport_origin or is_airport_dest
+    is_road_mode = mode in (":road", "car", "walking")
+
+    if not any_airport and not is_road_mode:
+        return []
+
+    # Choose OSRM profile
+    if mode == "walking":
+        profile = "walking"
+        osrm_mode = "WALK"
+    elif is_road_mode or any_airport:
+        profile = "driving"
+        osrm_mode = "CAR"
+
+    o_lon = origin.position.lon.degrees
+    o_lat = origin.position.lat.degrees
+    d_lon = dest.position.lon.degrees
+    d_lat = dest.position.lat.degrees
+
+    url = (
+        f"https://router.project-osrm.org/route/v1/{profile}"
+        f"/{o_lon},{o_lat};{d_lon},{d_lat}"
+        f"?overview=full&geometries=geojson"
+    )
+    try:
+        resp = _requests.get(url, timeout=25)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        log.info("OSRM query failed: %s", e)
+        return []
+
+    if data.get("code") != "Ok" or not data.get("routes"):
+        return []
+
+    route_data = data["routes"][0]
+    duration_s = route_data["duration"]
+    geometry = route_data.get("geometry", {})
+    coords = geometry.get("coordinates", [])
+
+    geo_positions = [Position(lat, lon) for lon, lat in coords]
+
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+    tz = ZoneInfo("Europe/London")
+    now = datetime.now(tz)
+    dep_time = Time(now, tz)
+    arr_time = Time(now + timedelta(seconds=duration_s), tz)
+
+    origin_stop = Stop(
+        position=origin.position,
+        timezone=tz,
+        name=origin_name,
+        id=origin_id,
+        departure=dep_time,
+    )
+    dest_stop = Stop(
+        position=dest.position,
+        timezone=tz,
+        name=dest_name,
+        id=dest_id,
+        arrival=arr_time,
+    )
+
+    leg = Leg(
+        mode=osrm_mode,
+        origin=origin_stop,
+        destination=dest_stop,
+        stops=[],
+        name=f"OSRM {profile}",
+        geometry=geo_positions,
+    )
+
+    route = Route(
+        origin=origin,
+        destination=dest,
+        departure=dep_time,
+        arrival=arr_time,
+        legs=[leg],
+    )
+    return [route]
+
+
+def _opensky_search_flights(
+    origin_name: str, dest_name: str,
+    dep_dt,
+    origin_loc, dest_loc,
+    origin_id: str = "", dest_id: str = "",
+) -> list:
+    """Query OpenSky Network for historical flights and return Route objects."""
+    from datetime import datetime as _datetime
+    from zoneinfo import ZoneInfo as _ZoneInfo
+    import requests as _requests
+
+    username = os.environ.get("OSKY_USER", "")
+    password = os.environ.get("OSKY_PASS", "")
+    if not username or not password:
+        log.warning("OpenSky credentials not configured; set OSKY_USER/OSKY_PASS")
+        return []
+
+    db = FlightDB.get_instance()
+
+    def _airport_icao(name, sid=""):
+        # Try ID first (airport_BCN -> extract IATA)
+        if sid:
+            iata = sid.split("airport_", 1)[-1] if "airport_" in sid else ""
+            if iata:
+                ap = db.find_airport(iata)
+                if ap and ap.get("icao"):
+                    return ap["icao"]
+        # Try extracting IATA from name "(BCN)"
+        import re as _re
+        _m = _re.search(r'\(([A-Z]{3})\)', name)
+        if _m:
+            ap = db.find_airport(_m.group(1))
+            if ap and ap.get("icao"):
+                return ap["icao"]
+        # Fallback: raw name lookup
+        ap = db.find_airport(name.strip().upper())
+        if ap and ap.get("icao"):
+            return ap["icao"]
+        matches = [a for a in db.search_airports(name) if a.get("icao")]
+        return matches[0]["icao"] if matches else None
+
+    orig_icao = _airport_icao(origin_name, origin_id)
+    dest_icao = _airport_icao(dest_name, dest_id)
+    if not orig_icao or not dest_icao:
+        missing = []
+        if not orig_icao: missing.append(f"origin '{origin_name}'")
+        if not dest_icao: missing.append(f"destination '{dest_name}'")
+        log.warning("Could not resolve ICAO codes for %s", " / ".join(missing))
+        return []
+
+    _now = _datetime.now()
+    target = dep_dt.replace(tzinfo=None)
+    if target > _now:
+        while target > _now:
+            target -= timedelta(days=7)
+    elif (_now - target).days > 30:
+        while (_now - target).days > 30:
+            target += timedelta(days=7)
+
+    day_start = target.replace(hour=0, minute=0, second=0, microsecond=0)
+    begin_ts = int(day_start.timestamp())
+    end_ts = begin_ts + 2 * 86400
+
+    url = f"https://opensky-network.org/api/flights/arrival?airport={dest_icao}&begin={begin_ts}&end={end_ts}"
+    try:
+        resp = _requests.get(url, auth=(username, password), timeout=30)
+        resp.raise_for_status()
+        flights = resp.json()
+    except Exception as e:
+        error_msg = f"OpenSky query failed ({type(e).__name__}): {str(e)}"
+        if "403" in str(e):
+            error_msg += " [Check OpenSky credentials and account permissions]"
+        elif "401" in str(e):
+            error_msg += " [Invalid OpenSky credentials]"
+        log.warning("%s", error_msg)
+        return []
+
+    if not isinstance(flights, list):
+        return []
+
+    flights = [f for f in flights if f.get("estDepartureAirport") == orig_icao]
+
+    req_ts = int(dep_dt.timestamp())
+    flights.sort(key=lambda f: abs((f.get("firstSeen") or 0) - req_ts))
+
+    from rail_planner import Route, Leg, Stop
+    from geo import Position
+    from time_util import Time
+
+    tz = _ZoneInfo("Europe/London")
+    routes = []
+    for f in flights:
+        callsign = (f.get("callsign") or "").strip()
+        icao24 = f.get("icao24") or ""
+        if not callsign:
+            continue
+        first_ts = f.get("firstSeen")
+        last_ts = f.get("lastSeen")
+        if not first_ts or not last_ts:
+            continue
+
+        dep_utc = _datetime.fromtimestamp(first_ts, tz=_ZoneInfo("UTC")).astimezone(tz)
+        arr_utc = _datetime.fromtimestamp(last_ts, tz=_ZoneInfo("UTC")).astimezone(tz)
+
+        op_match = re.match(r"^([A-Z]{2,3})", callsign)
+        operator = op_match.group(1) if op_match else ""
+
+        origin_stop = Stop(
+            position=Position(origin_loc.position.lat.degrees, origin_loc.position.lon.degrees),
+            timezone=tz,
+            name=origin_loc.name,
+            id=origin_loc.id,
+            departure=Time(dep_utc, tz),
+        )
+        dest_stop = Stop(
+            position=Position(dest_loc.position.lat.degrees, dest_loc.position.lon.degrees),
+            timezone=tz,
+            name=dest_loc.name,
+            id=dest_loc.id,
+            arrival=Time(arr_utc, tz),
+        )
+
+        leg = Leg(
+            mode="AIRPLANE",
+            origin=origin_stop,
+            destination=dest_stop,
+            stops=[],
+            id=icao24,
+            name=callsign,
+            operator=operator,
+        )
+
+        route = Route(
+            origin=origin_loc,
+            destination=dest_loc,
+            departure=Time(dep_utc, tz),
+            arrival=Time(arr_utc, tz),
+            legs=[leg],
+        )
+        routes.append(route)
+
+    return routes
 
 
 def _route_response(routes, query_body, offset_minutes=None, fallback_date=None):
@@ -993,11 +1440,100 @@ async def enrich_geometry(body: dict):
 async def estimate_emissions(body: dict):
     legs = []
     for i, leg in enumerate(body.get("legs", [])):
+        mode = (leg.get("mode") or "RAIL").upper()
+        distance_km = float(leg.get("distance_km") or 0)
+        distance_source = leg.get("distance_source", "scheduled")
+
+        # Flight distance fallback: compute great-circle + surface/taxi uplift
+        if distance_km <= 0 and mode in {"PLANE", "AIRPLANE", "FLIGHT"}:
+            # Prefer enriched geometry if provided by enrichment step
+            geom = leg.get("geometry") or leg.get("enriched_geometry")
+            if geom and isinstance(geom, list) and len(geom) >= 2:
+                # compute polyline length
+                import math
+
+                def _poly_len_km(g):
+                    s = 0.0
+                    for j in range(1, len(g)):
+                        lat1, lon1 = g[j - 1]["lat"], g[j - 1]["lon"]
+                        lat2, lon2 = g[j]["lat"], g[j]["lon"]
+                        # haversine
+                        R = 6371.0
+                        dlat = math.radians(lat2 - lat1)
+                        dlon = math.radians(lon2 - lon1)
+                        a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
+                        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+                        s += R * c
+                    return s
+
+                distance_km = _poly_len_km(geom)
+                distance_source = "flight_arc"
+            else:
+                # Try airport name/coords via FlightDB
+                origin_lat = leg.get("origin_lat")
+                origin_lon = leg.get("origin_lon")
+                dest_lat = leg.get("dest_lat")
+                dest_lon = leg.get("dest_lon")
+                if origin_lat is None or dest_lat is None:
+                    # Try searching by name
+                    fdb = FlightDB.get_instance()
+                    o_candidates = fdb.search_airports(leg.get("origin", "") or "")
+                    d_candidates = fdb.search_airports(leg.get("destination", "") or "")
+                    if o_candidates:
+                        origin_lat = o_candidates[0]["lat"]
+                        origin_lon = o_candidates[0]["lon"]
+                    if d_candidates:
+                        dest_lat = d_candidates[0]["lat"]
+                        dest_lon = d_candidates[0]["lon"]
+            if origin_lat is not None and dest_lat is not None:
+                    # haversine between airport centroids
+                    import math
+
+                    R = 6371.0
+                    lat1 = math.radians(float(origin_lat))
+                    lat2 = math.radians(float(dest_lat))
+                    dlat = lat2 - lat1
+                    dlon = math.radians(float(dest_lon) - float(origin_lon))
+                    a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+                    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+                    gc = R * c
+                    # Surface/taxi + uplift heuristics
+                    # Surface km: conservative default 15 km (taxi/approach)
+                    surface_km = 15.0
+                    # Routing uplift: short-haul has proportionally more detours
+                    if gc <= 500:
+                        uplift = 1.10
+                        surface_km = 12.0
+                    elif gc <= 2000:
+                        uplift = 1.06
+                        surface_km = 15.0
+                    else:
+                        uplift = 1.03
+                        surface_km = 18.0
+                    distance_km = gc * uplift + surface_km
+                    distance_source = "airport_gc_estimate"
+                    # Try to refine surface_km using OSM runway/taxiway data via FlightDB
+                    try:
+                        fdb = FlightDB.get_instance()
+                        origin_airps = fdb.search_airports(leg.get('origin', '') or '')
+                        dest_airps = fdb.search_airports(leg.get('destination', '') or '')
+                        if origin_airps:
+                            oinfo = fdb.estimate_ground_and_departure(origin_airps[0])
+                            if oinfo and oinfo.get('distance_km') is not None:
+                                surface_km = min(30.0, max(5.0, oinfo.get('distance_km')))
+                        if dest_airps:
+                            dinfo = fdb.estimate_ground_and_departure(dest_airps[0])
+                            if dinfo and dinfo.get('distance_km') is not None:
+                                surface_km = max(surface_km, min(30.0, max(5.0, dinfo.get('distance_km'))))
+                        distance_km = gc * uplift + surface_km
+                        distance_source = 'airport_gc_estimate'
+                    except Exception:
+                        pass
         detail = _emissions_detail(
-            mode=leg.get("mode", "RAIL"),
+            mode=mode,
             operator=leg.get("operator", ""),
-            distance_km=float(leg.get("distance_km") or 0),
-            distance_source=leg.get("distance_source", "scheduled"),
+            distance_km=distance_km,
+            distance_source=distance_source,
             countries=leg.get("countries") or [],
             traction_hint=leg.get("traction_hint"),
         )
@@ -1008,6 +1544,45 @@ async def estimate_emissions(body: dict):
 
 def _enrich_one_leg(leg_in: dict) -> dict:
     if leg_in.get("leg_type", "transit") not in {"transit", "unincluded"}:
+        # If this is a flight leg, return a great-circle flight arc fallback
+        if leg_in.get("mode") in {"plane", "PLANE", "flight"}:
+            from math import radians, sin, cos, atan2
+
+            def _flight_arc(lat1, lon1, lat2, lon2, steps=32):
+                # simple great-circle interpolation (slerp on unit sphere)
+                import math
+
+                lat1r = math.radians(lat1)
+                lon1r = math.radians(lon1)
+                lat2r = math.radians(lat2)
+                lon2r = math.radians(lon2)
+                # convert to cartesian
+                x1 = math.cos(lat1r) * math.cos(lon1r)
+                y1 = math.cos(lat1r) * math.sin(lon1r)
+                z1 = math.sin(lat1r)
+                x2 = math.cos(lat2r) * math.cos(lon2r)
+                y2 = math.cos(lat2r) * math.sin(lon2r)
+                z2 = math.sin(lat2r)
+                dot = max(-1.0, min(1.0, x1 * x2 + y1 * y2 + z1 * z2))
+                omega = math.acos(dot)
+                pts = []
+                if omega == 0:
+                    return [{"lat": lat1, "lon": lon1}, {"lat": lat2, "lon": lon2}]
+                for i in range(steps + 1):
+                    t = i / steps
+                    s1 = math.sin((1 - t) * omega) / math.sin(omega)
+                    s2 = math.sin(t * omega) / math.sin(omega)
+                    x = s1 * x1 + s2 * x2
+                    y = s1 * y1 + s2 * y2
+                    z = s1 * z1 + s2 * z2
+                    lat = math.degrees(math.atan2(z, math.hypot(x, y)))
+                    lon = math.degrees(math.atan2(y, x))
+                    pts.append({"lat": lat, "lon": lon})
+                return pts
+
+            if leg_in.get("origin_lat") is not None and leg_in.get("dest_lat") is not None:
+                arc = _flight_arc(leg_in.get("origin_lat"), leg_in.get("origin_lon"), leg_in.get("dest_lat"), leg_in.get("dest_lon"))
+                return {"index": leg_in.get("index"), "geometry": arc, "source": "flight_arc"}
         return {"index": leg_in.get("index"), "geometry": None, "source": None}
     geom, source = _enrich_leg_geometry(
         leg_in.get("origin_lat", 0),
@@ -1223,9 +1798,11 @@ async def delete_railway_cache(body: dict):
         return JSONResponse({"error": f"Unknown region {region}"}, status_code=400)
     cache_path = DATA_DIR / info["cache"]
     if cache_path.exists():
+        # Get file size before deleting
+        file_size = cache_path.stat().st_size
         cache_path.unlink()
-        print(f"Deleted railway cache: {cache_path}")
-        return {"success": True, "deleted": str(cache_path)}
+        print(f"Deleted railway cache: {cache_path} ({file_size / (1024**2):.1f} MB)")
+        return {"success": True, "deleted": str(cache_path), "size_bytes": file_size}
     return JSONResponse({"error": "No railway cache found"}, status_code=404)
 
 

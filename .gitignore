@@ -30,3 +30,6 @@ session-ses_*.md
 # Railway geometry database (downloaded OSM PBF + extracted cache)
 *.osm.pbf
 *.json.gz
+
+# Rail Planner server credentials
+assets/py/Rail Planner/ui/.env
