@@ -18,7 +18,7 @@ selected_repos: true # includes select repo cards
 social: true # includes social icons at the bottom of the page
 ---
 
-I'm [Skye Owen-Lloyd-Walters](https://sk1y101.github.io/), I'm one of those "programmer people" everyone likes to ask for printer advice. Sometimes I write code that does stuff, most of the time that code is purely for my own entertainment.
+I'm [Skye Owen-Lloyd-Walters](https://skyecas.github.io/), I'm one of those "programmer people" everyone likes to ask for printer advice. Sometimes I write code that does stuff, most of the time that code is purely for my own entertainment.
 {% assign user = site.data.repositories.github_users | first %}
 {% include repository/repo_user.liquid username=user %}
 
@@ -31,7 +31,7 @@ I love writing code with Python, and I reckon I've become fairly competent with 
 My primary interests are definitely spaceflight, astronomy, and programming.
 <sub>I wonder how many of those were obvious</sub>
 
-Welcome to my [personal website](https://sk1y101.github.io/), I'll steadily be adding anything of relevance here, collating all of my projects and occasionally dropping news and blog posts.
+Welcome to my [personal website](https://skyecas.github.io/), I'll steadily be adding anything of relevance here, collating all of my projects and occasionally dropping news and blog posts.
 <font size="2">
   <sup>
     Do not attach a lot of weight to occasionally, I am... sporadic... with regular posts. Just look at my github commit history per repo.

@@ -4,7 +4,7 @@ title: Pokétch FitBit
 description: A clock-face based on the Pokémon watch from Diamond, Pearl, and Platinum.
 highlights:
 img: assets/img/fitbit/poketchfitbit.png
-redirect: https://github.com/SK1Y101/PoketchFitbit
+redirect: https://github.com/skyecas/PoketchFitbit
 category: fun
 date: "2021-08-25"
 endDate: "2024-01-01"
@@ -17,8 +17,8 @@ When I first started this project, Pokémon Brilliant Diamond and Shining Pearl 
 # Fitbit Pokétch
 A Fitbit clock-face in the style of the Pokémon Generation IV Pokétch.
 
-![Pokétch view](https://github.com/SK1Y101/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK4.3/screenshots/App_Views/App_View_Animated.png)
-![Pokétch view](https://github.com/SK1Y101/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK6.0/screenshots/App_View/App_View_Animated.png)
+![Pokétch view](https://github.com/skyecas/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK4.3/screenshots/App_Views/App_View_Animated.png)
+![Pokétch view](https://github.com/skyecas/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK6.0/screenshots/App_View/App_View_Animated.png)
 
 [![forthebadge](https://forthebadge.com/images/badges/made-with-javascript.svg)](https://forthebadge.com)
 [![forthebadge](https://forthebadge.com/images/badges/uses-css.svg)](https://forthebadge.com)
@@ -49,8 +49,8 @@ Tap the bottom half of the screen to cycle through the applications, or tap the 
 
 To enable/disable certain applications, use the dropdown available in the settings for the watch face. By default, only the digital watch face is visible.
 
-![Pokétch view](https://github.com/SK1Y101/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK4.3/screenshots/App_Views/App_View_Animated.png)
-![Pokétch view](https://github.com/SK1Y101/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK6.0/screenshots/App_View/App_View_Animated.png)
+![Pokétch view](https://github.com/skyecas/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK4.3/screenshots/App_Views/App_View_Animated.png)
+![Pokétch view](https://github.com/skyecas/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK6.0/screenshots/App_View/App_View_Animated.png)
 
 ### Customisation
 
@@ -66,13 +66,13 @@ Mascot         - Want an Eevee, or a Pikachu on your digital clock?
 
 Wherever possible, I have tried to keep the watch feature and aesthetics as close to the original Pokétch from the games, with minimal changes.
 
-For further description of watch features, see the wiki pages in the github repo [here](https://github.com/SK1Y101/PoketchFitbit/wiki)
+For further description of watch features, see the wiki pages in the github repo [here](https://github.com/skyecas/PoketchFitbit/wiki)
 
-![Pokétch view](https://github.com/SK1Y101/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK4.3/screenshots/screen_colours/Screen_Colour_Animated.png)
-![Pokétch view](https://github.com/SK1Y101/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK6.0/screenshots/Screen_Colour/Screen_Colour_Animated.png)
+![Pokétch view](https://github.com/skyecas/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK4.3/screenshots/screen_colours/Screen_Colour_Animated.png)
+![Pokétch view](https://github.com/skyecas/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK6.0/screenshots/Screen_Colour/Screen_Colour_Animated.png)
 
-![Pokétch view](https://github.com/SK1Y101/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK4.3/screenshots/edge_colours/Edge_View_Animated.png)
-![Pokétch view](https://github.com/SK1Y101/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK6.0/screenshots/Edge_Colour/Edge_Colour_Animated.png)
+![Pokétch view](https://github.com/skyecas/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK4.3/screenshots/edge_colours/Edge_View_Animated.png)
+![Pokétch view](https://github.com/skyecas/PoketchFitbit/blob/main/FitbitPoketch-Export/SDK6.0/screenshots/Edge_Colour/Edge_Colour_Animated.png)
 
 ## Links
 

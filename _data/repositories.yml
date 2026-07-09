@@ -1,17 +1,17 @@
 github_users:
-  - sk1y101
+  - skyecas
   - SkiylianSoftware
 
 selected_repos:
-  - sk1y101/transitproject
-  - sk1y101/poketchfitbit
-  - sk1y101/skiylia
+  - skyecas/transitproject
+  - skyecas/poketchfitbit
+  - skyecas/skiylia
   - canonical/maas
   - canonical/terrform-provider-maas
 
 github_repos:
-  - sk1y101/improved-ttv-pipeline
-  - sk1y101/transitproject
+  - skyecas/improved-ttv-pipeline
+  - skyecas/transitproject
   - canonical/maas
   - canonical/terrform-provider-maas
   - canonical/maas-terraform-modules
@@ -21,15 +21,15 @@ github_repos:
   - canonical/packer-maas
   - canonical/gomaasclient
   - canonical/maas-ansible-playbook
-  - sk1y101/AutoBreezeBeats
-  - sk1y101/vn-template
-  - sk1y101/sk1y101.github.io
-  - sk1y101/poketchfitbit
-  - sk1y101/kos
-  - sk1y101/kosflightcontroller
-  - sk1y101/seasonsclock
-  - sk1y101/gwproject
-  - sk1y101/skiylia
+  - skyecas/AutoBreezeBeats
+  - skyecas/vn-template
+  - skyecas/skyecas.github.io
+  - skyecas/poketchfitbit
+  - skyecas/kos
+  - skyecas/kosflightcontroller
+  - skyecas/seasonsclock
+  - skyecas/gwproject
+  - skyecas/skiylia
   - Revolutionary-Games/Thrive
   - alshedivat/al-folio
   - all-contributors/all-contributors

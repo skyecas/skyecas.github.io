@@ -4,7 +4,7 @@ title: KOS Flight Controller
 description: An autopilot script written for KSP + RSS.
 highlights:
 img: assets/img/FlightControllerUI.png
-redirect: https://github.com/SK1Y101/KOSFlightController
+redirect: https://github.com/skyecas/KOSFlightController
 category: fun
 date: "2022-01-02"
 endDate: "2024-01-01"
