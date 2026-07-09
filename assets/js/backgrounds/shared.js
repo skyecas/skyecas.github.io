@@ -795,7 +795,7 @@ window.getScrollY = function() {
   s.onload = function() {
     window.lenis = new Lenis({ duration: 0, syncTouch: true, wheelMultiplier: 1 });
     window.lenisScroll = 0;
-    window.lenis.on('scroll', function(e) { window.lenisScroll = e.animatedScroll; });
+    window.lenis.on('scroll', function(e) { window.lenisScroll = e.scroll; });
     function lenisRaf(time) { window.lenis.raf(time); requestAnimationFrame(lenisRaf); }
     requestAnimationFrame(lenisRaf);
   };
