@@ -94,7 +94,11 @@ layout: default
     {%- endfor -%}
 
     <div class="profile-gallery">
-        {%- for image in profile_images -%}
+        {% assign start = profile_images.size | minus: 3 %}
+        {% if start < 0 %}
+            {% assign start = 0 %}
+        {% endif %}
+        {%- for image in profile_images limit:3 offset:start -%}
             {% assign parts = image.name | split: "-" %}
             {% if parts.size == 3 %}
                 {% assign year = parts[0] %}
